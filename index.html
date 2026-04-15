@@ -339,10 +339,9 @@
     </div>
     <div class="tabs">
     <div class="tab active" onclick="switchTab('home')">首页</div>
-    <div class="tab" onclick="switchTab('search')">搜房</div>
+    <div class="tab" onclick="switchTab('search')">找房</div>
     <div class="tab" onclick="switchTab('daily')">日报</div>
-    <div class="tab" onclick="switchTab('listing')">房源</div>
-    <div class="tab" onclick="switchTab('repair')">催单</div>
+    <div class="tab" onclick="switchTab('repair')">售后</div>
     <div class="tab" onclick="switchTab('history')">记录</div>
   </div>
   </div><!-- /header-inner -->
@@ -352,30 +351,24 @@
 <div class="page active" id="page-home">
   <div class="page-inner" style="padding-bottom:60px;">
 
-    <!-- Greeting -->
-    <div style="margin-bottom:16px;">
-      <div style="font-size:16px;font-weight:600;color:var(--text);">早上好 👋</div>
-      <div style="font-size:12px;color:var(--text3);margin-top:2px;" id="home-date"></div>
-    </div>
-
     <!-- 找房跟进 -->
     <div style="font-size:10px;font-weight:600;color:var(--text3);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;display:flex;align-items:center;gap:6px;">找房 & 跟进 <span style="flex:1;height:1px;background:var(--border);display:block;"></span></div>
 
     <div style="background:var(--surface);border-radius:var(--radius-sm);border:1px solid var(--border);margin-bottom:14px;overflow:hidden;">
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5px;background:var(--border);">
-        <div style="background:var(--surface);padding:14px 13px;cursor:pointer;" onclick="switchTab('search')">
+        <div style="background:var(--surface);padding:14px 13px;cursor:pointer;" onclick="switchTab('search');setTimeout(()=>setFindStep(1),100)">
           <div style="font-size:18px;margin-bottom:4px;">🔍</div>
-          <div style="font-size:13px;font-weight:600;">搜索房源</div>
-          <div style="font-size:10px;color:var(--text3);margin-top:2px;line-height:1.4;">按条件批量搜，自动提取中介电话</div>
+          <div style="font-size:13px;font-weight:600;">① 搜索房源</div>
+          <div style="font-size:10px;color:var(--text3);margin-top:2px;line-height:1.4;">按条件批量搜，勾选shortlist</div>
         </div>
         <div style="background:var(--surface);padding:14px 13px;cursor:pointer;" onclick="switchTab('search');setTimeout(()=>document.getElementById('single-url-input')?.scrollIntoView({behavior:'smooth'}),300)">
           <div style="font-size:18px;margin-bottom:4px;">🔗</div>
           <div style="font-size:13px;font-weight:600;">单链接提取</div>
-          <div style="font-size:10px;color:var(--text3);margin-top:2px;line-height:1.4;">粘贴PG链接，一键提取全部字段</div>
+          <div style="font-size:10px;color:var(--text3);margin-top:2px;line-height:1.4;">粘贴PG链接，一键提取字段</div>
         </div>
-        <div style="background:var(--surface);padding:14px 13px;cursor:pointer;grid-column:1/-1;" onclick="switchTab('listing')">
-          <div style="font-size:13px;font-weight:600;">📋 房源列表 & 看房安排</div>
-          <div style="font-size:10px;color:var(--text3);margin-top:2px;">整理发客户 · 生成看房安排</div>
+        <div style="background:var(--surface);padding:14px 13px;cursor:pointer;grid-column:1/-1;" onclick="switchToStep2()">
+          <div style="font-size:13px;font-weight:600;">② 整理房源 → 发客户消息</div>
+          <div style="font-size:10px;color:var(--text3);margin-top:2px;">shortlist → 加亮点 → 生成微信消息</div>
         </div>
       </div>
     </div>
@@ -392,8 +385,8 @@
         </div>
         <div style="background:var(--surface);padding:14px 13px;cursor:pointer;" onclick="switchTab('repair')">
           <div style="font-size:18px;margin-bottom:4px;">🔧</div>
-          <div style="font-size:12px;font-weight:600;">报修催单</div>
-          <div style="font-size:10px;color:var(--text3);margin-top:2px;line-height:1.4;">中英双语催单消息</div>
+          <div style="font-size:12px;font-weight:600;">售后服务</div>
+          <div style="font-size:10px;color:var(--text3);margin-top:2px;line-height:1.4;">报修跟进，中英双语</div>
         </div>
         <div style="background:var(--surface);padding:14px 13px;cursor:pointer;" onclick="switchTab('history')">
           <div style="font-size:18px;margin-bottom:4px;">🗂</div>
@@ -430,9 +423,19 @@
   </div>
 </div>
 
-<!-- SEARCH -->
+<!-- SEARCH+LISTING combined as 找房 -->
 <div class="page" id="page-search">
   <div class="page-inner">
+
+    <!-- 3-step workflow tabs -->
+    <div style="display:flex;gap:0;background:var(--surface2);border-radius:10px;padding:3px;margin-bottom:16px;">
+      <button id="step-btn-1" class="mode-btn active" onclick="setFindStep(1)" style="flex:1;border-radius:8px;font-size:12px;">① 搜房</button>
+      <button id="step-btn-2" class="mode-btn" onclick="setFindStep(2)" style="flex:1;border-radius:8px;font-size:12px;">② 整理房源</button>
+      <button id="step-btn-3" class="mode-btn" onclick="setFindStep(3)" style="flex:1;border-radius:8px;font-size:12px;">③ 约看房</button>
+    </div>
+
+    <!-- STEP 1: 搜房 -->
+    <div id="find-step-1">
 
     <!-- Search form -->
     <div class="card" id="search-form-card">
@@ -512,10 +515,23 @@
     <!-- Results area -->
     <div id="search-results-area" style="display:none;">
 
+      <!-- Sort bar -->
+      <div style="display:flex;gap:6px;align-items:center;margin-bottom:8px;flex-wrap:wrap;">
+        <span style="font-size:11px;color:var(--text3);font-weight:500;">排序：</span>
+        <button class="sort-btn active" id="sort-date" onclick="sortResults('date')" style="font-size:11px;padding:4px 10px;border-radius:20px;border:1px solid var(--border);background:var(--accent-j);color:#fff;cursor:pointer;">最新</button>
+        <button class="sort-btn" id="sort-price-asc" onclick="sortResults('price-asc')" style="font-size:11px;padding:4px 10px;border-radius:20px;border:1px solid var(--border);background:var(--surface);color:var(--text2);cursor:pointer;">价格 ↑</button>
+        <button class="sort-btn" id="sort-price-desc" onclick="sortResults('price-desc')" style="font-size:11px;padding:4px 10px;border-radius:20px;border:1px solid var(--border);background:var(--surface);color:var(--text2);cursor:pointer;">价格 ↓</button>
+        <button class="sort-btn" id="sort-furnished" onclick="sortResults('furnished')" style="font-size:11px;padding:4px 10px;border-radius:20px;border:1px solid var(--border);background:var(--surface);color:var(--text2);cursor:pointer;">有装修优先</button>
+        <button class="sort-btn" id="sort-area" onclick="sortResults('area')" style="font-size:11px;padding:4px 10px;border-radius:20px;border:1px solid var(--border);background:var(--surface);color:var(--text2);cursor:pointer;">面积 ↓</button>
+      </div>
+
       <!-- Stats bar -->
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;font-size:12px;color:var(--text2);">
         <span id="search-stats">找到 0 套房源</span>
-        <a id="search-pg-link" href="#" target="_blank" style="font-size:11px;color:var(--accent-j);text-decoration:none;">在PG查看 →</a>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <button id="select-all-btn" onclick="selectAllResults()" style="display:none;font-size:11px;color:var(--accent-j);background:none;border:none;cursor:pointer;font-weight:600;">全选</button>
+          <a id="search-pg-link" href="#" target="_blank" style="font-size:11px;color:var(--accent-j);text-decoration:none;">在PG查看 →</a>
+        </div>
       </div>
       <!-- MRT search tip -->
       <div id="mrt-tip" style="display:none;background:#FFF5F5;border:1px solid #f5c0c0;border-radius:8px;padding:8px 12px;font-size:12px;color:var(--accent-j);margin-bottom:12px;">
@@ -527,9 +543,9 @@
 
       <!-- Pagination -->
       <div style="display:flex;align-items:center;justify-content:space-between;margin-top:16px;margin-bottom:16px;">
-        <button class="btn-copy-sm" id="pg-prev" onclick="changePage(-1)" style="padding:8px 14px;">← 上10套</button>
+        <button class="btn-copy-sm" id="pg-prev" onclick="changePage(-1)" style="padding:8px 14px;">← 上一页</button>
         <span id="pg-info" style="font-size:12px;color:var(--text2);"></span>
-        <button class="btn-copy-sm" id="pg-next" onclick="changePage(1)" style="padding:8px 14px;">下10套 →</button>
+        <button class="btn-copy-sm" id="pg-next" onclick="changePage(1)" style="padding:8px 14px;">下一页 →</button>
       </div>
 
       <!-- Shortlist bar -->
@@ -552,7 +568,66 @@
       </div>
 
     </div>
-  </div>
+    </div><!-- /find-step-1 -->
+
+    <!-- STEP 2+3: 整理房源 & 约看 (listing logic) -->
+    <div id="find-step-2" style="display:none;">
+      <!-- Mode toggle inside step 2/3 -->
+      <div style="display:flex;gap:0;background:var(--surface2);border-radius:10px;padding:3px;margin-bottom:14px;">
+        <button class="mode-btn active" id="mode-list-btn" onclick="setListingMode('list')" style="flex:1;border-radius:8px;font-size:12px;">📋 房源列表</button>
+        <button class="mode-btn" id="mode-view-btn" onclick="setListingMode('viewing')" style="flex:1;border-radius:8px;font-size:12px;">📅 看房安排</button>
+      </div>
+
+      <!-- Client info -->
+      <div class="card" style="margin-bottom:12px;">
+        <div class="field-group" style="margin-bottom:10px;">
+          <label>客户称呼</label>
+          <input type="text" id="listing-client" placeholder="如：老板、张总、Simon">
+        </div>
+        <div class="field-group" style="margin-bottom:6px;">
+          <label>开头语 <span style="font-size:10px;color:var(--text3)">选一个或自定义</span></label>
+          <div style="display:flex;flex-direction:column;gap:6px;" id="intro-presets">
+            <div class="intro-preset" onclick="selectIntro(0)" style="padding:8px 12px;border-radius:8px;border:1.5px solid var(--border);font-size:12px;color:var(--text2);cursor:pointer;background:var(--surface);">这是我们为您精心挑选的几套房源，都符合您的要求，价格也在预算范围内 😊</div>
+            <div class="intro-preset" onclick="selectIntro(1)" style="padding:8px 12px;border-radius:8px;border:1.5px solid var(--border);font-size:12px;color:var(--text2);cursor:pointer;background:var(--surface);">根据您的需求，我们找到以下几套合适的房源，供您参考～</div>
+            <div class="intro-preset" onclick="selectIntro(2)" style="padding:8px 12px;border-radius:8px;border:1.5px solid var(--border);font-size:12px;color:var(--text2);cursor:pointer;background:var(--surface);">老板好！以下是最新筛选的房源，性价比不错，欢迎查看 🏠</div>
+          </div>
+          <input type="text" id="listing-intro" placeholder="或自定义开头语（留空则直接展示房源）" style="margin-top:8px;">
+        </div>
+      </div>
+
+      <!-- Listings container -->
+      <div id="listings-container"></div>
+      <button class="btn-add-listing" onclick="addListingRow()">＋ 添加房源</button>
+
+      <!-- Viewing extra -->
+      <div id="viewing-extra" style="display:none;">
+        <div class="card" style="margin-bottom:12px;">
+          <div class="field-group">
+            <label>看房日期</label>
+            <input type="text" id="viewing-date" placeholder="如：17/04 周五">
+          </div>
+          <div class="field-group" style="margin-bottom:0;">
+            <label>备注（可选）</label>
+            <input type="text" id="viewing-note" placeholder="如：其他的还在等中介回复中">
+          </div>
+        </div>
+      </div>
+
+      <button class="btn-generate btn-j" id="btn-listing" onclick="generateListing()">
+        <span id="listing-btn-text">生成房源列表</span>
+        <div class="spinner" id="listing-spinner"></div>
+      </button>
+      <div class="result-box" id="listing-result">
+        <div class="result-header">
+          <span class="result-label">生成的消息</span>
+          <button class="btn-copy" id="listing-copy-btn" onclick="copyResult('listing')">复制</button>
+        </div>
+        <div class="result-content" id="listing-result-content"></div>
+      </div>
+      <div class="error-box" id="listing-error"></div>
+    </div><!-- /find-step-2 -->
+
+  </div><!-- /page-inner -->
 </div>
 
 <!-- DAILY REPORT -->
@@ -600,7 +675,7 @@
 <!-- REPAIR FOLLOW-UP -->
 <div class="page" id="page-repair">
   <div class="page-inner">
-    <div class="tip"><strong>使用方法：</strong>填入报修信息，选催单力度，直接复制发给师傅。</div>
+    <div class="tip"><strong>使用方法：</strong>填入报修信息，选跟进力度，直接复制发给师傅/租客/屋主。</div>
   <div class="card">
     <div class="field-group">
       <label>房源 / 单元</label>
@@ -662,61 +737,7 @@
   </div><!-- /page-inner -->
 </div>
 
-<!-- LISTING -->
-<div class="page" id="page-listing">
-  <div class="page-inner">
-
-    <!-- Mode toggle -->
-    <div style="display:flex;gap:0;background:var(--surface2);border-radius:10px;padding:3px;margin-bottom:14px;">
-      <button class="mode-btn active" id="mode-list-btn" onclick="setListingMode('list')" style="flex:1;border-radius:8px;">📋 房源列表</button>
-      <button class="mode-btn" id="mode-view-btn" onclick="setListingMode('viewing')" style="flex:1;border-radius:8px;">📅 看房安排</button>
-    </div>
-
-    <!-- Client info card -->
-    <div class="card" style="margin-bottom:12px;">
-      <div class="field-group" style="margin-bottom:10px;">
-        <label>客户称呼</label>
-        <input type="text" id="listing-client" placeholder="如：老板、张总、Simon">
-      </div>
-      <div class="field-group" style="margin-bottom:0;">
-        <label>开头语（可选）<span style="font-size:10px;color:var(--text3)"> 留空则直接展示房源列表</span></label>
-        <input type="text" id="listing-intro" placeholder="如：这是我们为您精心挑选的几套房源，都在预算范围内～">
-      </div>
-    </div>
-
-    <!-- Listings container -->
-    <div id="listings-container"></div>
-    <button class="btn-add-listing" onclick="addListingRow()">＋ 添加房源</button>
-
-    <!-- Viewing extra fields -->
-    <div id="viewing-extra" style="display:none;">
-      <div class="card" style="margin-bottom:12px;">
-        <div class="field-group">
-          <label>看房日期</label>
-          <input type="text" id="viewing-date" placeholder="如：17/04 周五">
-        </div>
-        <div class="field-group" style="margin-bottom:0;">
-          <label>备注（可选）</label>
-          <input type="text" id="viewing-note" placeholder="如：其他的还在等中介回复中">
-        </div>
-      </div>
-    </div>
-
-    <button class="btn-generate btn-j" id="btn-listing" onclick="generateListing()">
-      <span id="listing-btn-text">生成消息</span>
-      <div class="spinner" id="listing-spinner"></div>
-    </button>
-    <div class="result-box" id="listing-result">
-      <div class="result-header">
-        <span class="result-label">生成的消息</span>
-        <button class="btn-copy" id="listing-copy-btn" onclick="copyResult('listing')">复制</button>
-      </div>
-      <div class="result-content" id="listing-result-content"></div>
-    </div>
-    <div class="error-box" id="listing-error"></div>
-
-  </div><!-- /page-inner -->
-</div>
+<!-- listing page merged into 找房 -->
 
 <!-- HISTORY -->
 <div class="page" id="page-history">
@@ -755,31 +776,69 @@ if (sessionStorage.getItem('hhg_auth') === '1') {
 }
 // ===== END PASSWORD =====
 
+// ===== INTRO PRESETS =====
+const INTRO_PRESETS = [
+  '这是我们为您精心挑选的几套房源，都符合您的要求，价格也在预算范围内 😊',
+  '根据您的需求，我们找到以下几套合适的房源，供您参考～',
+  '老板好！以下是最新筛选的房源，性价比不错，欢迎查看 🏠',
+];
+let selectedIntroIdx = -1;
+
+function selectIntro(idx) {
+  selectedIntroIdx = idx;
+  document.getElementById('listing-intro').value = INTRO_PRESETS[idx];
+  document.querySelectorAll('.intro-preset').forEach((el, i) => {
+    el.style.borderColor = i === idx ? 'var(--accent-j)' : 'var(--border)';
+    el.style.background = i === idx ? 'var(--accent-j-light)' : 'var(--surface)';
+    el.style.color = i === idx ? 'var(--accent-j)' : 'var(--text2)';
+  });
+}
+
 let selectedPerson = '';
 let selectedUrgency = 0;
 let selectedLang = '';
 let history = JSON.parse(localStorage.getItem('hhg_history') || '[]');
 
 function switchTab(tab) {
-  const ids = ['home', 'search', 'daily', 'listing', 'repair', 'history'];
+  // listing is now inside search tab
+  const ids = ['home', 'search', 'daily', 'repair', 'history'];
   document.querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('active', ids[i] === tab));
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.getElementById('page-' + tab).classList.add('active');
+  const pageEl = document.getElementById('page-' + tab);
+  if (pageEl) pageEl.classList.add('active');
   if (tab === 'history') renderHistory();
-  if (tab === 'listing' && listingRows.length === 0) addListingRow();
+}
+
+let currentFindStep = 1;
+function setFindStep(step) {
+  currentFindStep = step;
+  [1, 2].forEach(s => {
+    const el = document.getElementById('find-step-' + s);
+    if (el) el.style.display = s === step ? '' : 'none';
+    const btn = document.getElementById('step-btn-' + s);
+    if (btn) btn.classList.toggle('active', s === step);
+  });
+  // step 3 = viewing mode in step 2
+  if (step === 3) {
+    const el = document.getElementById('find-step-2');
+    if (el) el.style.display = '';
+    document.getElementById('step-btn-2').classList.remove('active');
+    document.getElementById('step-btn-3').classList.add('active');
+    setListingMode('viewing');
+    if (listingRows.length === 0) addListingRow();
+  } else if (step === 2) {
+    setListingMode('list');
+    if (listingRows.length === 0) addListingRow();
+  }
+}
+
+function switchToStep2() {
+  switchTab('search');
+  setTimeout(() => setFindStep(2), 100);
 }
 
 // Set home date
-(function() {
-  const el = document.getElementById('home-date');
-  if (el) {
-    const days = ['周日','周一','周二','周三','周四','周五','周六'];
-    const now = new Date();
-    const d = now.getDate(), m = ['January','February','March','April','May','June','July','August','September','October','November','December'][now.getMonth()];
-    const s = [1,21,31].includes(d)?'st':[2,22].includes(d)?'nd':[3,23].includes(d)?'rd':'th';
-    el.textContent = `${d}${s} ${m} ${now.getFullYear()} · ${days[now.getDay()]}`;
-  }
-})();
+// home date removed
 
 function selectPerson(p) {
   selectedPerson = p;
@@ -956,6 +1015,44 @@ let searchState = {
 let shortlistMap = new Map();
 let shortlistIds = new Set(); // just links for fast lookup
 
+let currentSort = 'date';
+
+function sortResults(mode) {
+  currentSort = mode;
+  // Update button styles
+  ['date','price-asc','price-desc','furnished','area'].forEach(m => {
+    const btn = document.getElementById('sort-' + m);
+    if (!btn) return;
+    btn.style.background = m === mode ? 'var(--accent-j)' : 'var(--surface)';
+    btn.style.color = m === mode ? '#fff' : 'var(--text2)';
+  });
+  // Sort results array
+  const r = [...searchState.results];
+  if (mode === 'price-asc') r.sort((a,b) => (a.priceRaw||0) - (b.priceRaw||0));
+  else if (mode === 'price-desc') r.sort((a,b) => (b.priceRaw||0) - (a.priceRaw||0));
+  else if (mode === 'furnished') r.sort((a,b) => {
+    const score = x => x.furnishing?.toLowerCase().includes('fully') ? 2 : x.furnishing?.toLowerCase().includes('partial') ? 1 : 0;
+    return score(b) - score(a);
+  });
+  else if (mode === 'area') r.sort((a,b) => (b.areaSqft||0) - (a.areaSqft||0));
+  // date = keep original order (already sorted by date from API)
+  searchState.results = r;
+  renderSearchResults();
+}
+
+function selectAllResults() {
+  const allSelected = searchState.results.every(r => shortlistIds.has(r.link));
+  if (allSelected) {
+    // deselect all on this page
+    searchState.results.forEach(r => { shortlistMap.delete(r.link); shortlistIds.delete(r.link); });
+  } else {
+    // select all on this page
+    searchState.results.forEach(r => { shortlistMap.set(r.link, r); shortlistIds.add(r.link); });
+  }
+  updateShortlistBar();
+  renderSearchResults();
+}
+
 function toggleShortlist(link, checked) {
   const r = searchState.results.find(x => x.link === link);
   if (checked && r) {
@@ -1009,7 +1106,7 @@ function sendShortlistToListing() {
     });
   });
   renderListingRows();
-  switchTab('listing');
+  switchToStep2();
 }
 
 function setSearchType(type) {
@@ -1131,6 +1228,14 @@ function renderSearchResults() {
   const mrtTip = document.getElementById('mrt-tip');
   if (mrtTip) mrtTip.style.display = mrtSearch ? 'block' : 'none';
 
+  // Show 全选 button when there are results
+  const selectAllBtn = document.getElementById('select-all-btn');
+  if (selectAllBtn) {
+    selectAllBtn.style.display = results.length > 0 ? '' : 'none';
+    const allSelected = results.length > 0 && results.every(r => shortlistIds.has(r.link));
+    selectAllBtn.textContent = allSelected ? '取消全选' : '全选本页';
+  }
+
   // Pagination — always show if more than one page
   const showPagination = totalPages > 1;
   document.getElementById('pg-prev').style.display = showPagination ? '' : 'none';
@@ -1164,12 +1269,15 @@ function renderSearchResults() {
     const isShortlisted = shortlistIds.has(r.link);
     return `
     <div style="background:var(--surface);border:1.5px solid ${isShortlisted ? 'var(--accent-j)' : 'var(--border)'};border-radius:var(--radius-sm);margin-bottom:10px;overflow:hidden;${isShortlisted ? 'box-shadow:0 0 0 2px #FDEAEA;' : ''}">
-      <!-- Header: shortlist checkbox + date -->
+      <!-- Header: number + shortlist checkbox + date -->
       <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px 0;">
-        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;margin:0;">
-          <input type="checkbox" ${isShortlisted ? 'checked' : ''} onchange="toggleShortlist('${r.link}', this.checked)" style="width:16px;height:16px;accent-color:var(--accent-j);cursor:pointer;">
-          <span style="font-size:12px;font-weight:600;color:${isShortlisted ? 'var(--accent-j)' : 'var(--text3)'};">${isShortlisted ? '✓ 已选' : '选择'}</span>
-        </label>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span style="font-size:12px;font-weight:700;color:var(--text3);min-width:24px;">${start + i}</span>
+          <label style="display:flex;align-items:center;gap:5px;cursor:pointer;margin:0;">
+            <input type="checkbox" ${isShortlisted ? 'checked' : ''} onchange="toggleShortlist('${r.link}', this.checked)" style="width:16px;height:16px;accent-color:var(--accent-j);cursor:pointer;">
+            <span style="font-size:12px;font-weight:600;color:${isShortlisted ? 'var(--accent-j)' : 'var(--text3)'};">${isShortlisted ? '✓ 已选' : '选择'}</span>
+          </label>
+        </div>
         <span style="font-size:11px;color:var(--text3);">${r.listedDate || ''}</span>
       </div>
       <div style="padding:10px 14px 12px;">
@@ -1187,7 +1295,7 @@ function renderSearchResults() {
         <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px;">
           ${r.beds != null ? `<span style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:3px 9px;font-size:12px;">🛏 ${r.beds}房${r.baths != null ? ' ' + r.baths + '卫' : ''}</span>` : ''}
           ${r.areaDisplay ? `<span style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:3px 9px;font-size:12px;">📐 ${r.areaDisplay}</span>` : ''}
-          ${furnishLabel ? `<span style="background:#FFF5F5;border:1px solid #f5c0c0;border-radius:6px;padding:3px 9px;font-size:12px;color:var(--accent-j);">${furnishLabel}</span>` : ''}
+          <span style="background:${furnishLabel ? '#FFF5F5' : 'var(--surface2)'};border:1px solid ${furnishLabel ? '#f5c0c0' : 'var(--border)'};border-radius:6px;padding:3px 9px;font-size:12px;color:${furnishLabel ? 'var(--accent-j)' : 'var(--text3)'};">🛋 ${furnishLabel || '家具待确认'}</span>
           ${r.availability ? `<span style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:3px 9px;font-size:12px;">📅 ${r.availability.replace('Ready to Move','马上入住')}</span>` : ''}
         </div>
 
@@ -1258,7 +1366,7 @@ function sendToListing() {
   if (results.length === 0) { alert('没有搜索结果'); return; }
 
   // Switch to listing tab and pre-fill with results
-  switchTab('listing');
+  switchToStep2();
   // Clear existing rows
   listingRows = [];
   listingIdCounter = 0;
