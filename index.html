@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>HHG Admin 小助手</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap');
+
+  :root {
+    --bg: #F2F0EB;
+    --surface: #FFFFFF;
+    --surface2: #F7F5F0;
+    --border: #E2DDD6;
+    --text: #1A1816;
+    --text2: #6B6560;
+    --text3: #9E9890;
+    --accent-j: #4A3F8F;
+    --accent-j-light: #EEEDFE;
+    --accent-y: #8F5A00;
+    --accent-y-light: #FEF3DC;
+    --accent-g: #1A6B45;
+    --accent-g-light: #E8F7EF;
+    --red: #C0392B;
+    --red-light: #FDECEA;
+    --shadow: 0 2px 12px rgba(0,0,0,0.07);
+    --radius: 16px;
+    --radius-sm: 10px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 0 0 80px;
+  }
+
+  .header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 20px 20px 0;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .header-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+  .logo { font-size: 15px; font-weight: 600; color: var(--text); letter-spacing: -0.3px; }
+  .logo span { color: var(--accent-j); }
+  .version {
+    font-size: 10px; color: var(--text3);
+    font-family: 'DM Mono', monospace;
+    background: var(--surface2);
+    padding: 3px 8px; border-radius: 20px;
+  }
+
+  .tabs { display: flex; gap: 4px; }
+  .tab {
+    flex: 1; text-align: center; padding: 10px 8px;
+    font-size: 13px; font-weight: 500; color: var(--text3);
+    border-bottom: 2px solid transparent; cursor: pointer;
+    transition: all .15s; white-space: nowrap;
+  }
+  .tab.active { color: var(--text); border-bottom-color: var(--text); }
+
+  .page { display: none; padding: 20px; }
+  .page.active { display: block; }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    margin-bottom: 12px;
+    box-shadow: var(--shadow);
+  }
+
+  label { display: block; font-size: 12px; font-weight: 500; color: var(--text2); margin-bottom: 6px; }
+
+  textarea, input[type=text], select {
+    width: 100%;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px; color: var(--text);
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 12px 14px; outline: none;
+    transition: border-color .15s;
+    -webkit-appearance: none; resize: none;
+  }
+  textarea:focus, input[type=text]:focus, select:focus {
+    border-color: var(--accent-j); background: var(--surface);
+  }
+  textarea { line-height: 1.6; }
+
+  .person-pills { display: flex; gap: 8px; flex-wrap: wrap; }
+  .person-pill {
+    padding: 7px 16px; border-radius: 50px;
+    font-size: 13px; font-weight: 500;
+    border: 1.5px solid var(--border);
+    cursor: pointer; transition: all .15s;
+    background: var(--surface); color: var(--text2);
+  }
+  .person-pill.active-j { background: var(--accent-j-light); border-color: var(--accent-j); color: var(--accent-j); }
+  .person-pill.active-w { background: var(--accent-g-light); border-color: var(--accent-g); color: var(--accent-g); }
+  .person-pill.active-y { background: var(--accent-y-light); border-color: var(--accent-y); color: var(--accent-y); }
+
+  .urgency-btns { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .urgency-btn {
+    padding: 10px 6px; border-radius: var(--radius-sm);
+    font-size: 12px; font-weight: 500;
+    border: 1.5px solid var(--border); cursor: pointer;
+    transition: all .15s; background: var(--surface);
+    color: var(--text2); text-align: center; line-height: 1.3;
+  }
+  .urgency-btn.active { border-color: var(--red); background: var(--red-light); color: var(--red); }
+
+  .btn-generate {
+    width: 100%; padding: 16px;
+    border-radius: var(--radius);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px; font-weight: 600;
+    border: none; cursor: pointer;
+    transition: all .15s; margin-top: 4px;
+    display: flex; align-items: center;
+    justify-content: center; gap: 8px;
+  }
+  .btn-j { background: var(--accent-j); color: #fff; }
+  .btn-j:active { opacity: .85; transform: scale(.99); }
+  .btn-y { background: var(--accent-y); color: #fff; }
+  .btn-y:active { opacity: .85; transform: scale(.99); }
+  .btn-generate:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+
+  .spinner {
+    width: 16px; height: 16px;
+    border: 2px solid rgba(255,255,255,.3);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin .7s linear infinite;
+    display: none;
+  }
+  .spinner.show { display: block; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .result-box {
+    display: none; margin-top: 16px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius); overflow: hidden;
+  }
+  .result-box.show { display: block; }
+  .result-header {
+    display: flex; align-items: center;
+    justify-content: space-between;
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+  }
+  .result-label { font-size: 11px; font-weight: 600; color: var(--text3); letter-spacing: .5px; text-transform: uppercase; }
+  .btn-copy {
+    font-family: 'DM Sans', sans-serif; font-size: 12px;
+    font-weight: 500; color: var(--accent-j);
+    background: var(--accent-j-light); border: none;
+    padding: 5px 12px; border-radius: 20px; cursor: pointer; transition: all .15s;
+  }
+  .btn-copy:active { opacity: .7; }
+  .btn-copy.copied { color: var(--accent-g); background: var(--accent-g-light); }
+  .result-content {
+    padding: 14px; font-size: 13px;
+    line-height: 1.7; color: var(--text);
+    white-space: pre-wrap; word-break: break-word;
+    font-family: 'DM Mono', monospace;
+  }
+
+  .error-box {
+    display: none; margin-top: 12px;
+    background: var(--red-light);
+    border: 1px solid #f5b7b1;
+    border-radius: var(--radius-sm);
+    padding: 12px 14px; font-size: 13px; color: var(--red);
+  }
+  .error-box.show { display: block; }
+
+  .tip {
+    background: var(--accent-j-light);
+    border-radius: var(--radius-sm);
+    padding: 10px 12px; font-size: 12px;
+    color: var(--accent-j); line-height: 1.6; margin-bottom: 12px;
+  }
+  .tip strong { font-weight: 600; }
+
+  .field-group { margin-bottom: 14px; }
+
+  .history-empty { text-align: center; padding: 48px 20px; color: var(--text3); font-size: 13px; }
+  .history-item {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); padding: 14px; margin-bottom: 10px;
+  }
+  .history-meta { display: flex; justify-content: space-between; margin-bottom: 8px; }
+  .history-type { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 10px; }
+  .ht-daily { background: var(--accent-j-light); color: var(--accent-j); }
+  .ht-repair { background: var(--accent-y-light); color: var(--accent-y); }
+  .history-time { font-size: 11px; color: var(--text3); font-family: 'DM Mono', monospace; }
+  .history-preview { font-size: 12px; color: var(--text2); line-height: 1.5; }
+  .btn-copy-sm {
+    font-size: 11px; font-weight: 500; color: var(--text3);
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 20px; padding: 4px 10px; cursor: pointer;
+    margin-top: 8px; display: inline-block;
+  }
+
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+  .cursor {
+    display: inline-block; width: 2px; height: 13px;
+    background: var(--text); margin-left: 2px;
+    vertical-align: middle; animation: blink .8s infinite;
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-top">
+    <div class="logo">HHG <span>Admin</span> 小助手</div>
+    <div class="version">v1.0</div>
+  </div>
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('daily')">日报整理</div>
+    <div class="tab" onclick="switchTab('repair')">报修催单</div>
+    <div class="tab" onclick="switchTab('history')">历史记录</div>
+  </div>
+</div>
+
+<!-- DAILY REPORT -->
+<div class="page active" id="page-daily">
+  <div class="tip" style="margin-top:16px;">
+    <strong>使用方法：</strong>把今天做的事随手记下来，不用管格式，贴进来就行。
+  </div>
+  <div class="card">
+    <div class="field-group">
+      <label>你是谁？</label>
+      <div class="person-pills">
+        <div class="person-pill" id="pill-j" onclick="selectPerson('j')">Jaclyn</div>
+        <div class="person-pill" id="pill-w" onclick="selectPerson('w')">Wiki</div>
+        <div class="person-pill" id="pill-y" onclick="selectPerson('y')">Yuting</div>
+      </div>
+    </div>
+    <div class="field-group">
+      <label>日期</label>
+      <input type="text" id="daily-date" placeholder="如：15th April 2026">
+    </div>
+    <div class="field-group">
+      <label>今天做了什么？随手记就行</label>
+      <textarea id="daily-notes" rows="8" placeholder="例如：
+- 联系了王师傅，说下周一来
+- 给Mike发了3个房源，他说价格太贵
+- Jackie Boy还没转租金
+- AML做了两个：Hillsta和Sophia Hills
+- 安排了滕磊周六看房"></textarea>
+    </div>
+    <button class="btn-generate btn-j" id="btn-daily" onclick="generateDaily()">
+      <span id="daily-btn-text">生成日报</span>
+      <div class="spinner" id="daily-spinner"></div>
+    </button>
+    <div class="result-box" id="daily-result">
+      <div class="result-header">
+        <span class="result-label">生成的日报</span>
+        <button class="btn-copy" id="daily-copy-btn" onclick="copyResult('daily')">复制</button>
+      </div>
+      <div class="result-content" id="daily-result-content"></div>
+    </div>
+    <div class="error-box" id="daily-error"></div>
+  </div>
+</div>
+
+<!-- REPAIR FOLLOW-UP -->
+<div class="page" id="page-repair">
+  <div class="tip" style="margin-top:16px;">
+    <strong>使用方法：</strong>填入报修信息，选催单力度，直接复制发给师傅。
+  </div>
+  <div class="card">
+    <div class="field-group">
+      <label>房源 / 单元</label>
+      <input type="text" id="rep-unit" placeholder="如：D'Leedon #07-04">
+    </div>
+    <div class="field-group">
+      <label>报修类型</label>
+      <select id="rep-type">
+        <option value="">选择类型...</option>
+        <option>空调故障</option>
+        <option>水管漏水</option>
+        <option>电器问题</option>
+        <option>锁/门问题</option>
+        <option>虫害</option>
+        <option>其他</option>
+      </select>
+    </div>
+    <div class="field-group">
+      <label>第三方 / 师傅名字</label>
+      <input type="text" id="rep-vendor" placeholder="如：Cool Air Pte / 王师傅">
+    </div>
+    <div class="field-group">
+      <label>已等待天数</label>
+      <input type="text" id="rep-days" placeholder="如：2天">
+    </div>
+    <div class="field-group">
+      <label>补充说明（可选）</label>
+      <textarea id="rep-notes" rows="3" placeholder="如：租客已多次催促、这周必须解决..."></textarea>
+    </div>
+    <div class="field-group">
+      <label>催单力度</label>
+      <div class="urgency-btns">
+        <div class="urgency-btn" id="urg-1" onclick="selectUrgency(1)">第一次<br>联系<br><span style="font-size:10px;color:#999">礼貌询问</span></div>
+        <div class="urgency-btn" id="urg-2" onclick="selectUrgency(2)">第二次<br>跟进<br><span style="font-size:10px;color:#999">友好坚定</span></div>
+        <div class="urgency-btn" id="urg-3" onclick="selectUrgency(3)">超期<br>升级<br><span style="font-size:10px;color:#999">正式要求</span></div>
+      </div>
+    </div>
+    <div class="field-group">
+      <label>消息语言</label>
+      <div class="person-pills">
+        <div class="person-pill" id="lang-zh" onclick="selectLang('zh')">中文</div>
+        <div class="person-pill" id="lang-en" onclick="selectLang('en')">English</div>
+        <div class="person-pill" id="lang-both" onclick="selectLang('both')">双语</div>
+      </div>
+    </div>
+    <button class="btn-generate btn-y" id="btn-repair" onclick="generateRepair()">
+      <span id="repair-btn-text">生成催单消息</span>
+      <div class="spinner" id="repair-spinner"></div>
+    </button>
+    <div class="result-box" id="repair-result">
+      <div class="result-header">
+        <span class="result-label">生成的消息</span>
+        <button class="btn-copy" id="repair-copy-btn" onclick="copyResult('repair')">复制</button>
+      </div>
+      <div class="result-content" id="repair-result-content"></div>
+    </div>
+    <div class="error-box" id="repair-error"></div>
+  </div>
+</div>
+
+<!-- HISTORY -->
+<div class="page" id="page-history">
+  <div style="margin-top:16px;" id="history-list">
+    <div class="history-empty">暂无记录<br>使用工具后会自动保存在这里</div>
+  </div>
+</div>
+
+<script>
+const FUNCTION_URL = '/.netlify/functions/hhg-claude';
+
+let selectedPerson = '';
+let selectedUrgency = 0;
+let selectedLang = '';
+let history = JSON.parse(localStorage.getItem('hhg_history') || '[]');
+
+function switchTab(tab) {
+  const ids = ['daily', 'repair', 'history'];
+  document.querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('active', ids[i] === tab));
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + tab).classList.add('active');
+  if (tab === 'history') renderHistory();
+}
+
+function selectPerson(p) {
+  selectedPerson = p;
+  const colors = { j: 'active-j', w: 'active-w', y: 'active-y' };
+  ['j', 'w', 'y'].forEach(x => {
+    const el = document.getElementById('pill-' + x);
+    el.className = 'person-pill' + (x === p ? ' ' + colors[x] : '');
+  });
+}
+
+function selectUrgency(n) {
+  selectedUrgency = n;
+  [1, 2, 3].forEach(i => document.getElementById('urg-' + i).classList.toggle('active', i === n));
+}
+
+function selectLang(l) {
+  selectedLang = l;
+  ['zh', 'en', 'both'].forEach(x => {
+    document.getElementById('lang-' + x).className = 'person-pill' + (x === l ? ' active-j' : '');
+  });
+}
+
+// Set today's date
+const today = new Date();
+const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const d = today.getDate();
+const suffix = [1,21,31].includes(d)?'st':[2,22].includes(d)?'nd':[3,23].includes(d)?'rd':'th';
+document.getElementById('daily-date').value = d + suffix + ' ' + months[today.getMonth()] + ' ' + today.getFullYear();
+
+async function callAPI(system, user) {
+  const response = await fetch(FUNCTION_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ system, user })
+  });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.error || '请求失败，请稍后重试');
+  }
+  const data = await response.json();
+  return data.result || '';
+}
+
+function animateText(el, text) {
+  el.textContent = '';
+  const cursor = document.createElement('span');
+  cursor.className = 'cursor';
+  el.appendChild(cursor);
+  let i = 0;
+  const interval = setInterval(() => {
+    if (i < text.length) {
+      cursor.before(text[i++]);
+    } else {
+      clearInterval(interval);
+      cursor.remove();
+    }
+  }, 8);
+}
+
+async function runGenerate(type, systemPrompt, userPrompt, saveData) {
+  const btnEl = document.getElementById('btn-' + type);
+  const btnText = document.getElementById(type + '-btn-text');
+  const spinner = document.getElementById(type + '-spinner');
+  const resultBox = document.getElementById(type + '-result');
+  const resultContent = document.getElementById(type + '-result-content');
+  const errorEl = document.getElementById(type + '-error');
+
+  btnEl.disabled = true;
+  btnText.textContent = '生成中...';
+  spinner.classList.add('show');
+  errorEl.classList.remove('show');
+  resultBox.classList.remove('show');
+
+  try {
+    const text = await callAPI(systemPrompt, userPrompt);
+    resultBox.classList.add('show');
+    animateText(resultContent, text);
+    saveToHistory(type, saveData, text);
+  } catch (err) {
+    errorEl.textContent = err.message;
+    errorEl.classList.add('show');
+  } finally {
+    btnEl.disabled = false;
+    btnText.textContent = type === 'daily' ? '重新生成' : '重新生成';
+    spinner.classList.remove('show');
+  }
+}
+
+function generateDaily() {
+  const notes = document.getElementById('daily-notes').value.trim();
+  const date = document.getElementById('daily-date').value.trim();
+  if (!notes) { alert('请先填写今天做的事情'); return; }
+
+  const names = { j: 'Jaclyn', w: 'Wiki', y: 'Yuting' };
+  const specs = {
+    j: '住宅出租专员',
+    w: '房源管理和购买专员',
+    y: '商业出租和报修专员'
+  };
+  const name = names[selectedPerson] || '（未选择）';
+  const spec = specs[selectedPerson] || '房产中介Admin';
+
+  const system = `你是新加坡房地产中介公司"好好过 Haohaoguo Realty"的AI助手，专门帮助Admin团队整理日报。
+公司业务：住宅出租、商业出租、住宅买卖、报修/售后服务。
+
+把Admin随手记的流水账整理成标准格式的日报，要求：
+- 分类：【售前跟进】【售后/报修】【文件处理】【看房安排】【待处理明日事项】
+- 没有内容的分类直接省略
+- 每条事项一行，简洁清晰
+- 待处理事项特别标注
+- 语言：中英文混合，专有名词保持英文
+- 直接输出日报内容，不要加任何前缀或解释`;
+
+  const user = `${name} Daily Report | ${date}
+职责：${spec}
+
+今天的工作笔记：
+${notes}`;
+
+  runGenerate('daily', system, user, { person: name, date });
+}
+
+function generateRepair() {
+  const unit = document.getElementById('rep-unit').value.trim();
+  const type = document.getElementById('rep-type').value;
+  const vendor = document.getElementById('rep-vendor').value.trim();
+  const days = document.getElementById('rep-days').value.trim();
+  const notes = document.getElementById('rep-notes').value.trim();
+
+  if (!unit || !type || !vendor) { alert('请填写房源、报修类型和师傅/公司名称'); return; }
+  if (!selectedUrgency) { alert('请选择催单力度'); return; }
+  if (!selectedLang) { alert('请选择消息语言'); return; }
+
+  const urgencyDesc = {
+    1: `第一次联系，语气礼貌友好，询问是否可以安排上门时间`,
+    2: `第二次跟进，已等待${days || '2天'}，友好但需要明确表达需要一个确认时间，租客在等待`,
+    3: `超期升级，已等待${days || '5天以上'}，语气正式，说明若今日内无法给出确认时间将考虑更换承包商`
+  };
+  const langDesc = {
+    zh: '只用中文写消息',
+    en: 'Write the message in English only',
+    both: '先写中文版本，再附上英文翻译'
+  };
+
+  const system = `你是新加坡房地产中介公司"好好过 Haohaoguo Realty"的AI助手。
+帮助Admin生成专业的WhatsApp催单消息，发给第三方承包商/维修师傅。
+要求：专业但礼貌，代表公司身份，简洁不超过5句话，WhatsApp格式。
+语言要求：${langDesc[selectedLang]}
+直接输出消息内容，不要加任何前缀说明。`;
+
+  const user = `催单消息：
+房源：${unit}
+维修类型：${type}
+第三方/师傅：${vendor}
+等待时间：${days || '未记录'}
+场景：${urgencyDesc[selectedUrgency]}${notes ? '\n补充：' + notes : ''}`;
+
+  runGenerate('repair', system, user, { unit, type, vendor });
+}
+
+function copyResult(type) {
+  const text = document.getElementById(type + '-result-content').textContent;
+  const btn = document.getElementById(type + '-copy-btn');
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = '已复制 ✓';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = '复制'; btn.classList.remove('copied'); }, 2000);
+  });
+}
+
+function saveToHistory(type, meta, content) {
+  const item = {
+    id: Date.now(), type, meta, content,
+    time: new Date().toLocaleString('zh-CN', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+  };
+  history.unshift(item);
+  if (history.length > 20) history = history.slice(0, 20);
+  localStorage.setItem('hhg_history', JSON.stringify(history));
+}
+
+function renderHistory() {
+  const el = document.getElementById('history-list');
+  if (!history.length) {
+    el.innerHTML = '<div class="history-empty">暂无记录<br>使用工具后会自动保存在这里</div>';
+    return;
+  }
+  el.innerHTML = history.map(item => `
+    <div class="history-item">
+      <div class="history-meta">
+        <span class="history-type ${item.type === 'daily' ? 'ht-daily' : 'ht-repair'}">
+          ${item.type === 'daily' ? '日报' : '催单'}
+        </span>
+        <span class="history-time">${item.time}</span>
+      </div>
+      <div class="history-preview">${item.type === 'daily'
+        ? (item.meta.person + ' · ' + item.meta.date)
+        : (item.meta.unit + ' · ' + item.meta.type + ' · ' + item.meta.vendor)
+      }</div>
+      <div class="history-preview" style="margin-top:6px;color:#888;">${item.content.substring(0, 100)}${item.content.length > 100 ? '...' : ''}</div>
+      <button class="btn-copy-sm" onclick="copyHistoryItem(${item.id})">复制全文</button>
+    </div>
+  `).join('');
+}
+
+function copyHistoryItem(id) {
+  const item = history.find(h => h.id === id);
+  if (item) navigator.clipboard.writeText(item.content);
+}
+</script>
+</body>
+</html>
