@@ -8,27 +8,73 @@
   @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap');
 
   :root {
-    --bg: #F5F5F5;
+    --bg: #F7F6F4;
     --surface: #FFFFFF;
-    --surface2: #FAFAFA;
-    --border: #E8E8E8;
+    --surface2: #F4F3F1;
+    --border: #E8E5E0;
     --text: #1A1A1A;
     --text2: #5A5A5A;
     --text3: #9A9A9A;
-    --accent-j: #CC2222;
+    --accent-j: #D42B2B;
     --accent-j-light: #FDEAEA;
     --accent-y: #B8860B;
     --accent-y-light: #FEF7E0;
-    --accent-g: #1A6B45;
-    --accent-g-light: #E8F7EF;
-    --accent-gold: #CC2222;
+    --accent-g: #2D6A4F;
+    --accent-g-light: #E8F4EE;
+    --accent-gold: #D42B2B;
     --accent-gold-light: #FDEAEA;
-    --red: #CC2222;
+    --red: #D42B2B;
     --red-light: #FDEAEA;
-    --shadow: 0 2px 12px rgba(204,34,34,0.08);
-    --radius: 16px;
+    --shadow: 0 1px 8px rgba(0,0,0,0.06);
+    --radius: 14px;
     --radius-sm: 10px;
+    --max-w: 680px;
   }
+
+  /* ===== PASSWORD SCREEN ===== */
+  #pw-screen {
+    position: fixed; inset: 0; z-index: 9999;
+    background: #FFFFFF;
+    display: flex; align-items: center; justify-content: center;
+    flex-direction: column;
+  }
+  #pw-screen.hidden { display: none; }
+  .pw-logo {
+    margin-bottom: 32px;
+  }
+  .pw-logo svg { width: 80px; height: 80px; }
+  .pw-title { font-size: 18px; font-weight: 600; color: var(--text); margin-bottom: 4px; text-align: center; }
+  .pw-sub { font-size: 13px; color: var(--text3); margin-bottom: 28px; text-align: center; }
+  .pw-input-wrap { position: relative; width: 280px; }
+  .pw-input-wrap input {
+    width: 100%; padding: 14px 48px 14px 16px;
+    border: 1.5px solid var(--border);
+    border-radius: 12px; font-family: 'DM Sans', sans-serif;
+    font-size: 15px; outline: none; color: var(--text);
+    background: var(--surface2);
+    transition: border-color .15s;
+    letter-spacing: 2px;
+  }
+  .pw-input-wrap input:focus { border-color: var(--accent-j); background: #fff; }
+  .pw-input-wrap button {
+    position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+    background: none; border: none; cursor: pointer; font-size: 20px;
+    color: var(--text3); padding: 4px;
+  }
+  .pw-submit {
+    width: 280px; margin-top: 12px;
+    background: var(--accent-j); color: #fff;
+    border: none; border-radius: 12px;
+    padding: 14px; font-family: 'DM Sans', sans-serif;
+    font-size: 15px; font-weight: 600; cursor: pointer;
+    transition: opacity .15s;
+  }
+  .pw-submit:active { opacity: .85; }
+  .pw-error {
+    margin-top: 10px; font-size: 13px; color: var(--red);
+    display: none; text-align: center;
+  }
+  .pw-error.show { display: block; }
 
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 
@@ -43,38 +89,53 @@
   .header {
     background: var(--surface);
     border-bottom: 1px solid var(--border);
-    padding: 20px 20px 0;
+    padding: 0;
     position: sticky;
     top: 0;
     z-index: 100;
+  }
+  .header-inner {
+    max-width: var(--max-w);
+    margin: 0 auto;
+    padding: 16px 20px 0;
   }
   .header-top {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 16px;
+    margin-bottom: 14px;
   }
-  .logo { font-size: 16px; font-weight: 700; color: var(--text); letter-spacing: -0.3px; }
-  .logo span { color: #CC2222; }
-  .logo-sub { font-size: 10px; color: var(--text3); font-weight: 400; margin-left: 4px; letter-spacing: 0.5px; }
+  .logo {
+    display: flex; align-items: center; gap: 10px;
+  }
+  .logo-img { width: 32px; height: 32px; border-radius: 8px; }
+  .logo-text { font-size: 15px; font-weight: 700; color: var(--text); letter-spacing: -0.3px; }
+  .logo-sub { font-size: 10px; color: var(--text3); font-weight: 400; letter-spacing: 0.5px; }
   .version {
     font-size: 10px; color: var(--text3);
     font-family: 'DM Mono', monospace;
     background: var(--surface2);
     padding: 3px 8px; border-radius: 20px;
+    border: 1px solid var(--border);
   }
 
-  .tabs { display: flex; gap: 4px; }
+  .tabs { display: flex; gap: 0; overflow-x: auto; scrollbar-width: none; }
+  .tabs::-webkit-scrollbar { display: none; }
   .tab {
     flex: 1; text-align: center; padding: 10px 8px;
     font-size: 13px; font-weight: 500; color: var(--text3);
     border-bottom: 2px solid transparent; cursor: pointer;
-    transition: all .15s; white-space: nowrap;
+    transition: all .15s; white-space: nowrap; min-width: 48px;
   }
-  .tab.active { color: #CC2222; border-bottom-color: #CC2222; }
+  .tab.active { color: var(--accent-j); border-bottom-color: var(--accent-j); }
 
-  .page { display: none; padding: 20px; }
+  .page { display: none; }
   .page.active { display: block; }
+  .page-inner {
+    max-width: var(--max-w);
+    margin: 0 auto;
+    padding: 20px 16px;
+  }
 
   .card {
     background: var(--surface);
@@ -114,7 +175,7 @@
   .person-pill.active-j { background: var(--accent-j-light); border-color: var(--accent-j); color: var(--accent-j); }
   .person-pill.active-w { background: var(--accent-g-light); border-color: var(--accent-g); color: var(--accent-g); }
   .person-pill.active-y { background: var(--accent-y-light); border-color: var(--accent-y); color: var(--accent-y); }
-  .person-pill.active-g { background: var(--accent-g-light); border-color: var(--accent-g); color: var(--accent-g); }
+  .person-pill.active-g { background: var(--accent-j-light); border-color: var(--accent-j); color: var(--accent-j); }
 
   .urgency-btns { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
   .urgency-btn {
@@ -216,21 +277,22 @@
   /* Mode toggle */
   .mode-toggle { display: flex; gap: 0; margin-bottom: 14px; border: 1.5px solid var(--border); border-radius: var(--radius-sm); overflow: hidden; }
   .mode-btn { flex: 1; padding: 9px 8px; font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 500; color: var(--text2); background: var(--surface); border: none; cursor: pointer; transition: all .15s; }
-  .mode-btn.active { background: var(--accent-g); color: #fff; }
+  .mode-btn.active { background: var(--accent-j); color: #fff; }
 
   /* Listing rows */
   .listing-row { background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px; margin-bottom: 8px; position: relative; }
   .listing-row-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
   .listing-num { font-size: 11px; font-weight: 700; color: var(--text3); }
   .btn-remove { font-size: 11px; color: var(--red); background: none; border: none; cursor: pointer; padding: 2px 6px; }
-  .btn-add-listing { width: 100%; padding: 10px; border-radius: var(--radius-sm); font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500; color: var(--accent-g); background: var(--accent-g-light); border: 1.5px dashed var(--accent-g); cursor: pointer; margin-bottom: 14px; transition: all .15s; }
+  .btn-add-listing { width: 100%; padding: 10px; border-radius: var(--radius-sm); font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500; color: var(--accent-j); background: var(--accent-j-light); border: 1.5px dashed var(--accent-j); cursor: pointer; margin-bottom: 14px; transition: all .15s; }
   .btn-add-listing:active { opacity: .7; }
-  .btn-g { background: var(--accent-g); color: #fff; }
+  .btn-g { background: var(--accent-j); color: #fff; }
   .btn-g:active { opacity: .85; transform: scale(.99); }
+  .person-pill.active-g { background: var(--accent-j-light); border-color: var(--accent-j); color: var(--accent-j); }
 
   /* Viewing time input */
   .time-input { width: 100%; font-family: 'DM Sans', sans-serif; font-size: 13px; color: var(--text); background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 7px 10px; outline: none; margin-top: 6px; }
-  .time-input:focus { border-color: var(--accent-g); }
+  .time-input:focus { border-color: var(--accent-j); }
   .history-time { font-size: 11px; color: var(--text3); font-family: 'DM Mono', monospace; }
   .history-preview { font-size: 12px; color: var(--text2); line-height: 1.5; }
   .btn-copy-sm {
@@ -250,12 +312,67 @@
 </head>
 <body>
 
-<div class="header">
-  <div class="header-top">
-    <div class="logo"><span style="color:#CC2222;font-weight:700;">HHG</span> 好好过<span class="logo-sub">REALTY</span></div>
-    <div class="version">v1.4</div>
+<!-- PASSWORD SCREEN -->
+<div id="pw-screen">
+  <div class="pw-logo">
+    <!-- HaoHaoGuo logo SVG inline -->
+    <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" width="80" height="80">
+      <rect width="100" height="100" rx="20" fill="#D42B2B"/>
+      <!-- Half circle top -->
+      <path d="M15,55 A35,35 0 0,1 85,55 Z" fill="white"/>
+      <!-- H left -->
+      <rect x="20" y="55" width="8" height="22" fill="#D42B2B"/>
+      <rect x="20" y="63" width="16" height="6" fill="#D42B2B"/>
+      <rect x="28" y="55" width="8" height="22" fill="#D42B2B"/>
+      <!-- H right -->
+      <rect x="42" y="55" width="8" height="22" fill="#D42B2B"/>
+      <rect x="42" y="63" width="16" height="6" fill="#D42B2B"/>
+      <rect x="50" y="55" width="8" height="22" fill="#D42B2B"/>
+      <!-- G -->
+      <rect x="62" y="55" width="18" height="6" fill="#D42B2B"/>
+      <rect x="62" y="55" width="6" height="22" fill="#D42B2B"/>
+      <rect x="62" y="71" width="18" height="6" fill="#D42B2B"/>
+      <rect x="74" y="63" width="6" height="14" fill="#D42B2B"/>
+      <rect x="68" y="63" width="12" height="6" fill="#D42B2B"/>
+    </svg>
   </div>
-  <div class="tabs">
+  <div class="pw-title">HHG 好好过 Admin</div>
+  <div class="pw-sub">内部工具 · 请输入访问密码</div>
+  <div class="pw-input-wrap">
+    <input type="password" id="pw-input" placeholder="密码" onkeydown="if(event.key==='Enter')checkPassword()">
+    <button onclick="togglePwVisibility()" id="pw-eye">👁</button>
+  </div>
+  <button class="pw-submit" onclick="checkPassword()">进入</button>
+  <div class="pw-error" id="pw-error">密码不正确，请重试</div>
+</div>
+
+<div class="header">
+  <div class="header-inner">
+    <div class="header-top">
+      <div class="logo">
+        <svg class="logo-img" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+          <rect width="100" height="100" rx="18" fill="#D42B2B"/>
+          <path d="M15,55 A35,35 0 0,1 85,55 Z" fill="white"/>
+          <rect x="20" y="55" width="7" height="20" fill="#D42B2B"/>
+          <rect x="20" y="62" width="14" height="5" fill="#D42B2B"/>
+          <rect x="27" y="55" width="7" height="20" fill="#D42B2B"/>
+          <rect x="41" y="55" width="7" height="20" fill="#D42B2B"/>
+          <rect x="41" y="62" width="14" height="5" fill="#D42B2B"/>
+          <rect x="48" y="55" width="7" height="20" fill="#D42B2B"/>
+          <rect x="62" y="55" width="16" height="5" fill="#D42B2B"/>
+          <rect x="62" y="55" width="5" height="20" fill="#D42B2B"/>
+          <rect x="62" y="70" width="16" height="5" fill="#D42B2B"/>
+          <rect x="73" y="62" width="5" height="13" fill="#D42B2B"/>
+          <rect x="67" y="62" width="11" height="5" fill="#D42B2B"/>
+        </svg>
+        <div>
+          <div class="logo-text">HHG 好好过</div>
+          <div class="logo-sub">REALTY ADMIN</div>
+        </div>
+      </div>
+      <div class="version">v1.4</div>
+    </div>
+    <div class="tabs">
     <div class="tab active" onclick="switchTab('home')">首页</div>
     <div class="tab" onclick="switchTab('search')">搜房</div>
     <div class="tab" onclick="switchTab('daily')">日报</div>
@@ -263,11 +380,12 @@
     <div class="tab" onclick="switchTab('repair')">催单</div>
     <div class="tab" onclick="switchTab('history')">记录</div>
   </div>
+  </div><!-- /header-inner -->
 </div>
 
 <!-- HOME PAGE -->
 <div class="page active" id="page-home">
-  <div style="padding:16px 16px 60px;">
+  <div class="page-inner" style="padding-bottom:60px;">
 
     <!-- Greeting -->
     <div style="margin-bottom:16px;">
@@ -429,7 +547,7 @@
 
 <!-- SEARCH -->
 <div class="page" id="page-search">
-  <div style="margin-top:16px;">
+  <div class="page-inner">
 
     <!-- Search form -->
     <div class="card" id="search-form-card">
@@ -489,21 +607,18 @@
 
     <!-- Single URL extractor -->
     <div class="card" style="margin-top:12px;">
-      <div class="field-group" style="margin-bottom:10px;">
-        <label>🔗 单个房源提取 <span style="font-size:10px;color:var(--text3)">粘贴PG链接 → 自动提取信息</span></label>
-        <div style="display:flex;gap:8px;">
-          <input type="text" id="single-url-input" placeholder="https://www.propertyguru.com.sg/listing/..." style="flex:1;">
-          <button class="btn-generate btn-j" style="white-space:nowrap;padding:10px 16px;font-size:13px;" onclick="extractSingleUrl()">
-            <span id="extract-btn-text">提取</span>
-            <div class="spinner" id="extract-spinner"></div>
-          </button>
-        </div>
-      </div>
-      <div id="single-result-area" style="display:none;">
+      <label style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:10px;display:block;">🔗 单个房源提取</label>
+      <p style="font-size:12px;color:var(--text3);margin-bottom:12px;">粘贴 PropertyGuru 链接 → 一键提取所有字段（含中介电话）</p>
+      <input type="text" id="single-url-input" placeholder="https://www.propertyguru.com.sg/listing/..." style="width:100%;margin-bottom:10px;">
+      <button class="btn-generate btn-j" style="width:100%;padding:14px;" onclick="extractSingleUrl()">
+        <span id="extract-btn-text">提取信息</span>
+        <div class="spinner" id="extract-spinner"></div>
+      </button>
+      <div id="single-result-area" style="display:none;margin-top:12px;">
         <div id="single-result-card"></div>
         <div style="display:flex;gap:8px;margin-top:10px;">
-          <button class="btn-copy-sm" style="flex:1;text-align:center;padding:8px;" onclick="copySingleToExcel()">📋 复制到Excel</button>
-          <button class="btn-copy-sm" style="flex:1;text-align:center;padding:8px;" onclick="addSingleToResults()">➕ 加入搜索结果</button>
+          <button class="btn-copy-sm" style="flex:1;text-align:center;padding:9px;font-size:12px;" onclick="copySingleToExcel()">📋 复制到Excel</button>
+          <button class="btn-copy-sm" style="flex:1;text-align:center;padding:9px;font-size:12px;" onclick="addSingleToResults()">➕ 加入搜索结果</button>
         </div>
       </div>
       <div class="error-box" id="extract-error"></div>
@@ -544,9 +659,8 @@
 
 <!-- DAILY REPORT -->
 <div class="page" id="page-daily">
-  <div class="tip" style="margin-top:16px;">
-    <strong>使用方法：</strong>把今天做的事随手记下来，不用管格式，贴进来就行。
-  </div>
+  <div class="page-inner">
+    <div class="tip"><strong>使用方法：</strong>把今天做的事随手记下来，不用管格式，贴进来就行。</div>
   <div class="card">
     <div class="field-group">
       <label>你是谁？</label>
@@ -581,14 +695,14 @@
       <div class="result-content" id="daily-result-content"></div>
     </div>
     <div class="error-box" id="daily-error"></div>
-  </div>
+  </div><!-- /card -->
+  </div><!-- /page-inner -->
 </div>
 
 <!-- REPAIR FOLLOW-UP -->
 <div class="page" id="page-repair">
-  <div class="tip" style="margin-top:16px;">
-    <strong>使用方法：</strong>填入报修信息，选催单力度，直接复制发给师傅。
-  </div>
+  <div class="page-inner">
+    <div class="tip"><strong>使用方法：</strong>填入报修信息，选催单力度，直接复制发给师傅。</div>
   <div class="card">
     <div class="field-group">
       <label>房源 / 单元</label>
@@ -646,14 +760,14 @@
       <div class="result-content" id="repair-result-content"></div>
     </div>
     <div class="error-box" id="repair-error"></div>
-  </div>
+  </div><!-- /card -->
+  </div><!-- /page-inner -->
 </div>
 
 <!-- LISTING -->
 <div class="page" id="page-listing">
-  <div class="tip" style="margin-top:16px;">
-    <strong>使用方法：</strong>粘贴PropertyGuru链接，自动读取信息生成消息，不需要手动复制字段。
-  </div>
+  <div class="page-inner">
+    <div class="tip"><strong>使用方法：</strong>粘贴PropertyGuru链接，自动读取信息生成消息，不需要手动复制字段。</div>
   <div class="card">
     <div class="mode-toggle">
       <button class="mode-btn active" id="mode-list-btn" onclick="setListingMode('list')">📋 房源列表</button>
@@ -691,18 +805,46 @@
       <div class="result-content" id="listing-result-content"></div>
     </div>
     <div class="error-box" id="listing-error"></div>
-  </div>
+  </div><!-- /card -->
+  </div><!-- /page-inner -->
 </div>
 
 <!-- HISTORY -->
 <div class="page" id="page-history">
-  <div style="margin-top:16px;" id="history-list">
-    <div class="history-empty">暂无记录<br>使用工具后会自动保存在这里</div>
+  <div class="page-inner">
+    <div id="history-list">
+      <div class="history-empty">暂无记录<br>使用工具后会自动保存在这里</div>
+    </div>
   </div>
 </div>
 
 <script>
 const FUNCTION_URL = '/.netlify/functions/hhg-claude';
+
+// ===== PASSWORD =====
+const PW_HASH = 'Hhg2026@';
+function checkPassword() {
+  const val = document.getElementById('pw-input').value;
+  if (val === PW_HASH) {
+    sessionStorage.setItem('hhg_auth', '1');
+    document.getElementById('pw-screen').classList.add('hidden');
+  } else {
+    document.getElementById('pw-error').classList.add('show');
+    document.getElementById('pw-input').value = '';
+    document.getElementById('pw-input').focus();
+  }
+}
+function togglePwVisibility() {
+  const inp = document.getElementById('pw-input');
+  const btn = document.getElementById('pw-eye');
+  if (inp.type === 'password') { inp.type = 'text'; btn.textContent = '🙈'; }
+  else { inp.type = 'password'; btn.textContent = '👁'; }
+}
+// Auto-bypass if already authenticated this session
+if (sessionStorage.getItem('hhg_auth') === '1') {
+  document.getElementById('pw-screen').classList.add('hidden');
+}
+// ===== END PASSWORD =====
 
 let selectedPerson = '';
 let selectedUrgency = 0;
@@ -1035,50 +1177,49 @@ function renderSearchResults() {
   listEl.innerHTML = results.map((r, i) => {
     const hasPhone = r.agent?.phone;
     const noPhone = !hasPhone && !r.agent?.blocked;
+    const furnishLabel = (r.furnishing||'').replace('Fully Furnished','家具齐全').replace('Partial Furnished','配备部分家具').replace('Partially Furnished','配备部分家具').replace('Unfurnished','无家具');
     return `
-    <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:16px;margin-bottom:12px;box-shadow:var(--shadow);">
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:10px;overflow:hidden;">
 
-      <!-- Row 1: Number + Date -->
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-        <span style="font-size:11px;font-weight:700;color:var(--accent-j);background:var(--accent-j-light);padding:2px 8px;border-radius:10px;">房源 ${start + i}</span>
+      <!-- Header bar: number + date -->
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px 0;">
+        <span style="font-size:11px;font-weight:600;color:var(--text3);">房源 ${start + i}</span>
         <span style="font-size:11px;color:var(--text3);">${r.listedDate || ''}</span>
       </div>
 
-      <!-- Row 2: Link -->
-      <a href="${r.link}" target="_blank" style="font-size:12px;color:var(--accent-gold);text-decoration:none;display:block;margin-bottom:10px;word-break:break-all;">
-        🔗 ${r.link}
-      </a>
+      <!-- Main content -->
+      <div style="padding:10px 14px 12px;">
 
-      <!-- Row 3: Address + Price -->
-      <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;gap:8px;">
-        <div style="font-size:15px;font-weight:600;color:var(--text);">${r.address || '—'}</div>
-        <div style="font-size:15px;font-weight:700;color:var(--accent-j);white-space:nowrap;">${r.priceDisplay || '—'}</div>
-      </div>
+        <!-- Price + Address row -->
+        <div style="margin-bottom:8px;">
+          <div style="font-size:20px;font-weight:700;color:var(--accent-j);line-height:1.2;">${r.priceDisplay || '—'}</div>
+          <div style="font-size:14px;font-weight:600;color:var(--text);margin-top:2px;">${r.address || '—'}</div>
+        </div>
 
-      <!-- Row 4: Key stats chips -->
-      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;">
-        ${r.beds != null ? `<span style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:3px 8px;font-size:12px;">🛏 ${r.beds}房${r.baths != null ? ' ' + r.baths + '卫' : ''}</span>` : ''}
-        ${r.areaDisplay ? `<span style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:3px 8px;font-size:12px;">📐 ${r.areaDisplay}</span>` : ''}
-        ${r.furnishing ? `<span style="background:var(--accent-g-light);border:1px solid #b8e0cc;border-radius:6px;padding:3px 8px;font-size:12px;color:var(--accent-g);">${r.furnishing.replace('Fully Furnished','家具齐全').replace('Partial Furnished','配备部分家具').replace('Partially Furnished','配备部分家具').replace('Unfurnished','无家具')}</span>` : ''}
-        ${r.availability ? `<span style="background:var(--accent-y-light);border:1px solid #f5d98a;border-radius:6px;padding:3px 8px;font-size:12px;color:var(--accent-y);">📅 ${r.availability.replace('Ready to Move','马上入住')}</span>` : ''}
-      </div>
+        <!-- Key chips -->
+        <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px;">
+          ${r.beds != null ? `<span style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:3px 9px;font-size:12px;">🛏 ${r.beds}房${r.baths != null ? ' ' + r.baths + '卫' : ''}</span>` : ''}
+          ${r.areaDisplay ? `<span style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:3px 9px;font-size:12px;">📐 ${r.areaDisplay}</span>` : ''}
+          ${furnishLabel ? `<span style="background:#FFF5F5;border:1px solid #f5c0c0;border-radius:6px;padding:3px 9px;font-size:12px;color:var(--accent-j);">${furnishLabel}</span>` : ''}
+          ${r.availability ? `<span style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:3px 9px;font-size:12px;">📅 ${r.availability.replace('Ready to Move','马上入住')}</span>` : ''}
+        </div>
 
-      <!-- Row 5: MRT -->
-      ${r.mrt ? `<div style="font-size:12px;color:var(--text2);margin-bottom:6px;">🚇 ${r.mrt}</div>` : ''}
+        <!-- MRT -->
+        ${r.mrt ? `<div style="font-size:12px;color:var(--text2);margin-bottom:6px;">🚇 ${r.mrt}</div>` : ''}
 
-      <!-- Row 6: Extra details -->
-      ${(r.tenure || r.leaseTerm) ? `<div style="font-size:11px;color:var(--text3);margin-bottom:8px;">${[r.tenure, r.leaseTerm].filter(Boolean).join(' · ')}</div>` : ''}
+        <!-- Link -->
+        <a href="${r.link}" target="_blank" style="font-size:11px;color:var(--accent-j);text-decoration:none;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:6px;">🔗 ${r.link}</a>
 
-      <!-- Divider -->
-      <div style="border-top:1px dashed var(--border);margin:8px 0;"></div>
-
-      <!-- Row 7: Agent info (internal) -->
-      <div style="display:flex;flex-wrap:wrap;gap:4px;align-items:center;">
-        <span style="font-size:11px;color:var(--text3);margin-right:2px;">内部</span>
-        ${r.agent?.name ? `<span style="font-size:12px;color:var(--text);font-weight:500;">👤 ${r.agent.name}</span>` : ''}
-        ${hasPhone ? `<span style="font-size:12px;color:var(--accent-g);font-weight:500;">📞 ${r.agent.phone}</span>` : noPhone ? `<span style="font-size:11px;color:var(--text3);">📞 —</span>` : ''}
-        ${r.agent?.agency ? `<span style="font-size:11px;color:var(--text2);">· ${r.agent.agency}</span>` : ''}
-        ${r.agent?.cea ? `<span style="font-size:11px;color:var(--text3);">· CEA: ${r.agent.cea}</span>` : ''}
+        <!-- Divider + Agent -->
+        <div style="border-top:1px solid var(--border);padding-top:8px;margin-top:2px;">
+          <div style="font-size:11px;color:var(--text3);margin-bottom:3px;">内部信息</div>
+          <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">
+            ${r.agent?.name ? `<span style="font-size:12px;color:var(--text);font-weight:500;">👤 ${r.agent.name}</span>` : ''}
+            ${hasPhone ? `<span style="font-size:12px;color:var(--accent-j);font-weight:600;">📞 ${r.agent.phone}</span>` : noPhone ? `<span style="font-size:11px;color:var(--text3);">📞 —</span>` : ''}
+            ${r.agent?.agency ? `<span style="font-size:11px;color:var(--text2);">${r.agent.agency}</span>` : ''}
+            ${r.agent?.cea ? `<span style="font-size:11px;color:var(--text3);">CEA: ${r.agent.cea}</span>` : ''}
+          </div>
+        </div>
       </div>
     </div>`;
   }).join('');
