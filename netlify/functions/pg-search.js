@@ -1,7 +1,3 @@
-// PropertyGuru Next.js JSON API
-// Data path: pageProps.pageData.data.listingsData (object with numeric keys)
-// Each entry: { listingData: { id, price, agent, agency, mrt, ... } }
-
 const PG_BASE = "https://www.propertyguru.com.sg";
 const HEADERS = {
   "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
@@ -10,21 +6,22 @@ const HEADERS = {
   "Referer": "https://www.propertyguru.com.sg/",
 };
 
-// BuildId cache (per Lambda instance, ~1hr)
 let cachedBuildId = null;
 let cacheTime = 0;
+
+async function scraperFetch(url, wantJson = false) {
+  const key = process.env.SCRAPER_API_KEY;
+  if (!key) throw new Error("SCRAPER_API_KEY not configured");
+  const proxyUrl = `http://api.scraperapi.com?api_key=${key}&url=${encodeURIComponent(url)}&render=false`;
+  const resp = await fetch(proxyUrl, { headers: wantJson ? { "Accept": "application/json" } : HEADERS });
+  return resp;
+}
 
 async function getBuildId() {
   const now = Date.now();
   if (cachedBuildId && now - cacheTime < 3600000) return cachedBuildId;
-  // Fetch PG page via ScraperAPI (direct fetch is 403)
-  const key = process.env.SCRAPER_API_KEY;
-  const targetUrl = `${PG_BASE}/property-for-rent`;
-  const fetchUrl = key
-    ? `http://api.scraperapi.com?api_key=${key}&url=${encodeURIComponent(targetUrl)}&render=false`
-    : targetUrl;
   try {
-    const resp = await fetch(fetchUrl, { headers: HEADERS });
+    const resp = await scraperFetch(`${PG_BASE}/property-for-rent`);
     if (!resp.ok) return null;
     const html = await resp.text();
     const match = html.match(/"buildId"\s*:\s*"([^"]+)"/);
@@ -66,29 +63,23 @@ exports.handler = async function (event) {
   const searchUrl = `${PG_BASE}/${pgPage}?${qp.toString()}`;
 
   try {
-    // Step 1: Get buildId (cached)
+    // Step 1: Get buildId via ScraperAPI
     let buildId = await getBuildId();
-    if (!buildId) {
-      return json({ success: false, error: "Could not get PG buildId — check SCRAPER_API_KEY", blocked: true, searchUrl });
-    }
+    if (!buildId) return json({ success: false, error: "Could not get PG buildId", blocked: true, searchUrl });
 
-    // Step 2: Fetch JSON data API
+    // Step 2: Fetch Next.js JSON API via ScraperAPI
     const jsonUrl = `${PG_BASE}/_next/data/${buildId}/${pgPage}.json?${qp.toString()}`;
-    let resp = await fetch(jsonUrl, { headers: { ...HEADERS, "Accept": "application/json" } });
+    let resp = await scraperFetch(jsonUrl, true);
 
-    // If stale buildId, refresh and retry once
+    // If stale buildId, refresh once
     if (!resp.ok) {
       cachedBuildId = null;
       buildId = await getBuildId();
-      if (buildId) {
-        resp = await fetch(`${PG_BASE}/_next/data/${buildId}/${pgPage}.json?${qp.toString()}`, { headers: { ...HEADERS, "Accept": "application/json" } });
-      }
-      if (!resp || !resp.ok) return json({ success: false, error: `JSON API ${resp?.status}`, blocked: true, searchUrl });
+      if (buildId) resp = await scraperFetch(`${PG_BASE}/_next/data/${buildId}/${pgPage}.json?${qp.toString()}`, true);
+      if (!resp || !resp.ok) return json({ success: false, error: `API ${resp?.status}`, blocked: true, searchUrl });
     }
 
     const raw = await resp.json();
-
-    // Step 3: Extract listings from correct path
     const pageData = raw?.pageProps?.pageData?.data;
     const listingsObj = pageData?.listingsData || {};
     const paginationData = pageData?.paginationData || {};
@@ -97,14 +88,11 @@ exports.handler = async function (event) {
     const total = paginationData.totalCount || paginationData.total || rawListings.length;
     const totalPages = paginationData.totalPages || Math.ceil(total / 10);
 
-    if (rawListings.length === 0) {
-      return json({ success: true, total: 0, page, totalPages: 0, listings: [], searchUrl });
-    }
+    if (rawListings.length === 0) return json({ success: true, total: 0, page, totalPages: 0, listings: [], searchUrl });
 
-    // Step 4: Format listings (agent phone fetched separately)
     const listings = rawListings.map(r => formatListing(r, listingType));
 
-    // Step 5: Enrich with phone from listing detail pages (parallel, best-effort)
+    // Step 3: Enrich phone from listing detail pages (via ScraperAPI, parallel)
     const enriched = await Promise.all(listings.map(l => enrichPhone(l)));
 
     return json({ success: true, total, page, totalPages, listings: enriched, searchUrl, blocked: false });
@@ -119,97 +107,63 @@ function json(obj) {
 }
 
 function formatListing(r, listingType) {
-  // Price
   const priceRaw = r.price?.value || 0;
-  const priceDisplay = priceRaw
-    ? (listingType === "rent" ? `$${Number(priceRaw).toLocaleString()}/mo` : `$${Number(priceRaw).toLocaleString()}`)
-    : "";
+  const priceDisplay = priceRaw ? (listingType === "rent" ? `$${Number(priceRaw).toLocaleString()}/mo` : `$${Number(priceRaw).toLocaleString()}`) : "";
 
-  // Beds/baths from listingFeatures array
-  let beds = null, baths = null;
+  let beds = null, baths = null, areaSqft = null;
   if (r.listingFeatures) {
     const feats = Array.isArray(r.listingFeatures) ? r.listingFeatures.flat() : [];
     feats.forEach(f => {
       if (f.dataAutomationId === "listing-card-v2-bedrooms") beds = parseInt(f.text) || null;
       if (f.dataAutomationId === "listing-card-v2-bathrooms") baths = parseInt(f.text) || null;
+      if (f.text?.includes("sqft")) areaSqft = parseInt(f.text.replace(/[^\d]/g, "")) || null;
     });
   }
 
-  // Area from listingFeatures
-  let areaSqft = null;
-  if (r.listingFeatures) {
-    const feats = Array.isArray(r.listingFeatures) ? r.listingFeatures.flat() : [];
-    const areaFeat = feats.find(f => f.text?.includes("sqft") || f.iconName?.includes("area"));
-    if (areaFeat) areaSqft = parseInt(areaFeat.text?.replace(/[^\d]/g, "")) || null;
-  }
-
-  // Address
   const address = r.fullAddress?.split(",")[0]?.trim() || r.localizedTitle?.split(",")[0]?.trim() || "";
-
-  // MRT
   const mrt = r.mrt?.nearbyText || "";
-
-  // Availability
   const availability = r.availabilityInfo || "";
-
-  // Listed date
-  const listedDate = r.recency?.text?.replace("Listed on ", "").replace(" ago", "") || "";
-
-  // Furnishing — from description or later from detail page
-  const furnishing = r.furnishing || "";
-
-  // Agent (no phone yet — fetched separately)
-  const agent = {
-    name: r.agent?.name || "",
-    cea: r.agent?.license || "",
-    agency: r.agency?.name || "",
-    phone: "",
-    blocked: false,
-  };
+  const listedDate = r.recency?.text?.replace("Listed on ", "") || "";
 
   return {
     link: r.url || "",
     address,
-    priceRaw,
-    priceDisplay,
-    beds,
-    baths,
-    areaSqft,
+    priceRaw, priceDisplay,
+    beds, baths, areaSqft,
     areaDisplay: areaSqft ? `${areaSqft.toLocaleString()} sqft` : "",
-    furnishing,
-    availability,
-    mrt,
-    listedDate,
+    furnishing: "", availability, mrt, listedDate,
     propertyType: r.typeText || "",
-    tenure: r.tenure || "",
-    leaseTerm: "",
-    agent,
+    tenure: "", leaseTerm: "",
+    agent: {
+      name: r.agent?.name || "",
+      cea: r.agent?.license || "",
+      agency: r.agency?.name || "",
+      phone: "",
+      blocked: false,
+    },
   };
 }
 
 async function enrichPhone(listing) {
   if (!listing.link) return listing;
   try {
-    const resp = await fetch(listing.link, { headers: HEADERS, redirect: "follow" });
+    const resp = await scraperFetch(listing.link);
     if (!resp.ok) return listing;
     const html = await resp.text();
     const phoneMatch = html.match(/"\+65(\d{8})"/);
     if (phoneMatch) listing.agent.phone = "+65" + phoneMatch[1];
     if (!listing.furnishing) {
-      const furnMatch = html.match(/(Fully [Ff]urnished|Partial(?:ly)? [Ff]urnished|Unfurnished)/i);
-      if (furnMatch) listing.furnishing = furnMatch[1];
+      const fm = html.match(/(Fully [Ff]urnished|Partial(?:ly)? [Ff]urnished|Unfurnished)/i);
+      if (fm) listing.furnishing = fm[1];
     }
     if (!listing.areaSqft) {
-      const areaMatch = html.match(/([\d,]+)\s*sqft/i);
-      if (areaMatch) {
-        listing.areaSqft = parseInt(areaMatch[1].replace(/,/g, ""));
-        listing.areaDisplay = `${listing.areaSqft.toLocaleString()} sqft`;
-      }
+      const am = html.match(/([\d,]+)\s*sqft/i);
+      if (am) { listing.areaSqft = parseInt(am[1].replace(/,/g,"")); listing.areaDisplay = `${listing.areaSqft.toLocaleString()} sqft`; }
     }
-    const leaseMatch = html.match(/(\d+)\s+years?\s+lease/i);
-    if (leaseMatch) listing.leaseTerm = leaseMatch[0];
-    const tenureMatch = html.match(/(Freehold|Leasehold\s*\d*)/i);
-    if (tenureMatch) listing.tenure = tenureMatch[1];
+    const lm = html.match(/(\d+)\s+years?\s+lease/i);
+    if (lm) listing.leaseTerm = lm[0];
+    const tm = html.match(/(Freehold|Leasehold\s*\d*)/i);
+    if (tm) listing.tenure = tm[1];
   } catch {}
   return listing;
 }
