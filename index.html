@@ -584,7 +584,9 @@
           <label>客户称呼</label>
           <input type="text" id="listing-client" placeholder="如：老板、张总、Simon">
         </div>
-        <div class="field-group" style="margin-bottom:0;">
+
+        <!-- Step 2: 发房源 开头语 -->
+        <div id="list-intro-field" class="field-group" style="margin-bottom:0;">
           <label>开头语</label>
           <select id="listing-intro-select" onchange="onIntroSelect(this.value)" style="width:100%;margin-bottom:6px;">
             <option value="">— 不加开头语 —</option>
@@ -598,6 +600,31 @@
             <option value="__custom__">✏️ 自定义...</option>
           </select>
           <input type="text" id="listing-intro" placeholder="自定义开头语..." style="display:none;">
+        </div>
+
+        <!-- Step 3: 约看房 开头语 + 日期 + 备注 (hidden in step 2) -->
+        <div id="viewing-fields-in-card" style="display:none;">
+          <div class="field-group" style="margin-bottom:10px;">
+            <label>开头语</label>
+            <select id="viewing-intro-select" onchange="onViewingIntroSelect(this.value)" style="width:100%;margin-bottom:6px;">
+              <option value="">— 不加开头语 —</option>
+              <option value="这是目前为您安排好的看房时间，您先参考一下，如有变化我会及时更新。">这是目前为您安排好的看房时间，您先参考一下，如有变化我会及时更新。</option>
+              <option value="以下是目前确认好的看房安排，供您参考，一有新的确认我再补充给您。">以下是目前确认好的看房安排，供您参考，一有新的确认我再补充给您。</option>
+              <option value="目前先确认了以下几套，其他的还在等中介回复，一有更新马上告诉您。">目前先确认了以下几套，其他的还在等中介回复，一有更新马上告诉您。</option>
+              <option value="刚刚又确认了几套可以加入一起看，整理给您。">刚刚又确认了几套可以加入一起看，整理给您。</option>
+              <option value="看房时间这边有一点调整，我重新整理给您。">看房时间这边有一点调整，我重新整理给您。</option>
+              <option value="__custom_v__">✏️ 自定义...</option>
+            </select>
+            <input type="text" id="viewing-intro" placeholder="自定义开头语..." style="display:none;">
+          </div>
+          <div class="field-group" style="margin-bottom:10px;">
+            <label>看房日期</label>
+            <input type="text" id="viewing-date" placeholder="如：17/04 周五">
+          </div>
+          <div class="field-group" style="margin-bottom:0;">
+            <label>备注（可选）</label>
+            <input type="text" id="viewing-note" placeholder="如：其他的还在等中介回复中">
+          </div>
         </div>
       </div>
 
@@ -617,19 +644,7 @@
       <div id="listings-container"></div>
       <button class="btn-add-listing" onclick="addListingRow()">＋ 单个添加</button>
 
-      <!-- Viewing extra -->
-      <div id="viewing-extra" style="display:none;">
-        <div class="card" style="margin-bottom:12px;">
-          <div class="field-group">
-            <label>看房日期</label>
-            <input type="text" id="viewing-date" placeholder="如：17/04 周五">
-          </div>
-          <div class="field-group" style="margin-bottom:0;">
-            <label>备注（可选）</label>
-            <input type="text" id="viewing-note" placeholder="如：其他的还在等中介回复中">
-          </div>
-        </div>
-      </div>
+      <!-- viewing-extra fields moved into client card -->
 
       <button class="btn-generate btn-j" id="btn-listing" onclick="generateListing()">
         <span id="listing-btn-text">生成房源列表</span>
@@ -807,49 +822,80 @@ function onIntroSelect(val) {
   }
 }
 
+function onViewingIntroSelect(val) {
+  const customInput = document.getElementById('viewing-intro');
+  if (val === '__custom_v__') {
+    customInput.style.display = '';
+    customInput.value = '';
+    customInput.focus();
+  } else {
+    customInput.style.display = 'none';
+    customInput.value = val;
+  }
+}
+
 function resetFindTab() {
-  // Clear search
-  const freetext = document.getElementById('s-freetext');
-  if (freetext) freetext.value = '';
-  const minp = document.getElementById('s-minprice');
-  if (minp) minp.value = '';
-  const maxp = document.getElementById('s-maxprice');
-  if (maxp) maxp.value = '';
-  searchState.results = [];
-  searchState.total = 0;
-  searchState.totalPages = 0;
-  searchState.page = 1;
-  searchState.mrtSearch = false;
-  shortlistMap.clear();
-  shortlistIds.clear();
-  const resultsArea = document.getElementById('search-results-area');
-  if (resultsArea) resultsArea.style.display = 'none';
-  // Reset property type pills
-  togglePropType('ALL');
-  searchState.bedrooms = [];
-  [0,1,2,3,4,5].forEach(i => {
-    const el = document.getElementById('bd-' + i);
-    if (el) el.className = 'person-pill';
-  });
-  // Clear listing rows
-  listingRows = [];
-  listingIdCounter = 0;
-  const lc = document.getElementById('listings-container');
-  if (lc) lc.innerHTML = '';
-  // Clear batch input
-  const bi = document.getElementById('batch-links-input');
-  if (bi) bi.value = '';
-  // Clear intro
-  const sel = document.getElementById('listing-intro-select');
-  if (sel) sel.value = '';
-  const intro = document.getElementById('listing-intro');
-  if (intro) { intro.value = ''; intro.style.display = 'none'; }
-  // Clear result
-  const result = document.getElementById('listing-result');
-  if (result) result.classList.remove('show');
-  // Reset to step 1
-  setFindStep(1);
-  alert('已清除全部数据 ✓');
+  const step = currentFindStep;
+  
+  if (step === 1) {
+    // Clear search form and results
+    const freetext = document.getElementById('s-freetext');
+    if (freetext) freetext.value = '';
+    const minp = document.getElementById('s-minprice');
+    if (minp) minp.value = '';
+    const maxp = document.getElementById('s-maxprice');
+    if (maxp) maxp.value = '';
+    searchState.results = [];
+    searchState.total = 0;
+    searchState.totalPages = 0;
+    searchState.page = 1;
+    searchState.mrtSearch = false;
+    shortlistMap.clear();
+    shortlistIds.clear();
+    const resultsArea = document.getElementById('search-results-area');
+    if (resultsArea) resultsArea.style.display = 'none';
+    // Reset filters
+    togglePropType('ALL');
+    searchState.bedrooms = [];
+    [0,1,2,3,4,5].forEach(i => {
+      const el = document.getElementById('bd-' + i);
+      if (el) el.className = 'person-pill';
+    });
+    showToast('搜索条件和结果已清除 ✓');
+
+  } else if (step === 2 || step === 3) {
+    // Clear listing rows and form
+    listingRows = [];
+    listingIdCounter = 0;
+    renderListingRows();
+    const bi = document.getElementById('batch-links-input');
+    if (bi) bi.value = '';
+    const client = document.getElementById('listing-client');
+    if (client) client.value = '';
+    const sel = document.getElementById('listing-intro-select');
+    if (sel) sel.value = '';
+    const intro = document.getElementById('listing-intro');
+    if (intro) { intro.value = ''; intro.style.display = 'none'; }
+    const vsel = document.getElementById('viewing-intro-select');
+    if (vsel) vsel.value = '';
+    const vi = document.getElementById('viewing-intro');
+    if (vi) { vi.value = ''; vi.style.display = 'none'; }
+    const vdate = document.getElementById('viewing-date');
+    if (vdate) vdate.value = '';
+    const vnote = document.getElementById('viewing-note');
+    if (vnote) vnote.value = '';
+    const result = document.getElementById('listing-result');
+    if (result) result.classList.remove('show');
+    showToast('房源列表已清除 ✓');
+  }
+}
+
+function showToast(msg) {
+  const t = document.createElement('div');
+  t.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#1A1A1A;color:#fff;padding:10px 20px;border-radius:20px;font-size:13px;z-index:9999;font-family:"DM Sans",sans-serif;';
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 2000);
 }
 
 // ===== BATCH LINKS =====
@@ -866,6 +912,9 @@ function addBatchLinks() {
     return;
   }
   
+  // Remove any empty placeholder rows before adding batch
+  listingRows = listingRows.filter(r => r.link.trim() !== '' || r.fallback.trim() !== '');
+  
   links.forEach(link => {
     // avoid duplicates
     if (!listingRows.find(r => r.link === link)) {
@@ -876,13 +925,19 @@ function addBatchLinks() {
   renderListingRows();
   document.getElementById('batch-links-input').value = '';
   
-  // Auto-fetch all added rows
+  // Auto-fetch all added rows in background
   const toFetch = listingRows.filter(r => r.status === 'idle' && r.link.includes('propertyguru'));
-  if (toFetch.length > 0) {
-    toFetch.forEach(r => fetchListing(r.id));
-  }
+  toFetch.forEach(r => fetchListing(r.id));
   
-  alert(`已加入 ${links.length} 条链接，正在自动读取信息...`);
+  // Show feedback without alert blocking
+  const batchArea = document.getElementById('batch-links-input');
+  if (batchArea) {
+    const msg = document.createElement('div');
+    msg.style.cssText = 'font-size:12px;color:var(--accent-j);padding:4px 0;font-weight:500;';
+    msg.textContent = `✓ 已加入 ${links.length} 条链接，正在读取信息...`;
+    batchArea.parentNode.appendChild(msg);
+    setTimeout(() => msg.remove(), 3000);
+  }
 }
 
 let selectedPerson = '';
@@ -917,22 +972,27 @@ function setFindStep(step) {
   if (step === 2) {
     listingMode = 'list';
     document.getElementById('listing-btn-text').textContent = '生成房源列表';
-    document.getElementById('viewing-extra').style.display = 'none';
+    // Hide viewing fields, show list intro
+    const vfc = document.getElementById('viewing-fields-in-card');
+    if (vfc) vfc.style.display = 'none';
+    const lif = document.getElementById('list-intro-field');
+    if (lif) lif.style.display = '';
     if (listingRows.length === 0) addListingRow();
   } else if (step === 3) {
     listingMode = 'viewing';
     document.getElementById('listing-btn-text').textContent = '生成看房安排';
-    document.getElementById('viewing-extra').style.display = 'block';
+    // Show viewing fields in card, hide list intro
+    const lif = document.getElementById('list-intro-field');
+    if (lif) lif.style.display = 'none';
+    const vfc = document.getElementById('viewing-fields-in-card');
+    if (vfc) vfc.style.display = '';
     if (listingRows.length === 0) addListingRow();
   }
 }
 
 function switchToStep2() {
   switchTab('search');
-  setTimeout(() => {
-    setFindStep(2);
-    if (listingRows.length === 0) addListingRow();
-  }, 100);
+  setTimeout(() => setFindStep(2), 100);
 }
 
 // Set home date
@@ -1585,7 +1645,7 @@ let listingIdCounter = 0;
 
 function setListingMode(mode) {
   listingMode = mode;
-  const viewExtra = document.getElementById('viewing-extra');
+  const viewExtra = document.getElementById('viewing-fields-in-card');
   if (viewExtra) viewExtra.style.display = mode === 'viewing' ? 'block' : 'none';
   const btnText = document.getElementById('listing-btn-text');
   if (btnText) btnText.textContent = mode === 'list' ? '生成房源列表' : '生成看房安排';
@@ -1763,7 +1823,9 @@ ${intro ? '[开头语]\n\n' : ''}【1】🏠 [小区名]
 - 面积加sq.ft，家具：Fully Furnished→家具齐全，Partial Furnished→配备部分家具，Unfurnished→无家具
 - 入住日期：Ready to Move→马上入住，否则保留英文日期
 - 亮点行：如果有亮点内容则加💡开头，没有则省略这行
-- 🔗 后面必须是完整的PropertyGuru URL（https://...），直接原样输出，不要替换成"链接"文字
+- 🔗 后面必须是完整的PropertyGuru URL（https://www.propertyguru.com.sg/listing/...），直接原样输出
+- ⚠️ 绝对不要把面积（如484sq.ft）变成链接，sq.ft是纯文字
+- ⚠️ 每行只能有一个链接，且链接只能出现在🔗那一行
 - 开头语：如果有开头语则放在第一套房源前面
 - 最后加一行：如有疑问欢迎随时告知 😊
 - 直接输出消息，不要加任何前缀`;
@@ -1783,6 +1845,7 @@ ${listingsText}`;
 任务：生成看房安排消息发给客户（微信中文）。
 
 输出格式：
+[开头语（如有）]
 [客户称呼]，这是[日期]目前的看房安排, 加了[N]套 :
 [备注（如有）]
 
@@ -1798,9 +1861,16 @@ ${listingsText}`;
 - 编号用【1】【2】格式
 - 亮点有则加💡，无则省略
 - 等待确认的房源不加【已确定】行
+- 🔗 后面必须是完整的PropertyGuru URL，直接原样输出
+- ⚠️ 面积（如484sq.ft）是纯文字，不是链接，不要变成超链接格式
 - 直接输出消息，不要加前缀`;
 
+    const viewingIntroSel = document.getElementById('viewing-intro-select')?.value || '';
+    const viewingIntroCustom = document.getElementById('viewing-intro')?.value?.trim() || '';
+    const viewingIntro = viewingIntroSel === '__custom_v__' ? viewingIntroCustom : (viewingIntroSel || viewingIntroCustom);
+
     userPrompt = `客户称呼：${client}
+${viewingIntro ? '开头语：' + viewingIntro : '（无开头语，直接从看房安排内容开始）'}
 看房日期：${viewingDate || '待定'}
 备注：${viewingNote || '无'}
 已确认${confirmedCount}套
