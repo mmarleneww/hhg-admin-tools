@@ -532,13 +532,22 @@
         <button class="btn-copy-sm" id="pg-next" onclick="changePage(1)" style="padding:8px 14px;">下10套 →</button>
       </div>
 
+      <!-- Shortlist bar -->
+      <div id="shortlist-bar" style="display:none;background:#FFF5F5;border:1.5px solid #f5c0c0;border-radius:10px;padding:10px 14px;margin-bottom:10px;align-items:center;justify-content:space-between;gap:10px;">
+        <span id="shortlist-count" style="font-size:13px;font-weight:600;color:var(--accent-j);"></span>
+        <div style="display:flex;gap:8px;">
+          <button onclick="clearShortlist()" style="font-size:12px;color:var(--text3);background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:6px 12px;cursor:pointer;">清空</button>
+          <button onclick="sendShortlistToListing()" style="font-size:12px;font-weight:600;color:#fff;background:var(--accent-j);border:none;border-radius:8px;padding:6px 14px;cursor:pointer;">✉️ 发给客户 →</button>
+        </div>
+      </div>
+
       <!-- Action buttons -->
       <div style="display:flex;gap:10px;">
-        <button class="btn-generate btn-g" style="flex:1;padding:13px;" onclick="copyToExcel()">
-          📋 复制Excel格式
+        <button class="btn-generate" style="flex:1;padding:12px;background:var(--surface2);color:var(--text2);border:1px solid var(--border);font-size:13px;" onclick="copyToExcel()">
+          📋 全部复制Excel
         </button>
-        <button class="btn-generate btn-j" style="flex:1;padding:13px;" onclick="sendToListing()">
-          ✉️ 生成发客户消息
+        <button class="btn-generate btn-j" style="flex:1;padding:12px;font-size:13px;" onclick="sendToListing()">
+          ✉️ 全部导入房源页
         </button>
       </div>
 
@@ -656,33 +665,44 @@
 <!-- LISTING -->
 <div class="page" id="page-listing">
   <div class="page-inner">
-    <div class="tip"><strong>使用方法：</strong>粘贴PropertyGuru链接，自动读取信息生成消息，不需要手动复制字段。</div>
-  <div class="card">
-    <div class="mode-toggle">
-      <button class="mode-btn active" id="mode-list-btn" onclick="setListingMode('list')">📋 房源列表</button>
-      <button class="mode-btn" id="mode-view-btn" onclick="setListingMode('viewing')">📅 看房安排</button>
+
+    <!-- Mode toggle -->
+    <div style="display:flex;gap:0;background:var(--surface2);border-radius:10px;padding:3px;margin-bottom:14px;">
+      <button class="mode-btn active" id="mode-list-btn" onclick="setListingMode('list')" style="flex:1;border-radius:8px;">📋 房源列表</button>
+      <button class="mode-btn" id="mode-view-btn" onclick="setListingMode('viewing')" style="flex:1;border-radius:8px;">📅 看房安排</button>
     </div>
 
-    <div class="field-group">
-      <label>客户称呼</label>
-      <input type="text" id="listing-client" placeholder="如：老板、张总、Simon">
+    <!-- Client info card -->
+    <div class="card" style="margin-bottom:12px;">
+      <div class="field-group" style="margin-bottom:10px;">
+        <label>客户称呼</label>
+        <input type="text" id="listing-client" placeholder="如：老板、张总、Simon">
+      </div>
+      <div class="field-group" style="margin-bottom:0;">
+        <label>开头语（可选）<span style="font-size:10px;color:var(--text3)"> 留空则直接展示房源列表</span></label>
+        <input type="text" id="listing-intro" placeholder="如：这是我们为您精心挑选的几套房源，都在预算范围内～">
+      </div>
     </div>
 
+    <!-- Listings container -->
     <div id="listings-container"></div>
     <button class="btn-add-listing" onclick="addListingRow()">＋ 添加房源</button>
 
+    <!-- Viewing extra fields -->
     <div id="viewing-extra" style="display:none;">
-      <div class="field-group">
-        <label>看房日期</label>
-        <input type="text" id="viewing-date" placeholder="如：17/04 周五">
-      </div>
-      <div class="field-group">
-        <label>备注（可选）</label>
-        <input type="text" id="viewing-note" placeholder="如：其他的还在等中介回复中">
+      <div class="card" style="margin-bottom:12px;">
+        <div class="field-group">
+          <label>看房日期</label>
+          <input type="text" id="viewing-date" placeholder="如：17/04 周五">
+        </div>
+        <div class="field-group" style="margin-bottom:0;">
+          <label>备注（可选）</label>
+          <input type="text" id="viewing-note" placeholder="如：其他的还在等中介回复中">
+        </div>
       </div>
     </div>
 
-    <button class="btn-generate btn-g" id="btn-listing" onclick="generateListing()">
+    <button class="btn-generate btn-j" id="btn-listing" onclick="generateListing()">
       <span id="listing-btn-text">生成消息</span>
       <div class="spinner" id="listing-spinner"></div>
     </button>
@@ -694,7 +714,7 @@
       <div class="result-content" id="listing-result-content"></div>
     </div>
     <div class="error-box" id="listing-error"></div>
-  </div><!-- /card -->
+
   </div><!-- /page-inner -->
 </div>
 
@@ -932,6 +952,65 @@ let searchState = {
   lastSearchUrl: '',
   mrtSearch: false,
 };
+// Shortlist: persists across pages. Map of link → listing object
+let shortlistMap = new Map();
+let shortlistIds = new Set(); // just links for fast lookup
+
+function toggleShortlist(link, checked) {
+  const r = searchState.results.find(x => x.link === link);
+  if (checked && r) {
+    shortlistMap.set(link, r);
+    shortlistIds.add(link);
+  } else {
+    shortlistMap.delete(link);
+    shortlistIds.delete(link);
+  }
+  updateShortlistBar();
+  // Re-render just the card border without full re-render
+  renderSearchResults();
+}
+
+function updateShortlistBar() {
+  const count = shortlistMap.size;
+  const bar = document.getElementById('shortlist-bar');
+  if (!bar) return;
+  if (count === 0) {
+    bar.style.display = 'none';
+  } else {
+    bar.style.display = 'flex';
+    document.getElementById('shortlist-count').textContent = `已选 ${count} 套`;
+  }
+}
+
+function clearShortlist() {
+  shortlistMap.clear();
+  shortlistIds.clear();
+  updateShortlistBar();
+  renderSearchResults();
+}
+
+function sendShortlistToListing() {
+  if (shortlistMap.size === 0) { alert('请先勾选房源'); return; }
+  listingRows = [];
+  listingIdCounter = 0;
+  shortlistMap.forEach(r => {
+    addListingRow({
+      link: r.link || '',
+      status: 'ok',
+      fetched: {
+        address: r.projectName || r.address || '',
+        price: r.priceDisplay || '',
+        beds: r.beds,
+        baths: r.baths,
+        area: r.areaDisplay || '',
+        furnishing: r.furnishing || '',
+        availability: r.availability || '',
+      },
+    });
+  });
+  renderListingRows();
+  switchTab('listing');
+}
 
 function setSearchType(type) {
   searchState.type = type;
@@ -1019,6 +1098,9 @@ async function doSearch(pageNum) {
     searchState.mrtSearch = data.mrtSearch || false;
 
     renderSearchResults();
+    // Restore opacity after page turn
+    const listEl = document.getElementById('search-results-list');
+    if (listEl) { listEl.style.opacity = '1'; listEl.style.transition = 'opacity .2s'; }
     document.getElementById('search-results-area').style.display = 'block';
     document.getElementById('search-results-area').scrollIntoView({ behavior: 'smooth', block: 'start' });
 
@@ -1034,13 +1116,13 @@ async function doSearch(pageNum) {
 
 function renderSearchResults() {
   const { results, total, page, totalPages, mrtSearch } = searchState;
-  const pageSize = total <= 20 ? 20 : 10;
+  const pageSize = results.length || 20;  // actual page size from API
   const start = (page - 1) * pageSize + 1;
-  const end = Math.min(page * pageSize, total);
+  const end = start + results.length - 1;
 
   // Stats — show MRT search indicator
   const statsText = total > 0
-    ? `找到 ${total.toLocaleString()} 套 · 按最新排序 · 第${start}-${end}套${mrtSearch ? ' 🚇 MRT范围搜索' : ''}`
+    ? `找到约 ${total.toLocaleString()} 套 · 按最新 · 第${page}页（${results.length}套）${mrtSearch ? ' 🚇 MRT范围' : ''}`
     : '暂无结果';
   document.getElementById('search-stats').textContent = statsText;
   document.getElementById('search-pg-link').href = searchState.lastSearchUrl;
@@ -1049,13 +1131,13 @@ function renderSearchResults() {
   const mrtTip = document.getElementById('mrt-tip');
   if (mrtTip) mrtTip.style.display = mrtSearch ? 'block' : 'none';
 
-  // Pagination
-  const showPagination = total > 20;
+  // Pagination — always show if more than one page
+  const showPagination = totalPages > 1;
   document.getElementById('pg-prev').style.display = showPagination ? '' : 'none';
   document.getElementById('pg-next').style.display = showPagination ? '' : 'none';
   document.getElementById('pg-info').style.display = showPagination ? '' : 'none';
   if (showPagination) {
-    document.getElementById('pg-info').textContent = `${start}-${end} / ${total.toLocaleString()}套`;
+    document.getElementById('pg-info').textContent = `第 ${page} / ${totalPages} 页 · 共约${total.toLocaleString()}套`;
     document.getElementById('pg-prev').disabled = page <= 1;
     document.getElementById('pg-next').disabled = page >= totalPages;
   }
@@ -1079,11 +1161,15 @@ function renderSearchResults() {
     const streetLine = (r.streetAddress && r.streetAddress !== projectName && r.streetAddress !== r.address)
       ? `<div style="font-size:11px;color:var(--text3);margin-top:1px;">${r.streetAddress}</div>`
       : '';
+    const isShortlisted = shortlistIds.has(r.link);
     return `
-    <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:10px;overflow:hidden;">
-      <!-- Header: number + date -->
+    <div style="background:var(--surface);border:1.5px solid ${isShortlisted ? 'var(--accent-j)' : 'var(--border)'};border-radius:var(--radius-sm);margin-bottom:10px;overflow:hidden;${isShortlisted ? 'box-shadow:0 0 0 2px #FDEAEA;' : ''}">
+      <!-- Header: shortlist checkbox + date -->
       <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px 0;">
-        <span style="font-size:11px;font-weight:600;color:var(--text3);">房源 ${start + i}</span>
+        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;margin:0;">
+          <input type="checkbox" ${isShortlisted ? 'checked' : ''} onchange="toggleShortlist('${r.link}', this.checked)" style="width:16px;height:16px;accent-color:var(--accent-j);cursor:pointer;">
+          <span style="font-size:12px;font-weight:600;color:${isShortlisted ? 'var(--accent-j)' : 'var(--text3)'};">${isShortlisted ? '✓ 已选' : '选择'}</span>
+        </label>
         <span style="font-size:11px;color:var(--text3);">${r.listedDate || ''}</span>
       </div>
       <div style="padding:10px 14px 12px;">
@@ -1129,6 +1215,13 @@ function renderSearchResults() {
 function changePage(dir) {
   const newPage = searchState.page + dir;
   if (newPage < 1 || newPage > searchState.totalPages) return;
+  // Visual feedback - dim results
+  const list = document.getElementById('search-results-list');
+  if (list) list.style.opacity = '0.4';
+  const pgPrev = document.getElementById('pg-prev');
+  const pgNext = document.getElementById('pg-next');
+  if (pgPrev) pgPrev.disabled = true;
+  if (pgNext) pgNext.disabled = true;
   doSearch(newPage);
 }
 
@@ -1171,19 +1264,22 @@ function sendToListing() {
   listingIdCounter = 0;
   // Add each result as a listing row
   results.forEach(r => {
-    listingIdCounter++;
-    const raw = [
-      r.address,
-      r.beds != null && r.baths != null ? `${r.beds} Beds ${r.baths} Baths` : '',
-      r.priceDisplay,
-      r.areaDisplay,
-      r.furnishing,
-      r.availability,
-    ].filter(Boolean).join('  ');
-    listingRows.push({ id: listingIdCounter, link: r.link || '', fallback: raw, time: '', status: 'ok', fetched: null });
+    addListingRow({
+      link: r.link || '',
+      status: 'ok',
+      fetched: {
+        address: r.projectName || r.address || '',
+        price: r.priceDisplay || '',
+        beds: r.beds,
+        baths: r.baths,
+        area: r.areaDisplay || '',
+        furnishing: r.furnishing || '',
+        availability: r.availability || '',
+      },
+    });
   });
   renderListingRows();
-  alert(`已将 ${results.length} 套房源导入到"房源"标签页，可在那里生成发客户消息`);
+  alert(`已将 ${results.length} 套房源导入"房源"页 ✅ 可在那里加亮点然后生成消息`);
 }
 
 // ===== SINGLE URL EXTRACTOR =====
@@ -1290,9 +1386,17 @@ function setListingMode(mode) {
   renderListingRows();
 }
 
-function addListingRow() {
+function addListingRow(prefill) {
   listingIdCounter++;
-  listingRows.push({ id: listingIdCounter, link: '', fallback: '', time: '', status: 'idle', fetched: null });
+  listingRows.push({
+    id: listingIdCounter,
+    link: prefill?.link || '',
+    fallback: prefill?.fallback || '',
+    highlight: prefill?.highlight || '',
+    time: '',
+    status: prefill?.status || 'idle',
+    fetched: prefill?.fetched || null,
+  });
   renderListingRows();
 }
 
@@ -1305,27 +1409,37 @@ function renderListingRows() {
   const container = document.getElementById('listings-container');
   container.innerHTML = listingRows.map((row, idx) => {
     const statusIcon = row.status === 'loading' ? '⏳' : row.status === 'ok' ? '✅' : row.status === 'blocked' ? '⚠️' : '';
-    const statusColor = row.status === 'ok' ? 'var(--accent-g)' : row.status === 'blocked' ? 'var(--accent-y)' : 'var(--text3)';
+    const statusColor = row.status === 'ok' ? 'var(--accent-j)' : row.status === 'blocked' ? 'var(--accent-y)' : 'var(--text3)';
+    const fetchedSummary = row.fetched ? `
+      <div style="background:#FFF5F5;border-radius:8px;padding:8px 10px;margin:6px 0;font-size:12px;color:var(--text);">
+        <span style="font-weight:600;">${row.fetched.address || ''}</span>
+        ${row.fetched.price ? ` · <span style="color:var(--accent-j);font-weight:600;">${row.fetched.price}</span>` : ''}
+        ${(row.fetched.beds||row.fetched.baths) ? ` · ${row.fetched.beds||'?'}房${row.fetched.baths||'?'}卫` : ''}
+        ${row.fetched.area ? ` · ${row.fetched.area}` : ''}
+        ${row.fetched.furnishing ? ` · ${row.fetched.furnishing}` : ''}
+        ${row.fetched.availability ? ` · ${row.fetched.availability}` : ''}
+      </div>` : '';
     return `
     <div class="listing-row">
       <div class="listing-row-header">
-        <span class="listing-num">房源 ${idx + 1} <span style="color:${statusColor}">${statusIcon}</span></span>
+        <span class="listing-num">【${idx + 1}】 <span style="color:${statusColor}">${statusIcon}</span></span>
         ${listingRows.length > 1 ? `<button class="btn-remove" onclick="removeListingRow(${row.id})">✕ 删除</button>` : ''}
       </div>
-      <div class="field-group" style="margin-bottom:${row.status === 'blocked' ? '8px' : '0'};">
-        <label>PropertyGuru 链接 <span style="font-size:10px;color:var(--text3)">— 粘贴后自动读取</span></label>
-        <input type="text" value="${row.link}" oninput="updateRowLink(${row.id}, this.value)" onblur="fetchListing(${row.id})" placeholder="https://www.propertyguru.com.sg/listing/...">
+      <div class="field-group" style="margin-bottom:6px;">
+        <input type="text" value="${row.link}" oninput="updateRowLink(${row.id}, this.value)" onblur="fetchListing(${row.id})" placeholder="粘贴 PropertyGuru 链接，自动读取...">
       </div>
-      ${row.fetched ? `<div style="font-size:11px;color:var(--accent-g);padding:4px 0 8px;line-height:1.6;">${formatFetched(row.fetched)}</div>` : ''}
+      ${fetchedSummary}
       ${row.status === 'blocked' ? `
-      <div style="font-size:11px;color:var(--accent-y);margin-bottom:6px;">⚠️ 自动读取被拦截，请手动填写关键信息：</div>
-      <div class="field-group" style="margin-bottom:0;">
-        <textarea rows="2" oninput="updateRowFallback(${row.id},this.value)" placeholder="如：Cliff Top  6房7卫  $40,000  15883sqft  配备部分家具  22nd June 2026">${row.fallback}</textarea>
+      <div style="font-size:11px;color:var(--accent-y);margin-bottom:6px;">⚠️ 自动读取被拦截，请手动填写：</div>
+      <div class="field-group" style="margin-bottom:6px;">
+        <textarea rows="2" oninput="updateRowFallback(${row.id},this.value)" placeholder="如：Principal Garden  2房2卫  $4,500  800sqft  家具齐全  马上入住">${row.fallback}</textarea>
       </div>` : ''}
+      <div class="field-group" style="margin-bottom:${listingMode === 'viewing' ? '6px' : '0'};">
+        <input type="text" class="time-input" value="${row.highlight||''}" oninput="updateRowHighlight(${row.id},this.value)" placeholder="💡 亮点/推荐原因（可留空）" style="font-size:12px;color:var(--text2);background:var(--surface2);">
+      </div>
       ${listingMode === 'viewing' ? `
-      <div style="margin-top:8px;">
-        <label>确认时间（留空=等待确认）</label>
-        <input type="text" class="time-input" value="${row.time}" oninput="updateRowTime(${row.id},this.value)" placeholder="如：星期五 10.15am">
+      <div class="field-group" style="margin-bottom:0;">
+        <input type="text" class="time-input" value="${row.time}" oninput="updateRowTime(${row.id},this.value)" placeholder="确认看房时间（留空=等待确认）如：星期五 10.15am">
       </div>` : ''}
     </div>`;
   }).join('');
@@ -1342,6 +1456,10 @@ function updateRowFallback(id, val) {
 function updateRowTime(id, val) {
   const row = listingRows.find(r => r.id === id);
   if (row) row.time = val;
+}
+function updateRowHighlight(id, val) {
+  const row = listingRows.find(r => r.id === id);
+  if (row) row.highlight = val;
 }
 
 async function fetchListing(id) {
@@ -1406,10 +1524,11 @@ async function generateListing() {
     let s = `房源${i+1}:\n链接: ${r.link || '（未填）'}`;
     if (r.fetched) {
       const d = r.fetched;
-      s += `\n从页面读取到: 地址="${d.address || d.titleHtml || ''}" 价格="${d.price || ''}" 卧室="${d.beds || ''}" 浴室="${d.baths || ''}" 面积="${d.area || ''}" 家具="${d.furnishing || ''}" 入住="${d.availability || ''}" 描述="${(d.description || '').substring(0, 200)}"`;
+      s += `\n小区名: ${d.address||''}, 价格: ${d.price||''}, 卧室: ${d.beds||''}, 浴室: ${d.baths||''}, 面积: ${d.area||''}, 家具: ${d.furnishing||''}, 入住: ${d.availability||''}`;
     } else if (r.fallback) {
-      s += `\n手动填写: ${r.fallback}`;
+      s += `\n手动信息: ${r.fallback}`;
     }
+    if (r.highlight) s += `\n亮点/推荐: ${r.highlight}`;
     if (listingMode === 'viewing') s += `\n确认时间: ${r.time || '等待确认'}`;
     return s;
   }).join('\n\n');
@@ -1417,25 +1536,32 @@ async function generateListing() {
   let systemPrompt, userPrompt;
 
   if (listingMode === 'list') {
+    const intro = document.getElementById('listing-intro').value.trim();
     systemPrompt = `你是新加坡房地产中介"好好过 Haohaoguo Realty"的AI助手。
-任务：根据PropertyGuru房源信息，整理成标准格式发给客户的微信消息。
+任务：根据房源信息，整理成发给客户的微信消息，格式如下：
 
-输出格式（每套房源）：
-[链接]
-[地址]  [X房X卫]  $[月租]  [面积]sq.ft  [家具情况]  [入住日期]
+${intro ? '[开头语]\n\n' : ''}【1】🏠 [小区名]
+💰 $[月租] | [X]房[X]卫 | [面积]sq.ft
+🛋 [家具情况] | [入住日期]
+[💡 亮点（如有）]
+🔗 [链接]
+
+【2】🏠 [小区名]
+...（以此类推）
 
 规则：
-- 地址只保留英文门牌/小区名，去掉多余描述词
-- 价格格式：$XX,XXX（月租，不含/mo）
-- 面积后面加sq.ft
-- 家具情况：家具齐全 / 配备部分家具 / 无家具
-- 入住日期：马上入住 / 具体日期
-- 如果信息不全，尽量从描述中推断，实在没有的字段用"—"
-- 多套房源之间空一行
-- 直接输出内容，不要加任何前缀或说明`;
+- 编号用【1】【2】格式，前面加🏠
+- 价格格式：$X,XXX（不加/mo）
+- 面积加sq.ft，家具：Fully Furnished→家具齐全，Partial Furnished→配备部分家具，Unfurnished→无家具
+- 入住日期：Ready to Move→马上入住，否则保留英文日期
+- 亮点行：如果有亮点内容则加💡开头，没有则省略这行
+- 开头语：如果有开头语则放在第一套房源前面
+- 最后加一行：如有疑问欢迎随时告知 😊
+- 直接输出消息，不要加任何前缀`;
 
     userPrompt = `客户称呼：${client}
-请整理以下${filled.length}套房源，发给客户：
+${intro ? '开头语：' + intro : '（无开头语，直接列房源）'}
+请整理以下${filled.length}套房源：
 
 ${listingsText}`;
 
@@ -1451,14 +1577,18 @@ ${listingsText}`;
 [客户称呼]，这是[日期]目前的看房安排, 加了[N]套 :
 [备注（如有）]
 
-[链接]
-[地址]  [X房X卫]  $[月租]  [面积]sq.ft  [家具情况]  [入住日期]
-【已确定[时间]】
+【1】🏠 [小区名]
+💰 $[月租] | [X]房[X]卫 | [面积]sq.ft
+🛋 [家具情况] | [入住日期]
+[💡 亮点（如有）]
+🔗 [链接]
+【已确定[时间]】（已确认的才加，等待确认的省略）
 
 规则：
 - 已确认时间的排前面，等待确认的排后面
-- 地址只保留英文门牌/小区名
-- 等待确认的房源不加【】时间行
+- 编号用【1】【2】格式
+- 亮点有则加💡，无则省略
+- 等待确认的房源不加【已确定】行
 - 直接输出消息，不要加前缀`;
 
     userPrompt = `客户称呼：${client}
