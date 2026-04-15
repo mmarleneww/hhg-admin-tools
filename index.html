@@ -369,7 +369,7 @@
 <!-- LISTING -->
 <div class="page" id="page-listing">
   <div class="tip" style="margin-top:16px;">
-    <strong>两个功能：</strong>①房源列表发给客户 ②看房安排（带确认时间）
+    <strong>使用方法：</strong>粘贴PropertyGuru链接，自动读取信息生成消息，不需要手动复制字段。
   </div>
   <div class="card">
     <div class="mode-toggle">
@@ -377,17 +377,14 @@
       <button class="mode-btn" id="mode-view-btn" onclick="setListingMode('viewing')">📅 看房安排</button>
     </div>
 
-    <!-- 客户称呼 -->
     <div class="field-group">
       <label>客户称呼</label>
       <input type="text" id="listing-client" placeholder="如：老板、张总、Simon">
     </div>
 
-    <!-- 房源输入区 -->
     <div id="listings-container"></div>
     <button class="btn-add-listing" onclick="addListingRow()">＋ 添加房源</button>
 
-    <!-- 看房模式额外字段 -->
     <div id="viewing-extra" style="display:none;">
       <div class="field-group">
         <label>看房日期</label>
@@ -613,7 +610,7 @@ function setListingMode(mode) {
 
 function addListingRow() {
   listingIdCounter++;
-  listingRows.push({ id: listingIdCounter, raw: '', link: '', time: '' });
+  listingRows.push({ id: listingIdCounter, link: '', fallback: '', time: '', status: 'idle', fetched: null });
   renderListingRows();
 }
 
@@ -624,41 +621,104 @@ function removeListingRow(id) {
 
 function renderListingRows() {
   const container = document.getElementById('listings-container');
-  container.innerHTML = listingRows.map((row, idx) => `
+  container.innerHTML = listingRows.map((row, idx) => {
+    const statusIcon = row.status === 'loading' ? '⏳' : row.status === 'ok' ? '✅' : row.status === 'blocked' ? '⚠️' : '';
+    const statusColor = row.status === 'ok' ? 'var(--accent-g)' : row.status === 'blocked' ? 'var(--accent-y)' : 'var(--text3)';
+    return `
     <div class="listing-row">
       <div class="listing-row-header">
-        <span class="listing-num">房源 ${idx + 1}</span>
+        <span class="listing-num">房源 ${idx + 1} <span style="color:${statusColor}">${statusIcon}</span></span>
         ${listingRows.length > 1 ? `<button class="btn-remove" onclick="removeListingRow(${row.id})">✕ 删除</button>` : ''}
       </div>
-      <div class="field-group" style="margin-bottom:8px;">
-        <label>PropertyGuru 链接</label>
-        <input type="text" value="${row.link}" oninput="updateRow(${row.id},'link',this.value)" placeholder="https://www.propertyguru.com.sg/listing/...">
+      <div class="field-group" style="margin-bottom:${row.status === 'blocked' ? '8px' : '0'};">
+        <label>PropertyGuru 链接 <span style="font-size:10px;color:var(--text3)">— 粘贴后自动读取</span></label>
+        <input type="text" value="${row.link}" oninput="updateRowLink(${row.id}, this.value)" onblur="fetchListing(${row.id})" placeholder="https://www.propertyguru.com.sg/listing/...">
       </div>
-      <div class="field-group" style="margin-bottom:${listingMode === 'viewing' ? '8px' : '0'};">
-        <label>从PG复制的字段（地址、价格、面积、卧室、家具、入住日期）</label>
-        <textarea rows="3" oninput="updateRow(${row.id},'raw',this.value)" placeholder="例如：Cliff Top  6 Beds  7 Baths  $40,000/mo  15,883 sqft  Partial Furnished  Available 22 Jun 2026">${row.raw}</textarea>
-      </div>
-      ${listingMode === 'viewing' ? `
-      <div style="margin-bottom:0;">
-        <label>确认时间（留空=等待确认）</label>
-        <input type="text" class="time-input" value="${row.time}" oninput="updateRow(${row.id},'time',this.value)" placeholder="如：星期五 10.15am 或 留空表示等待中">
+      ${row.fetched ? `<div style="font-size:11px;color:var(--accent-g);padding:4px 0 8px;line-height:1.6;">${formatFetched(row.fetched)}</div>` : ''}
+      ${row.status === 'blocked' ? `
+      <div style="font-size:11px;color:var(--accent-y);margin-bottom:6px;">⚠️ 自动读取被拦截，请手动填写关键信息：</div>
+      <div class="field-group" style="margin-bottom:0;">
+        <textarea rows="2" oninput="updateRowFallback(${row.id},this.value)" placeholder="如：Cliff Top  6房7卫  $40,000  15883sqft  配备部分家具  22nd June 2026">${row.fallback}</textarea>
       </div>` : ''}
-    </div>
-  `).join('');
+      ${listingMode === 'viewing' ? `
+      <div style="margin-top:8px;">
+        <label>确认时间（留空=等待确认）</label>
+        <input type="text" class="time-input" value="${row.time}" oninput="updateRowTime(${row.id},this.value)" placeholder="如：星期五 10.15am">
+      </div>` : ''}
+    </div>`;
+  }).join('');
 }
 
-function updateRow(id, field, val) {
+function updateRowLink(id, val) {
   const row = listingRows.find(r => r.id === id);
-  if (row) row[field] = val;
+  if (row) { row.link = val; row.status = 'idle'; row.fetched = null; }
+}
+function updateRowFallback(id, val) {
+  const row = listingRows.find(r => r.id === id);
+  if (row) row.fallback = val;
+}
+function updateRowTime(id, val) {
+  const row = listingRows.find(r => r.id === id);
+  if (row) row.time = val;
+}
+
+async function fetchListing(id) {
+  const row = listingRows.find(r => r.id === id);
+  if (!row || !row.link.includes('propertyguru.com.sg') || row.status === 'ok' || row.status === 'loading') return;
+
+  row.status = 'loading';
+  renderListingRows();
+
+  try {
+    const res = await fetch('/.netlify/functions/pg-fetch', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url: row.link })
+    });
+    const data = await res.json();
+
+    if (data.success && data.data) {
+      row.fetched = data.data;
+      row.status = 'ok';
+    } else {
+      row.status = 'blocked';
+    }
+  } catch {
+    row.status = 'blocked';
+  }
+  renderListingRows();
+}
+
+function formatFetched(d) {
+  const parts = [];
+  if (d.address || d.titleHtml) parts.push(`📍 ${(d.address || d.titleHtml || '').substring(0, 80)}`);
+  if (d.price) parts.push(`💰 ${d.price}`);
+  if (d.beds || d.baths) parts.push(`🛏 ${d.beds || '?'}房 ${d.baths || '?'}卫`);
+  if (d.area) parts.push(`📐 ${d.area}`);
+  if (d.furnishing) parts.push(`🪑 ${d.furnishing}`);
+  if (d.availability) parts.push(`📅 ${d.availability}`);
+  return parts.join('  ·  ') || '已读取，AI将处理详细信息';
 }
 
 async function generateListing() {
   const client = document.getElementById('listing-client').value.trim() || '老板';
-  const filled = listingRows.filter(r => r.raw.trim() || r.link.trim());
-  if (filled.length === 0) { alert('请至少填写一套房源的信息'); return; }
+  const filled = listingRows.filter(r => r.link.trim() || r.fallback.trim());
+  if (filled.length === 0) { alert('请至少填写一套房源的链接'); return; }
+
+  // Auto-fetch any unfetched rows first
+  const unfetched = filled.filter(r => r.link.includes('propertyguru') && r.status === 'idle');
+  if (unfetched.length > 0) {
+    for (const r of unfetched) await fetchListing(r.id);
+  }
 
   const listingsText = filled.map((r, i) => {
-    let s = `房源${i+1}:\n链接: ${r.link || '（未填）'}\n原始字段: ${r.raw}`;
+    let s = `房源${i+1}:\n链接: ${r.link || '（未填）'}`;
+    if (r.fetched) {
+      const d = r.fetched;
+      s += `\n从页面读取到: 地址="${d.address || d.titleHtml || ''}" 价格="${d.price || ''}" 卧室="${d.beds || ''}" 浴室="${d.baths || ''}" 面积="${d.area || ''}" 家具="${d.furnishing || ''}" 入住="${d.availability || ''}" 描述="${(d.description || '').substring(0, 200)}"`;
+    } else if (r.fallback) {
+      s += `\n手动填写: ${r.fallback}`;
+    }
     if (listingMode === 'viewing') s += `\n确认时间: ${r.time || '等待确认'}`;
     return s;
   }).join('\n\n');
@@ -667,62 +727,59 @@ async function generateListing() {
 
   if (listingMode === 'list') {
     systemPrompt = `你是新加坡房地产中介"好好过 Haohaoguo Realty"的AI助手。
-任务：把Admin从PropertyGuru复制的房源原始字段，整理成标准格式发给客户（微信中文消息）。
+任务：根据PropertyGuru房源信息，整理成标准格式发给客户的微信消息。
 
-输出格式（每套房源一块，无需编号）：
+输出格式（每套房源）：
 [链接]
 [地址]  [X房X卫]  $[月租]  [面积]sq.ft  [家具情况]  [入住日期]
 
 规则：
-- 地址只保留英文门牌/小区名，不要多余描述
-- 价格格式：$XX,XXX（月租）
+- 地址只保留英文门牌/小区名，去掉多余描述词
+- 价格格式：$XX,XXX（月租，不含/mo）
 - 面积后面加sq.ft
-- 家具情况统一用：家具齐全 / 配备部分家具 / 无家具
-- 入住日期：马上入住 / 具体日期（中文格式如"22nd June 2026"保持不变）
+- 家具情况：家具齐全 / 配备部分家具 / 无家具
+- 入住日期：马上入住 / 具体日期
+- 如果信息不全，尽量从描述中推断，实在没有的字段用"—"
 - 多套房源之间空一行
-- 不要加任何前缀、标题、解释`;
+- 直接输出内容，不要加任何前缀或说明`;
 
     userPrompt = `客户称呼：${client}
-请整理以下${filled.length}套房源：
+请整理以下${filled.length}套房源，发给客户：
 
 ${listingsText}`;
 
   } else {
     const viewingDate = document.getElementById('viewing-date').value.trim();
     const viewingNote = document.getElementById('viewing-note').value.trim();
+    const confirmedCount = filled.filter(r => r.time && r.time.trim()).length;
 
     systemPrompt = `你是新加坡房地产中介"好好过 Haohaoguo Realty"的AI助手。
-任务：生成看房安排消息，发给客户（微信中文消息）。
+任务：生成看房安排消息发给客户（微信中文）。
 
 输出格式：
-第一行：[客户称呼]，这是[日期]目前的看房安排, 加了[N]套 :
-（如有备注则第二行加备注，如"其他的还在等中介回复中，一旦有了更新，会再通知您哈~"）
-然后空一行，每套房源：
+[客户称呼]，这是[日期]目前的看房安排, 加了[N]套 :
+[备注（如有）]
 
 [链接]
 [地址]  [X房X卫]  $[月租]  [面积]sq.ft  [家具情况]  [入住日期]
-【已确定[时间]】  ← 有确认时间才加，等待中的不加
+【已确定[时间]】
 
 规则：
-- 已确认时间的房源排在前面
-- 等待确认的房源排在后面
+- 已确认时间的排前面，等待确认的排后面
 - 地址只保留英文门牌/小区名
-- 价格格式：$XX,XXX
-- 家具情况：家具齐全 / 配备部分家具 / 无家具`;
+- 等待确认的房源不加【】时间行
+- 直接输出消息，不要加前缀`;
 
     userPrompt = `客户称呼：${client}
 看房日期：${viewingDate || '待定'}
 备注：${viewingNote || '无'}
-已确认套数：${filled.filter(r => r.time.trim()).length}套
+已确认${confirmedCount}套
 
-房源信息：
 ${listingsText}`;
   }
 
   await runGenerate('listing', systemPrompt, userPrompt, {
-    mode: listingMode,
-    client,
-    count: filled.length
+    mode: listingMode, client, count: filled.length
   });
 }
 
