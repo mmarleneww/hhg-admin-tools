@@ -207,6 +207,26 @@
   .history-type { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 10px; }
   .ht-daily { background: var(--accent-j-light); color: var(--accent-j); }
   .ht-repair { background: var(--accent-y-light); color: var(--accent-y); }
+  .ht-listing { background: var(--accent-g-light); color: var(--accent-g); }
+
+  /* Mode toggle */
+  .mode-toggle { display: flex; gap: 0; margin-bottom: 14px; border: 1.5px solid var(--border); border-radius: var(--radius-sm); overflow: hidden; }
+  .mode-btn { flex: 1; padding: 9px 8px; font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 500; color: var(--text2); background: var(--surface); border: none; cursor: pointer; transition: all .15s; }
+  .mode-btn.active { background: var(--accent-g); color: #fff; }
+
+  /* Listing rows */
+  .listing-row { background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px; margin-bottom: 8px; position: relative; }
+  .listing-row-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+  .listing-num { font-size: 11px; font-weight: 700; color: var(--text3); }
+  .btn-remove { font-size: 11px; color: var(--red); background: none; border: none; cursor: pointer; padding: 2px 6px; }
+  .btn-add-listing { width: 100%; padding: 10px; border-radius: var(--radius-sm); font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500; color: var(--accent-g); background: var(--accent-g-light); border: 1.5px dashed var(--accent-g); cursor: pointer; margin-bottom: 14px; transition: all .15s; }
+  .btn-add-listing:active { opacity: .7; }
+  .btn-g { background: var(--accent-g); color: #fff; }
+  .btn-g:active { opacity: .85; transform: scale(.99); }
+
+  /* Viewing time input */
+  .time-input { width: 100%; font-family: 'DM Sans', sans-serif; font-size: 13px; color: var(--text); background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 7px 10px; outline: none; margin-top: 6px; }
+  .time-input:focus { border-color: var(--accent-g); }
   .history-time { font-size: 11px; color: var(--text3); font-family: 'DM Mono', monospace; }
   .history-preview { font-size: 12px; color: var(--text2); line-height: 1.5; }
   .btn-copy-sm {
@@ -229,12 +249,13 @@
 <div class="header">
   <div class="header-top">
     <div class="logo">HHG <span>Admin</span> 小助手</div>
-    <div class="version">v1.0</div>
+    <div class="version">v1.1</div>
   </div>
   <div class="tabs">
-    <div class="tab active" onclick="switchTab('daily')">日报整理</div>
-    <div class="tab" onclick="switchTab('repair')">报修催单</div>
-    <div class="tab" onclick="switchTab('history')">历史记录</div>
+    <div class="tab active" onclick="switchTab('daily')">日报</div>
+    <div class="tab" onclick="switchTab('listing')">房源</div>
+    <div class="tab" onclick="switchTab('repair')">催单</div>
+    <div class="tab" onclick="switchTab('history')">记录</div>
   </div>
 </div>
 
@@ -345,6 +366,54 @@
   </div>
 </div>
 
+<!-- LISTING -->
+<div class="page" id="page-listing">
+  <div class="tip" style="margin-top:16px;">
+    <strong>两个功能：</strong>①房源列表发给客户 ②看房安排（带确认时间）
+  </div>
+  <div class="card">
+    <div class="mode-toggle">
+      <button class="mode-btn active" id="mode-list-btn" onclick="setListingMode('list')">📋 房源列表</button>
+      <button class="mode-btn" id="mode-view-btn" onclick="setListingMode('viewing')">📅 看房安排</button>
+    </div>
+
+    <!-- 客户称呼 -->
+    <div class="field-group">
+      <label>客户称呼</label>
+      <input type="text" id="listing-client" placeholder="如：老板、张总、Simon">
+    </div>
+
+    <!-- 房源输入区 -->
+    <div id="listings-container"></div>
+    <button class="btn-add-listing" onclick="addListingRow()">＋ 添加房源</button>
+
+    <!-- 看房模式额外字段 -->
+    <div id="viewing-extra" style="display:none;">
+      <div class="field-group">
+        <label>看房日期</label>
+        <input type="text" id="viewing-date" placeholder="如：17/04 周五">
+      </div>
+      <div class="field-group">
+        <label>备注（可选）</label>
+        <input type="text" id="viewing-note" placeholder="如：其他的还在等中介回复中">
+      </div>
+    </div>
+
+    <button class="btn-generate btn-g" id="btn-listing" onclick="generateListing()">
+      <span id="listing-btn-text">生成消息</span>
+      <div class="spinner" id="listing-spinner"></div>
+    </button>
+    <div class="result-box" id="listing-result">
+      <div class="result-header">
+        <span class="result-label">生成的消息</span>
+        <button class="btn-copy" id="listing-copy-btn" onclick="copyResult('listing')">复制</button>
+      </div>
+      <div class="result-content" id="listing-result-content"></div>
+    </div>
+    <div class="error-box" id="listing-error"></div>
+  </div>
+</div>
+
 <!-- HISTORY -->
 <div class="page" id="page-history">
   <div style="margin-top:16px;" id="history-list">
@@ -361,11 +430,12 @@ let selectedLang = '';
 let history = JSON.parse(localStorage.getItem('hhg_history') || '[]');
 
 function switchTab(tab) {
-  const ids = ['daily', 'repair', 'history'];
+  const ids = ['daily', 'listing', 'repair', 'history'];
   document.querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('active', ids[i] === tab));
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.getElementById('page-' + tab).classList.add('active');
   if (tab === 'history') renderHistory();
+  if (tab === 'listing' && listingRows.length === 0) addListingRow();
 }
 
 function selectPerson(p) {
@@ -527,7 +597,138 @@ function generateRepair() {
   runGenerate('repair', system, user, { unit, type, vendor });
 }
 
-function copyResult(type) {
+// ===== LISTING LOGIC =====
+let listingRows = [];
+let listingMode = 'list';
+let listingIdCounter = 0;
+
+function setListingMode(mode) {
+  listingMode = mode;
+  document.getElementById('mode-list-btn').classList.toggle('active', mode === 'list');
+  document.getElementById('mode-view-btn').classList.toggle('active', mode === 'viewing');
+  document.getElementById('viewing-extra').style.display = mode === 'viewing' ? 'block' : 'none';
+  document.getElementById('listing-btn-text').textContent = mode === 'list' ? '生成房源列表' : '生成看房安排';
+  renderListingRows();
+}
+
+function addListingRow() {
+  listingIdCounter++;
+  listingRows.push({ id: listingIdCounter, raw: '', link: '', time: '' });
+  renderListingRows();
+}
+
+function removeListingRow(id) {
+  listingRows = listingRows.filter(r => r.id !== id);
+  renderListingRows();
+}
+
+function renderListingRows() {
+  const container = document.getElementById('listings-container');
+  container.innerHTML = listingRows.map((row, idx) => `
+    <div class="listing-row">
+      <div class="listing-row-header">
+        <span class="listing-num">房源 ${idx + 1}</span>
+        ${listingRows.length > 1 ? `<button class="btn-remove" onclick="removeListingRow(${row.id})">✕ 删除</button>` : ''}
+      </div>
+      <div class="field-group" style="margin-bottom:8px;">
+        <label>PropertyGuru 链接</label>
+        <input type="text" value="${row.link}" oninput="updateRow(${row.id},'link',this.value)" placeholder="https://www.propertyguru.com.sg/listing/...">
+      </div>
+      <div class="field-group" style="margin-bottom:${listingMode === 'viewing' ? '8px' : '0'};">
+        <label>从PG复制的字段（地址、价格、面积、卧室、家具、入住日期）</label>
+        <textarea rows="3" oninput="updateRow(${row.id},'raw',this.value)" placeholder="例如：Cliff Top  6 Beds  7 Baths  $40,000/mo  15,883 sqft  Partial Furnished  Available 22 Jun 2026">${row.raw}</textarea>
+      </div>
+      ${listingMode === 'viewing' ? `
+      <div style="margin-bottom:0;">
+        <label>确认时间（留空=等待确认）</label>
+        <input type="text" class="time-input" value="${row.time}" oninput="updateRow(${row.id},'time',this.value)" placeholder="如：星期五 10.15am 或 留空表示等待中">
+      </div>` : ''}
+    </div>
+  `).join('');
+}
+
+function updateRow(id, field, val) {
+  const row = listingRows.find(r => r.id === id);
+  if (row) row[field] = val;
+}
+
+async function generateListing() {
+  const client = document.getElementById('listing-client').value.trim() || '老板';
+  const filled = listingRows.filter(r => r.raw.trim() || r.link.trim());
+  if (filled.length === 0) { alert('请至少填写一套房源的信息'); return; }
+
+  const listingsText = filled.map((r, i) => {
+    let s = `房源${i+1}:\n链接: ${r.link || '（未填）'}\n原始字段: ${r.raw}`;
+    if (listingMode === 'viewing') s += `\n确认时间: ${r.time || '等待确认'}`;
+    return s;
+  }).join('\n\n');
+
+  let systemPrompt, userPrompt;
+
+  if (listingMode === 'list') {
+    systemPrompt = `你是新加坡房地产中介"好好过 Haohaoguo Realty"的AI助手。
+任务：把Admin从PropertyGuru复制的房源原始字段，整理成标准格式发给客户（微信中文消息）。
+
+输出格式（每套房源一块，无需编号）：
+[链接]
+[地址]  [X房X卫]  $[月租]  [面积]sq.ft  [家具情况]  [入住日期]
+
+规则：
+- 地址只保留英文门牌/小区名，不要多余描述
+- 价格格式：$XX,XXX（月租）
+- 面积后面加sq.ft
+- 家具情况统一用：家具齐全 / 配备部分家具 / 无家具
+- 入住日期：马上入住 / 具体日期（中文格式如"22nd June 2026"保持不变）
+- 多套房源之间空一行
+- 不要加任何前缀、标题、解释`;
+
+    userPrompt = `客户称呼：${client}
+请整理以下${filled.length}套房源：
+
+${listingsText}`;
+
+  } else {
+    const viewingDate = document.getElementById('viewing-date').value.trim();
+    const viewingNote = document.getElementById('viewing-note').value.trim();
+
+    systemPrompt = `你是新加坡房地产中介"好好过 Haohaoguo Realty"的AI助手。
+任务：生成看房安排消息，发给客户（微信中文消息）。
+
+输出格式：
+第一行：[客户称呼]，这是[日期]目前的看房安排, 加了[N]套 :
+（如有备注则第二行加备注，如"其他的还在等中介回复中，一旦有了更新，会再通知您哈~"）
+然后空一行，每套房源：
+
+[链接]
+[地址]  [X房X卫]  $[月租]  [面积]sq.ft  [家具情况]  [入住日期]
+【已确定[时间]】  ← 有确认时间才加，等待中的不加
+
+规则：
+- 已确认时间的房源排在前面
+- 等待确认的房源排在后面
+- 地址只保留英文门牌/小区名
+- 价格格式：$XX,XXX
+- 家具情况：家具齐全 / 配备部分家具 / 无家具`;
+
+    userPrompt = `客户称呼：${client}
+看房日期：${viewingDate || '待定'}
+备注：${viewingNote || '无'}
+已确认套数：${filled.filter(r => r.time.trim()).length}套
+
+房源信息：
+${listingsText}`;
+  }
+
+  await runGenerate('listing', systemPrompt, userPrompt, {
+    mode: listingMode,
+    client,
+    count: filled.length
+  });
+}
+
+// ===== END LISTING LOGIC =====
+
+
   const text = document.getElementById(type + '-result-content').textContent;
   const btn = document.getElementById(type + '-copy-btn');
   navigator.clipboard.writeText(text).then(() => {
@@ -556,13 +757,15 @@ function renderHistory() {
   el.innerHTML = history.map(item => `
     <div class="history-item">
       <div class="history-meta">
-        <span class="history-type ${item.type === 'daily' ? 'ht-daily' : 'ht-repair'}">
-          ${item.type === 'daily' ? '日报' : '催单'}
+        <span class="history-type ${item.type === 'daily' ? 'ht-daily' : item.type === 'listing' ? 'ht-listing' : 'ht-repair'}">
+          ${item.type === 'daily' ? '日报' : item.type === 'listing' ? '房源' : '催单'}
         </span>
         <span class="history-time">${item.time}</span>
       </div>
       <div class="history-preview">${item.type === 'daily'
         ? (item.meta.person + ' · ' + item.meta.date)
+        : item.type === 'listing'
+        ? (item.meta.client + ' · ' + (item.meta.mode === 'viewing' ? '看房安排' : '房源列表') + ' · ' + item.meta.count + '套')
         : (item.meta.unit + ' · ' + item.meta.type + ' · ' + item.meta.vendor)
       }</div>
       <div class="history-preview" style="margin-top:6px;color:#888;">${item.content.substring(0, 100)}${item.content.length > 100 ? '...' : ''}</div>
