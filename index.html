@@ -358,105 +358,24 @@
       <div style="font-size:12px;color:var(--text3);margin-top:2px;" id="home-date"></div>
     </div>
 
-    <!-- Business toggle -->
-    <div style="display:flex;background:var(--surface2);border-radius:10px;padding:3px;margin-bottom:18px;gap:2px;">
-      <button class="mode-btn active" id="biz-res" onclick="setBizType('residential')" style="flex:1;border-radius:8px;">🏠 住宅 Residential</button>
-      <button class="mode-btn" id="biz-com" onclick="setBizType('commercial')" style="flex:1;border-radius:8px;">🏢 商业 Commercial</button>
-    </div>
-
     <!-- 找房跟进 -->
     <div style="font-size:10px;font-weight:600;color:var(--text3);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;display:flex;align-items:center;gap:6px;">找房 & 跟进 <span style="flex:1;height:1px;background:var(--border);display:block;"></span></div>
 
-    <div style="background:var(--surface);border-radius:var(--radius-sm);border:1px solid var(--border);margin-bottom:10px;overflow:hidden;">
-      <div style="padding:12px 14px 10px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border);">
-        <div style="width:30px;height:30px;border-radius:8px;background:#FDEAEA;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;">🔍</div>
-        <div><div style="font-size:13px;font-weight:500;">找房工具 <span style="font-size:9px;background:#FDEAEA;color:#CC2222;padding:1px 5px;border-radius:4px;font-weight:600;">NEW</span></div><div style="font-size:11px;color:var(--text3);margin-top:1px;">PropertyGuru搜索 · 自动提取中介信息</div></div>
-      </div>
+    <div style="background:var(--surface);border-radius:var(--radius-sm);border:1px solid var(--border);margin-bottom:14px;overflow:hidden;">
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5px;background:var(--border);">
-        <div style="background:var(--surface);padding:12px 13px;cursor:pointer;" onclick="switchTab('search')">
-          <div style="font-size:15px;margin-bottom:3px;">🔍</div>
-          <div style="font-size:12px;font-weight:500;">搜索房源</div>
-          <div style="font-size:10px;color:var(--text3);margin-top:2px;line-height:1.4;">按条件批量搜，自动拿中介电话</div>
+        <div style="background:var(--surface);padding:14px 13px;cursor:pointer;" onclick="switchTab('search')">
+          <div style="font-size:18px;margin-bottom:4px;">🔍</div>
+          <div style="font-size:13px;font-weight:600;">搜索房源</div>
+          <div style="font-size:10px;color:var(--text3);margin-top:2px;line-height:1.4;">按条件批量搜，自动提取中介电话</div>
         </div>
-        <div style="background:var(--surface);padding:12px 13px;cursor:pointer;" onclick="switchTab('search');setTimeout(()=>document.getElementById('single-url-input')?.scrollIntoView({behavior:'smooth'}),300)">
-          <div style="font-size:15px;margin-bottom:3px;">🔗</div>
-          <div style="font-size:12px;font-weight:500;">单链接提取</div>
+        <div style="background:var(--surface);padding:14px 13px;cursor:pointer;" onclick="switchTab('search');setTimeout(()=>document.getElementById('single-url-input')?.scrollIntoView({behavior:'smooth'}),300)">
+          <div style="font-size:18px;margin-bottom:4px;">🔗</div>
+          <div style="font-size:13px;font-weight:600;">单链接提取</div>
           <div style="font-size:10px;color:var(--text3);margin-top:2px;line-height:1.4;">粘贴PG链接，一键提取全部字段</div>
         </div>
-        <div style="background:var(--surface);padding:12px 13px;cursor:pointer;grid-column:1/-1;" onclick="switchTab('listing')">
-          <div style="font-size:12px;font-weight:500;">📋 房源列表 & 看房安排</div>
-          <div style="font-size:10px;color:var(--text3);margin-top:2px;">整理发客户 · 生成看房安排 · 复制Excel格式</div>
-        </div>
-      </div>
-    </div>
-
-    <div style="background:var(--surface);border-radius:var(--radius-sm);border:1px solid var(--border);margin-bottom:18px;overflow:hidden;">
-      <div style="padding:12px 14px 10px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border);">
-        <div style="width:30px;height:30px;border-radius:8px;background:#E8F7EF;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;">👥</div>
-        <div><div style="font-size:13px;font-weight:500;">客户跟进</div><div style="font-size:11px;color:var(--text3);margin-top:1px;">匹配、预约、反馈跟进</div></div>
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5px;background:var(--border);">
-        <div style="background:var(--surface);padding:12px 13px;opacity:0.45;">
-          <div style="font-size:15px;margin-bottom:3px;">🎯</div>
-          <div style="font-size:12px;font-weight:500;">客户需求匹配 <span style="font-size:9px;background:var(--surface2);color:var(--text3);padding:1px 5px;border-radius:4px;">即将</span></div>
-          <div style="font-size:10px;color:var(--text3);margin-top:2px;line-height:1.4;">填需求，AI推荐合适房源</div>
-        </div>
-        <div style="background:var(--surface);padding:12px 13px;opacity:0.45;">
-          <div style="font-size:15px;margin-bottom:3px;">💬</div>
-          <div style="font-size:12px;font-weight:500;">看房反馈跟进 <span style="font-size:9px;background:var(--surface2);color:var(--text3);padding:1px 5px;border-radius:4px;">即将</span></div>
-          <div style="font-size:10px;color:var(--text3);margin-top:2px;line-height:1.4;">输入反馈，生成跟进消息</div>
-        </div>
-        <div style="background:var(--surface);padding:12px 13px;opacity:0.45;grid-column:1/-1;">
-          <div style="font-size:12px;font-weight:500;">📆 约看消息生成 <span style="font-size:9px;background:var(--surface2);color:var(--text3);padding:1px 5px;border-radius:4px;">即将</span></div>
-          <div style="font-size:10px;color:var(--text3);margin-top:2px;">自然语言 → WhatsApp预约消息</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- 合同财务 -->
-    <div style="font-size:10px;font-weight:600;color:var(--text3);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;display:flex;align-items:center;gap:6px;">合同 & 财务 <span style="flex:1;height:1px;background:var(--border);display:block;"></span></div>
-
-    <div style="background:var(--surface);border-radius:var(--radius-sm);border:1px solid var(--border);margin-bottom:18px;overflow:hidden;">
-      <div style="padding:12px 14px 10px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border);">
-        <div style="width:30px;height:30px;border-radius:8px;background:#E8EFF8;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;">📄</div>
-        <div><div style="font-size:13px;font-weight:500;">合同 & 财务工具</div><div style="font-size:11px;color:var(--text3);margin-top:1px;">合同生成、信息提取、发票、AML核查</div></div>
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5px;background:var(--border);">
-        <div style="background:var(--surface);padding:12px 13px;opacity:0.45;">
-          <div style="font-size:15px;margin-bottom:3px;">📄</div>
-          <div style="font-size:12px;font-weight:500;">合同信息提取 <span style="font-size:9px;background:var(--surface2);color:var(--text3);padding:1px 5px;border-radius:4px;">即将</span></div>
-          <div style="font-size:10px;color:var(--text3);margin-top:2px;line-height:1.4;">上传PDF，自动读取关键条款</div>
-        </div>
-        <div style="background:var(--surface);padding:12px 13px;opacity:0.45;">
-          <div style="font-size:15px;margin-bottom:3px;">📝</div>
-          <div style="font-size:12px;font-weight:500;">合同草稿生成 <span style="font-size:9px;background:var(--surface2);color:var(--text3);padding:1px 5px;border-radius:4px;">即将</span></div>
-          <div style="font-size:10px;color:var(--text3);margin-top:2px;line-height:1.4;">填字段，一键生成标准合同PDF</div>
-        </div>
-        <div style="background:var(--surface);padding:12px 13px;opacity:0.45;">
-          <div style="font-size:15px;margin-bottom:3px;">🧾</div>
-          <div style="font-size:12px;font-weight:500;">发票生成 <span style="font-size:9px;background:var(--surface2);color:var(--text3);padding:1px 5px;border-radius:4px;">即将</span></div>
-          <div style="font-size:10px;color:var(--text3);margin-top:2px;line-height:1.4;">填写项目/金额，生成标准发票</div>
-        </div>
-        <div style="background:var(--surface);padding:12px 13px;opacity:0.45;">
-          <div style="font-size:15px;margin-bottom:3px;">🛡</div>
-          <div style="font-size:12px;font-weight:500;">AML核查清单 <span style="font-size:9px;background:var(--surface2);color:var(--text3);padding:1px 5px;border-radius:4px;">即将</span></div>
-          <div style="font-size:10px;color:var(--text3);margin-top:2px;line-height:1.4;">填客户信息，生成合规核查要点</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- 售后 -->
-    <div style="font-size:10px;font-weight:600;color:var(--text3);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;display:flex;align-items:center;gap:6px;">售后服务 <span style="flex:1;height:1px;background:var(--border);display:block;"></span></div>
-
-    <div style="background:var(--surface);border-radius:var(--radius-sm);border:1px solid var(--border);margin-bottom:18px;overflow:hidden;">
-      <div style="display:grid;grid-template-columns:1fr;gap:0.5px;background:var(--border);">
-        <div style="background:var(--surface);padding:12px 14px;cursor:pointer;display:flex;align-items:center;gap:12px;" onclick="switchTab('repair')">
-          <div style="width:30px;height:30px;border-radius:8px;background:#FEF7E0;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;">🔧</div>
-          <div style="flex:1;">
-            <div style="font-size:12px;font-weight:500;">报修催单</div>
-            <div style="font-size:10px;color:var(--text3);margin-top:2px;">向租客/屋主/第三方，轻·中·重三种力度，中英双语</div>
-          </div>
-          <div style="font-size:16px;color:var(--text3);">›</div>
+        <div style="background:var(--surface);padding:14px 13px;cursor:pointer;grid-column:1/-1;" onclick="switchTab('listing')">
+          <div style="font-size:13px;font-weight:600;">📋 房源列表 & 看房安排</div>
+          <div style="font-size:10px;color:var(--text3);margin-top:2px;">整理发客户 · 生成看房安排</div>
         </div>
       </div>
     </div>
@@ -464,45 +383,46 @@
     <!-- 日常运营 -->
     <div style="font-size:10px;font-weight:600;color:var(--text3);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;display:flex;align-items:center;gap:6px;">日常运营 <span style="flex:1;height:1px;background:var(--border);display:block;"></span></div>
 
-    <div style="background:var(--surface);border-radius:var(--radius-sm);border:1px solid var(--border);margin-bottom:18px;overflow:hidden;">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5px;background:var(--border);">
-        <div style="background:var(--surface);padding:12px 13px;cursor:pointer;" onclick="switchTab('daily')">
-          <div style="font-size:15px;margin-bottom:3px;">📝</div>
-          <div style="font-size:12px;font-weight:500;">日报整理</div>
-          <div style="font-size:10px;color:var(--text3);margin-top:2px;line-height:1.4;">随手记 → 标准5分类日报</div>
+    <div style="background:var(--surface);border-radius:var(--radius-sm);border:1px solid var(--border);margin-bottom:14px;overflow:hidden;">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.5px;background:var(--border);">
+        <div style="background:var(--surface);padding:14px 13px;cursor:pointer;" onclick="switchTab('daily')">
+          <div style="font-size:18px;margin-bottom:4px;">📝</div>
+          <div style="font-size:12px;font-weight:600;">日报整理</div>
+          <div style="font-size:10px;color:var(--text3);margin-top:2px;line-height:1.4;">随手记 → 标准日报</div>
         </div>
-        <div style="background:var(--surface);padding:12px 13px;cursor:pointer;" onclick="switchTab('history')">
-          <div style="font-size:15px;margin-bottom:3px;">🗂</div>
-          <div style="font-size:12px;font-weight:500;">历史记录</div>
-          <div style="font-size:10px;color:var(--text3);margin-top:2px;line-height:1.4;">查看所有生成的消息记录</div>
+        <div style="background:var(--surface);padding:14px 13px;cursor:pointer;" onclick="switchTab('repair')">
+          <div style="font-size:18px;margin-bottom:4px;">🔧</div>
+          <div style="font-size:12px;font-weight:600;">报修催单</div>
+          <div style="font-size:10px;color:var(--text3);margin-top:2px;line-height:1.4;">中英双语催单消息</div>
+        </div>
+        <div style="background:var(--surface);padding:14px 13px;cursor:pointer;" onclick="switchTab('history')">
+          <div style="font-size:18px;margin-bottom:4px;">🗂</div>
+          <div style="font-size:12px;font-weight:600;">历史记录</div>
+          <div style="font-size:10px;color:var(--text3);margin-top:2px;line-height:1.4;">所有生成的消息</div>
         </div>
       </div>
     </div>
 
-    <!-- 知识库 -->
-    <div style="font-size:10px;font-weight:600;color:var(--text3);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;display:flex;align-items:center;gap:6px;">知识库 <span style="flex:1;height:1px;background:var(--border);display:block;"></span></div>
+    <!-- 即将上线 -->
+    <div style="font-size:10px;font-weight:600;color:var(--text3);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;display:flex;align-items:center;gap:6px;">即将上线 <span style="flex:1;height:1px;background:var(--border);display:block;"></span></div>
 
-    <div style="background:var(--surface);border-radius:var(--radius-sm);border:1px solid var(--border);margin-bottom:18px;overflow:hidden;">
+    <div style="background:var(--surface);border-radius:var(--radius-sm);border:1px solid var(--border);margin-bottom:14px;overflow:hidden;">
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5px;background:var(--border);">
-        <div style="background:var(--surface);padding:12px 13px;opacity:0.45;">
-          <div style="font-size:15px;margin-bottom:3px;">📋</div>
-          <div style="font-size:12px;font-weight:500;">SOP标准流程 <span style="font-size:9px;background:var(--surface2);color:var(--text3);padding:1px 5px;border-radius:4px;">即将</span></div>
-          <div style="font-size:10px;color:var(--text3);margin-top:2px;line-height:1.4;">找房→签约→交房→报修各环节</div>
+        <div style="background:var(--surface);padding:12px 13px;opacity:0.5;">
+          <div style="font-size:12px;font-weight:500;">💬 看房反馈跟进</div>
+          <div style="font-size:10px;color:var(--text3);margin-top:2px;">输入反馈，生成跟进消息</div>
         </div>
-        <div style="background:var(--surface);padding:12px 13px;opacity:0.45;">
-          <div style="font-size:15px;margin-bottom:3px;">💬</div>
-          <div style="font-size:12px;font-weight:500;">客服话术库 <span style="font-size:9px;background:var(--surface2);color:var(--text3);padding:1px 5px;border-radius:4px;">即将</span></div>
-          <div style="font-size:10px;color:var(--text3);margin-top:2px;line-height:1.4;">常见问题标准回复，中英双语</div>
+        <div style="background:var(--surface);padding:12px 13px;opacity:0.5;">
+          <div style="font-size:12px;font-weight:500;">📄 合同信息提取</div>
+          <div style="font-size:10px;color:var(--text3);margin-top:2px;">上传PDF，提取关键条款</div>
         </div>
-        <div style="background:var(--surface);padding:12px 13px;opacity:0.45;">
-          <div style="font-size:15px;margin-bottom:3px;">⚖️</div>
-          <div style="font-size:12px;font-weight:500;">法规速查 <span style="font-size:9px;background:var(--surface2);color:var(--text3);padding:1px 5px;border-radius:4px;">即将</span></div>
-          <div style="font-size:10px;color:var(--text3);margin-top:2px;line-height:1.4;">新加坡租售法规、CEA规定</div>
+        <div style="background:var(--surface);padding:12px 13px;opacity:0.5;">
+          <div style="font-size:12px;font-weight:500;">🧾 发票生成</div>
+          <div style="font-size:10px;color:var(--text3);margin-top:2px;">填写项目/金额，生成发票</div>
         </div>
-        <div style="background:var(--surface);padding:12px 13px;opacity:0.45;">
-          <div style="font-size:15px;margin-bottom:3px;">🤖</div>
-          <div style="font-size:12px;font-weight:500;">AI问答 <span style="font-size:9px;background:var(--surface2);color:var(--text3);padding:1px 5px;border-radius:4px;">即将</span></div>
-          <div style="font-size:10px;color:var(--text3);margin-top:2px;line-height:1.4;">随时问任何房产/合规/话术问题</div>
+        <div style="background:var(--surface);padding:12px 13px;opacity:0.5;">
+          <div style="font-size:12px;font-weight:500;">🎯 客户需求匹配</div>
+          <div style="font-size:10px;color:var(--text3);margin-top:2px;">AI推荐合适房源</div>
         </div>
       </div>
     </div>
@@ -827,11 +747,6 @@ function switchTab(tab) {
   document.getElementById('page-' + tab).classList.add('active');
   if (tab === 'history') renderHistory();
   if (tab === 'listing' && listingRows.length === 0) addListingRow();
-}
-
-function setBizType(type) {
-  document.getElementById('biz-res').classList.toggle('active', type === 'residential');
-  document.getElementById('biz-com').classList.toggle('active', type === 'commercial');
 }
 
 // Set home date
@@ -1437,15 +1352,24 @@ async function fetchListing(id) {
   renderListingRows();
 
   try {
-    const res = await fetch('/.netlify/functions/pg-fetch', {
+    const res = await fetch('/.netlify/functions/pg-search', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ url: row.link })
+      body: JSON.stringify({ _extractUrl: row.link })
     });
     const data = await res.json();
 
-    if (data.success && data.data) {
-      row.fetched = data.data;
+    if (data.success && data.listing) {
+      const l = data.listing;
+      row.fetched = {
+        address: l.projectName || l.address || '',
+        price: l.priceDisplay || '',
+        beds: l.beds,
+        baths: l.baths,
+        area: l.areaDisplay || '',
+        furnishing: l.furnishing || '',
+        availability: l.availability || '',
+      };
       row.status = 'ok';
     } else {
       row.status = 'blocked';
