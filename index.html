@@ -8,22 +8,24 @@
   @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap');
 
   :root {
-    --bg: #F2F0EB;
+    --bg: #F5F5F5;
     --surface: #FFFFFF;
-    --surface2: #F7F5F0;
-    --border: #E2DDD6;
-    --text: #1A1816;
-    --text2: #6B6560;
-    --text3: #9E9890;
-    --accent-j: #4A3F8F;
-    --accent-j-light: #EEEDFE;
-    --accent-y: #8F5A00;
-    --accent-y-light: #FEF3DC;
+    --surface2: #FAFAFA;
+    --border: #E8E8E8;
+    --text: #1A1A1A;
+    --text2: #5A5A5A;
+    --text3: #9A9A9A;
+    --accent-j: #CC2222;
+    --accent-j-light: #FDEAEA;
+    --accent-y: #B8860B;
+    --accent-y-light: #FEF7E0;
     --accent-g: #1A6B45;
     --accent-g-light: #E8F7EF;
-    --red: #C0392B;
-    --red-light: #FDECEA;
-    --shadow: 0 2px 12px rgba(0,0,0,0.07);
+    --accent-gold: #CC2222;
+    --accent-gold-light: #FDEAEA;
+    --red: #CC2222;
+    --red-light: #FDEAEA;
+    --shadow: 0 2px 12px rgba(204,34,34,0.08);
     --radius: 16px;
     --radius-sm: 10px;
   }
@@ -52,8 +54,9 @@
     justify-content: space-between;
     margin-bottom: 16px;
   }
-  .logo { font-size: 15px; font-weight: 600; color: var(--text); letter-spacing: -0.3px; }
-  .logo span { color: var(--accent-j); }
+  .logo { font-size: 16px; font-weight: 700; color: var(--text); letter-spacing: -0.3px; }
+  .logo span { color: #CC2222; }
+  .logo-sub { font-size: 10px; color: var(--text3); font-weight: 400; margin-left: 4px; letter-spacing: 0.5px; }
   .version {
     font-size: 10px; color: var(--text3);
     font-family: 'DM Mono', monospace;
@@ -68,7 +71,7 @@
     border-bottom: 2px solid transparent; cursor: pointer;
     transition: all .15s; white-space: nowrap;
   }
-  .tab.active { color: var(--text); border-bottom-color: var(--text); }
+  .tab.active { color: #CC2222; border-bottom-color: #CC2222; }
 
   .page { display: none; padding: 20px; }
   .page.active { display: block; }
@@ -249,8 +252,8 @@
 
 <div class="header">
   <div class="header-top">
-    <div class="logo">HHG <span>Admin</span> 小助手</div>
-    <div class="version">v1.2</div>
+    <div class="logo"><span>HHG</span> 好好过<span class="logo-sub">REALTY</span></div>
+    <div class="version">v1.3</div>
   </div>
   <div class="tabs">
     <div class="tab active" onclick="switchTab('search')">搜房</div>
@@ -292,8 +295,6 @@
           <div class="person-pill" id="pt-hdb" onclick="togglePropType('HDB')">HDB</div>
         </div>
       </div>
-
-      <!-- Bedrooms -->
       <div class="field-group">
         <label>卧室数 <span style="font-size:10px;color:var(--text3)">可多选</span></label>
         <div class="person-pills" id="bedroom-pills">
@@ -321,6 +322,28 @@
         <div class="spinner" id="search-spinner"></div>
       </button>
       <div class="error-box" id="search-error"></div>
+    </div>
+
+    <!-- Single URL extractor -->
+    <div class="card" style="margin-top:12px;">
+      <div class="field-group" style="margin-bottom:10px;">
+        <label>🔗 单个房源提取 <span style="font-size:10px;color:var(--text3)">粘贴PG链接 → 自动提取信息</span></label>
+        <div style="display:flex;gap:8px;">
+          <input type="text" id="single-url-input" placeholder="https://www.propertyguru.com.sg/listing/..." style="flex:1;">
+          <button class="btn-generate btn-j" style="white-space:nowrap;padding:10px 16px;font-size:13px;" onclick="extractSingleUrl()">
+            <span id="extract-btn-text">提取</span>
+            <div class="spinner" id="extract-spinner"></div>
+          </button>
+        </div>
+      </div>
+      <div id="single-result-area" style="display:none;">
+        <div id="single-result-card"></div>
+        <div style="display:flex;gap:8px;margin-top:10px;">
+          <button class="btn-copy-sm" style="flex:1;text-align:center;padding:8px;" onclick="copySingleToExcel()">📋 复制到Excel</button>
+          <button class="btn-copy-sm" style="flex:1;text-align:center;padding:8px;" onclick="addSingleToResults()">➕ 加入搜索结果</button>
+        </div>
+      </div>
+      <div class="error-box" id="extract-error"></div>
     </div>
 
     <!-- Results area -->
@@ -715,18 +738,20 @@ function togglePropType(t) {
     searchState.propTypes = [];
     ['all','condo','landed','hdb'].forEach(id => {
       const el = document.getElementById('pt-' + id);
-      el.className = 'person-pill' + (id === 'all' ? ' active-g' : '');
+      if (el) el.className = 'person-pill' + (id === 'all' ? ' active-g' : '');
     });
     return;
   }
   const idx = searchState.propTypes.indexOf(t);
   if (idx >= 0) searchState.propTypes.splice(idx, 1);
   else searchState.propTypes.push(t);
-  // Update UI
+  // Update ALL pill
   document.getElementById('pt-all').className = 'person-pill' + (searchState.propTypes.length === 0 ? ' active-g' : '');
-  ['CONDO','LANDED','HDB'].forEach(pt => {
-    const el = document.getElementById('pt-' + pt.toLowerCase().replace('landed','landed'));
-    if (el) el.className = 'person-pill' + (searchState.propTypes.includes(pt) ? ' active-g' : '');
+  // Update each type pill — map type → pill id
+  const idMap = { 'CONDO': 'pt-condo', 'LANDED': 'pt-landed', 'HDB': 'pt-hdb' };
+  Object.entries(idMap).forEach(([type, elId]) => {
+    const el = document.getElementById(elId);
+    if (el) el.className = 'person-pill' + (searchState.propTypes.includes(type) ? ' active-g' : '');
   });
 }
 
@@ -801,20 +826,26 @@ async function doSearch(pageNum) {
 
 function renderSearchResults() {
   const { results, total, page, totalPages } = searchState;
-  const start = (page - 1) * 10 + 1;
-  const end = Math.min(page * 10, total);
+  const pageSize = total <= 20 ? 20 : 10;
+  const start = (page - 1) * pageSize + 1;
+  const end = Math.min(page * pageSize, total);
 
   // Stats
   document.getElementById('search-stats').textContent =
-    total > 0 ? `找到 ${total.toLocaleString()} 套房源 · 按最新排序 · 第${start}-${end}套` : '暂无结果';
+    total > 0 ? `找到 ${total.toLocaleString()} 套 · 按最新排序 · 第${start}-${end}套` : '暂无结果';
   document.getElementById('search-pg-link').href = searchState.lastSearchUrl;
 
-  // Pagination
-  document.getElementById('pg-info').textContent = `${start}-${end} / ${total.toLocaleString()}套`;
-  document.getElementById('pg-prev').disabled = page <= 1;
-  document.getElementById('pg-next').disabled = page >= totalPages;
+  // Pagination — hide if ≤20 results
+  const showPagination = total > 20;
+  document.getElementById('pg-prev').style.display = showPagination ? '' : 'none';
+  document.getElementById('pg-next').style.display = showPagination ? '' : 'none';
+  document.getElementById('pg-info').style.display = showPagination ? '' : 'none';
+  if (showPagination) {
+    document.getElementById('pg-info').textContent = `${start}-${end} / ${total.toLocaleString()}套`;
+    document.getElementById('pg-prev').disabled = page <= 1;
+    document.getElementById('pg-next').disabled = page >= totalPages;
+  }
 
-  // Results list
   const listEl = document.getElementById('search-results-list');
   if (results.length === 0) {
     listEl.innerHTML = '<div class="history-empty">没有找到符合条件的房源</div>';
@@ -822,34 +853,52 @@ function renderSearchResults() {
   }
 
   listEl.innerHTML = results.map((r, i) => {
-    const agentBlocked = r.agent?.blocked;
-    const clientLine = [
-      r.address || '—',
-      (r.beds != null && r.baths != null) ? `${r.beds}房${r.baths}卫` : '',
-      r.priceDisplay || '',
-      r.areaDisplay || '',
-      r.furnishing || '',
-      r.availability || '',
-    ].filter(Boolean).join('  ');
-
+    const hasPhone = r.agent?.phone;
+    const noPhone = !hasPhone && !r.agent?.blocked;
     return `
-    <div class="listing-row" style="margin-bottom:10px;">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-        <span style="font-size:11px;font-weight:700;color:var(--text3);">房源 ${start + i}</span>
-        <span style="font-size:10px;color:var(--text3);">${r.listedDate ? '上架 ' + r.listedDate : ''}</span>
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:16px;margin-bottom:12px;box-shadow:var(--shadow);">
+
+      <!-- Row 1: Number + Date -->
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+        <span style="font-size:11px;font-weight:700;color:var(--accent-j);background:var(--accent-j-light);padding:2px 8px;border-radius:10px;">房源 ${start + i}</span>
+        <span style="font-size:11px;color:var(--text3);">${r.listedDate || ''}</span>
       </div>
-      <a href="${r.link}" target="_blank" style="font-size:12px;color:var(--accent-j);word-break:break-all;display:block;margin-bottom:6px;">🔗 ${r.link}</a>
-      <div style="font-size:13px;font-weight:500;color:var(--text);margin-bottom:4px;">${clientLine || '—'}</div>
-      ${r.mrt ? `<div style="font-size:12px;color:var(--text2);">🚇 ${r.mrt}</div>` : ''}
-      ${r.floor || r.tenure ? `<div style="font-size:11px;color:var(--text3);margin-top:2px;">${[r.floor, r.tenure, r.leaseTerm].filter(Boolean).join(' · ')}</div>` : ''}
-      <div style="border-top:1px dashed var(--border);margin:8px 0 6px;"></div>
-      <div style="font-size:11px;color:var(--text2);">
-        ${agentBlocked ? '<span style="color:var(--accent-y)">⚠️ 中介信息需点链接查看</span>' : `
-        👤 <strong>${r.agent?.name || '—'}</strong>
-        ${r.agent?.phone ? `&nbsp;📞 ${r.agent.phone}` : ''}
-        ${r.agent?.agency ? `&nbsp;·&nbsp;${r.agent.agency}` : ''}
-        ${r.agent?.cea ? `&nbsp;·&nbsp;CEA: ${r.agent.cea}` : ''}
-        `}
+
+      <!-- Row 2: Link -->
+      <a href="${r.link}" target="_blank" style="font-size:12px;color:var(--accent-gold);text-decoration:none;display:block;margin-bottom:10px;word-break:break-all;">
+        🔗 ${r.link}
+      </a>
+
+      <!-- Row 3: Address + Price -->
+      <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;gap:8px;">
+        <div style="font-size:15px;font-weight:600;color:var(--text);">${r.address || '—'}</div>
+        <div style="font-size:15px;font-weight:700;color:var(--accent-j);white-space:nowrap;">${r.priceDisplay || '—'}</div>
+      </div>
+
+      <!-- Row 4: Key stats chips -->
+      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;">
+        ${r.beds != null ? `<span style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:3px 8px;font-size:12px;">🛏 ${r.beds}房${r.baths != null ? ' ' + r.baths + '卫' : ''}</span>` : ''}
+        ${r.areaDisplay ? `<span style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:3px 8px;font-size:12px;">📐 ${r.areaDisplay}</span>` : ''}
+        ${r.furnishing ? `<span style="background:var(--accent-g-light);border:1px solid #b8e0cc;border-radius:6px;padding:3px 8px;font-size:12px;color:var(--accent-g);">${r.furnishing.replace('Fully Furnished','家具齐全').replace('Partial Furnished','配备部分家具').replace('Partially Furnished','配备部分家具').replace('Unfurnished','无家具')}</span>` : ''}
+        ${r.availability ? `<span style="background:var(--accent-y-light);border:1px solid #f5d98a;border-radius:6px;padding:3px 8px;font-size:12px;color:var(--accent-y);">📅 ${r.availability.replace('Ready to Move','马上入住')}</span>` : ''}
+      </div>
+
+      <!-- Row 5: MRT -->
+      ${r.mrt ? `<div style="font-size:12px;color:var(--text2);margin-bottom:6px;">🚇 ${r.mrt}</div>` : ''}
+
+      <!-- Row 6: Extra details -->
+      ${(r.tenure || r.leaseTerm) ? `<div style="font-size:11px;color:var(--text3);margin-bottom:8px;">${[r.tenure, r.leaseTerm].filter(Boolean).join(' · ')}</div>` : ''}
+
+      <!-- Divider -->
+      <div style="border-top:1px dashed var(--border);margin:8px 0;"></div>
+
+      <!-- Row 7: Agent info (internal) -->
+      <div style="display:flex;flex-wrap:wrap;gap:4px;align-items:center;">
+        <span style="font-size:11px;color:var(--text3);margin-right:2px;">内部</span>
+        ${r.agent?.name ? `<span style="font-size:12px;color:var(--text);font-weight:500;">👤 ${r.agent.name}</span>` : ''}
+        ${hasPhone ? `<span style="font-size:12px;color:var(--accent-g);font-weight:500;">📞 ${r.agent.phone}</span>` : noPhone ? `<span style="font-size:11px;color:var(--text3);">📞 —</span>` : ''}
+        ${r.agent?.agency ? `<span style="font-size:11px;color:var(--text2);">· ${r.agent.agency}</span>` : ''}
+        ${r.agent?.cea ? `<span style="font-size:11px;color:var(--text3);">· CEA: ${r.agent.cea}</span>` : ''}
       </div>
     </div>`;
   }).join('');
@@ -915,7 +964,95 @@ function sendToListing() {
   alert(`已将 ${results.length} 套房源导入到"房源"标签页，可在那里生成发客户消息`);
 }
 
-// ===== END SEARCH LOGIC =====
+// ===== SINGLE URL EXTRACTOR =====
+let singleExtracted = null;
+
+async function extractSingleUrl() {
+  const url = document.getElementById('single-url-input').value.trim();
+  const errorEl = document.getElementById('extract-error');
+  const btnText = document.getElementById('extract-btn-text');
+  const spinner = document.getElementById('extract-spinner');
+  errorEl.classList.remove('show');
+
+  if (!url || !url.includes('propertyguru.com.sg/listing/')) {
+    errorEl.textContent = '请输入有效的PropertyGuru房源链接';
+    errorEl.classList.add('show');
+    return;
+  }
+
+  btnText.textContent = '提取中...';
+  spinner.classList.add('show');
+
+  try {
+    const res = await fetch('/.netlify/functions/pg-search', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ _extractUrl: url })
+    });
+    const data = await res.json();
+
+    if (!data.success) {
+      errorEl.textContent = data.error || '提取失败，请重试';
+      errorEl.classList.add('show');
+      return;
+    }
+
+    singleExtracted = data.listing;
+    renderSingleResult(data.listing);
+    document.getElementById('single-result-area').style.display = 'block';
+  } catch (err) {
+    errorEl.textContent = '网络错误，请重试';
+    errorEl.classList.add('show');
+  } finally {
+    btnText.textContent = '提取';
+    spinner.classList.remove('show');
+  }
+}
+
+function renderSingleResult(r) {
+  if (!r) return;
+  const hasPhone = r.agent?.phone;
+  document.getElementById('single-result-card').innerHTML = `
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px;">
+      <a href="${r.link}" target="_blank" style="font-size:12px;color:var(--accent-gold);display:block;margin-bottom:8px;word-break:break-all;">🔗 ${r.link}</a>
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+        <span style="font-weight:600;">${r.address || '—'}</span>
+        <span style="font-weight:700;color:var(--accent-j);">${r.priceDisplay || '—'}</span>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:6px;">
+        ${r.beds != null ? `<span style="font-size:12px;background:var(--surface);border:1px solid var(--border);border-radius:5px;padding:2px 7px;">🛏 ${r.beds}房${r.baths != null ? r.baths + '卫' : ''}</span>` : ''}
+        ${r.areaDisplay ? `<span style="font-size:12px;background:var(--surface);border:1px solid var(--border);border-radius:5px;padding:2px 7px;">📐 ${r.areaDisplay}</span>` : ''}
+        ${r.furnishing ? `<span style="font-size:12px;background:var(--accent-g-light);border-radius:5px;padding:2px 7px;color:var(--accent-g);">${r.furnishing}</span>` : ''}
+        ${r.availability ? `<span style="font-size:12px;background:var(--accent-y-light);border-radius:5px;padding:2px 7px;color:var(--accent-y);">${r.availability}</span>` : ''}
+      </div>
+      ${r.mrt ? `<div style="font-size:12px;color:var(--text2);margin-bottom:4px;">🚇 ${r.mrt}</div>` : ''}
+      <div style="border-top:1px dashed var(--border);margin:8px 0 6px;font-size:12px;color:var(--text2);">
+        👤 ${r.agent?.name || '—'}
+        ${hasPhone ? `📞 ${r.agent.phone}` : ''}
+        ${r.agent?.agency ? '· ' + r.agent.agency : ''}
+        ${r.agent?.cea ? '· CEA: ' + r.agent.cea : ''}
+      </div>
+    </div>`;
+}
+
+function copySingleToExcel() {
+  if (!singleExtracted) return;
+  const r = singleExtracted;
+  const headers = ['链接','地址','价格','卧室','浴室','面积(sqft)','家具','入住日期','MRT','中介姓名','中介电话','公司','CEA'];
+  const row = [r.link||'', r.address||'', r.priceRaw||'', r.beds??'', r.baths??'', r.areaSqft||'', r.furnishing||'', r.availability||'', r.mrt||'', r.agent?.name||'', r.agent?.phone||'', r.agent?.agency||'', r.agent?.cea||''].join('\t');
+  navigator.clipboard.writeText(headers.join('\t') + '\n' + row).then(() => alert('已复制到剪贴板'));
+}
+
+function addSingleToResults() {
+  if (!singleExtracted) return;
+  searchState.results.unshift(singleExtracted);
+  document.getElementById('search-results-area').style.display = 'block';
+  renderSearchResults();
+  alert('已加入搜索结果列表');
+}
+// ===== END SINGLE URL EXTRACTOR =====
+
+
 
 
 let listingRows = [];
