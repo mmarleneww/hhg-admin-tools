@@ -728,7 +728,7 @@ ${listingsText}`;
 
 // ===== END LISTING LOGIC =====
 
-
+function copyResult(type) {
   const text = document.getElementById(type + '-result-content').textContent;
   const btn = document.getElementById(type + '-copy-btn');
   navigator.clipboard.writeText(text).then(() => {
