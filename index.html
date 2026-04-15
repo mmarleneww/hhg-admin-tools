@@ -111,6 +111,7 @@
   .person-pill.active-j { background: var(--accent-j-light); border-color: var(--accent-j); color: var(--accent-j); }
   .person-pill.active-w { background: var(--accent-g-light); border-color: var(--accent-g); color: var(--accent-g); }
   .person-pill.active-y { background: var(--accent-y-light); border-color: var(--accent-y); color: var(--accent-y); }
+  .person-pill.active-g { background: var(--accent-g-light); border-color: var(--accent-g); color: var(--accent-g); }
 
   .urgency-btns { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
   .urgency-btn {
@@ -249,13 +250,109 @@
 <div class="header">
   <div class="header-top">
     <div class="logo">HHG <span>Admin</span> 小助手</div>
-    <div class="version">v1.1</div>
+    <div class="version">v1.2</div>
   </div>
   <div class="tabs">
-    <div class="tab active" onclick="switchTab('daily')">日报</div>
+    <div class="tab active" onclick="switchTab('search')">搜房</div>
+    <div class="tab" onclick="switchTab('daily')">日报</div>
     <div class="tab" onclick="switchTab('listing')">房源</div>
     <div class="tab" onclick="switchTab('repair')">催单</div>
     <div class="tab" onclick="switchTab('history')">记录</div>
+  </div>
+</div>
+
+<!-- SEARCH -->
+<div class="page active" id="page-search">
+  <div style="margin-top:16px;">
+
+    <!-- Search form -->
+    <div class="card" id="search-form-card">
+      <!-- Transaction type -->
+      <div class="field-group">
+        <label>交易类型</label>
+        <div class="mode-toggle">
+          <button class="mode-btn active" id="stype-rent" onclick="setSearchType('rent')">🏠 租房</button>
+          <button class="mode-btn" id="stype-sale" onclick="setSearchType('sale')">💰 买房</button>
+        </div>
+      </div>
+
+      <!-- Search text -->
+      <div class="field-group">
+        <label>搜索词 <span style="font-size:10px;color:var(--text3)">小区名 / MRT站 / 区域（如 Hillsta、Orchard MRT、D10）</span></label>
+        <input type="text" id="s-freetext" placeholder="如：Hillsta / Orchard MRT / D10" onkeydown="if(event.key==='Enter')doSearch()">
+      </div>
+
+      <!-- Property type -->
+      <div class="field-group">
+        <label>房产类型 <span style="font-size:10px;color:var(--text3)">可多选</span></label>
+        <div class="person-pills" id="proptype-pills">
+          <div class="person-pill active-g" id="pt-all" onclick="togglePropType('ALL')">All</div>
+          <div class="person-pill" id="pt-condo" onclick="togglePropType('CONDO')">Condo</div>
+          <div class="person-pill" id="pt-landed" onclick="togglePropType('LANDED')">Landed</div>
+          <div class="person-pill" id="pt-hdb" onclick="togglePropType('HDB')">HDB</div>
+        </div>
+      </div>
+
+      <!-- Bedrooms -->
+      <div class="field-group">
+        <label>卧室数 <span style="font-size:10px;color:var(--text3)">可多选</span></label>
+        <div class="person-pills" id="bedroom-pills">
+          <div class="person-pill" id="bd-0" onclick="toggleBedroom(0)">Studio</div>
+          <div class="person-pill" id="bd-1" onclick="toggleBedroom(1)">1</div>
+          <div class="person-pill" id="bd-2" onclick="toggleBedroom(2)">2</div>
+          <div class="person-pill" id="bd-3" onclick="toggleBedroom(3)">3</div>
+          <div class="person-pill" id="bd-4" onclick="toggleBedroom(4)">4</div>
+          <div class="person-pill" id="bd-5" onclick="toggleBedroom(5)">5+</div>
+        </div>
+      </div>
+
+      <!-- Price -->
+      <div class="field-group">
+        <label>预算 <span id="price-unit-label" style="font-size:10px;color:var(--text3)">$/月（租房）</span></label>
+        <div style="display:flex;gap:10px;align-items:center;">
+          <input type="text" id="s-minprice" placeholder="最低" style="flex:1;">
+          <span style="color:var(--text3);font-size:13px;">—</span>
+          <input type="text" id="s-maxprice" placeholder="最高" style="flex:1;">
+        </div>
+      </div>
+
+      <button class="btn-generate btn-g" id="btn-search" onclick="doSearch()">
+        <span id="search-btn-text">🔍 搜索</span>
+        <div class="spinner" id="search-spinner"></div>
+      </button>
+      <div class="error-box" id="search-error"></div>
+    </div>
+
+    <!-- Results area -->
+    <div id="search-results-area" style="display:none;">
+
+      <!-- Stats bar -->
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;font-size:12px;color:var(--text2);">
+        <span id="search-stats">找到 0 套房源</span>
+        <a id="search-pg-link" href="#" target="_blank" style="font-size:11px;color:var(--accent-j);text-decoration:none;">在PG查看 →</a>
+      </div>
+
+      <!-- Results list -->
+      <div id="search-results-list"></div>
+
+      <!-- Pagination -->
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-top:16px;margin-bottom:16px;">
+        <button class="btn-copy-sm" id="pg-prev" onclick="changePage(-1)" style="padding:8px 14px;">← 上10套</button>
+        <span id="pg-info" style="font-size:12px;color:var(--text2);"></span>
+        <button class="btn-copy-sm" id="pg-next" onclick="changePage(1)" style="padding:8px 14px;">下10套 →</button>
+      </div>
+
+      <!-- Action buttons -->
+      <div style="display:flex;gap:10px;">
+        <button class="btn-generate btn-g" style="flex:1;padding:13px;" onclick="copyToExcel()">
+          📋 复制Excel格式
+        </button>
+        <button class="btn-generate btn-j" style="flex:1;padding:13px;" onclick="sendToListing()">
+          ✉️ 生成发客户消息
+        </button>
+      </div>
+
+    </div>
   </div>
 </div>
 
@@ -427,7 +524,7 @@ let selectedLang = '';
 let history = JSON.parse(localStorage.getItem('hhg_history') || '[]');
 
 function switchTab(tab) {
-  const ids = ['daily', 'listing', 'repair', 'history'];
+  const ids = ['search', 'daily', 'listing', 'repair', 'history'];
   document.querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('active', ids[i] === tab));
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.getElementById('page-' + tab).classList.add('active');
@@ -594,7 +691,233 @@ function generateRepair() {
   runGenerate('repair', system, user, { unit, type, vendor });
 }
 
-// ===== LISTING LOGIC =====
+// ===== SEARCH LOGIC =====
+let searchState = {
+  type: 'rent',
+  propTypes: [],   // [] = All
+  bedrooms: [],    // [] = Any
+  page: 1,
+  total: 0,
+  totalPages: 0,
+  results: [],
+  lastSearchUrl: '',
+};
+
+function setSearchType(type) {
+  searchState.type = type;
+  document.getElementById('stype-rent').classList.toggle('active', type === 'rent');
+  document.getElementById('stype-sale').classList.toggle('active', type === 'sale');
+  document.getElementById('price-unit-label').textContent = type === 'rent' ? '$/月（租房）' : '$（买房）';
+}
+
+function togglePropType(t) {
+  if (t === 'ALL') {
+    searchState.propTypes = [];
+    ['all','condo','landed','hdb'].forEach(id => {
+      const el = document.getElementById('pt-' + id);
+      el.className = 'person-pill' + (id === 'all' ? ' active-g' : '');
+    });
+    return;
+  }
+  const idx = searchState.propTypes.indexOf(t);
+  if (idx >= 0) searchState.propTypes.splice(idx, 1);
+  else searchState.propTypes.push(t);
+  // Update UI
+  document.getElementById('pt-all').className = 'person-pill' + (searchState.propTypes.length === 0 ? ' active-g' : '');
+  ['CONDO','LANDED','HDB'].forEach(pt => {
+    const el = document.getElementById('pt-' + pt.toLowerCase().replace('landed','landed'));
+    if (el) el.className = 'person-pill' + (searchState.propTypes.includes(pt) ? ' active-g' : '');
+  });
+}
+
+function toggleBedroom(n) {
+  const idx = searchState.bedrooms.indexOf(n);
+  if (idx >= 0) searchState.bedrooms.splice(idx, 1);
+  else searchState.bedrooms.push(n);
+  [0,1,2,3,4,5].forEach(i => {
+    const el = document.getElementById('bd-' + i);
+    if (el) el.className = 'person-pill' + (searchState.bedrooms.includes(i) ? ' active-g' : '');
+  });
+}
+
+async function doSearch(pageNum) {
+  const freetext = document.getElementById('s-freetext').value.trim();
+  const minPrice = document.getElementById('s-minprice').value.trim();
+  const maxPrice = document.getElementById('s-maxprice').value.trim();
+  const errorEl = document.getElementById('search-error');
+  const btnEl = document.getElementById('btn-search');
+  const btnText = document.getElementById('search-btn-text');
+  const spinner = document.getElementById('search-spinner');
+
+  errorEl.classList.remove('show');
+  btnEl.disabled = true;
+  btnText.textContent = '搜索中...';
+  spinner.classList.add('show');
+
+  searchState.page = pageNum || 1;
+
+  try {
+    const res = await fetch('/.netlify/functions/pg-search', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        listingType: searchState.type,
+        freetext,
+        bedrooms: searchState.bedrooms,
+        propertyTypes: searchState.propTypes,
+        minPrice: minPrice ? parseInt(minPrice) : undefined,
+        maxPrice: maxPrice ? parseInt(maxPrice) : undefined,
+        page: searchState.page,
+      })
+    });
+    const data = await res.json();
+
+    if (!data.success) {
+      errorEl.textContent = data.blocked
+        ? '⚠️ PropertyGuru暂时无法访问，请稍后重试'
+        : (data.error || '搜索失败，请重试');
+      errorEl.classList.add('show');
+      return;
+    }
+
+    searchState.total = data.total;
+    searchState.totalPages = data.totalPages;
+    searchState.results = data.listings || [];
+    searchState.lastSearchUrl = data.searchUrl || '';
+
+    renderSearchResults();
+    document.getElementById('search-results-area').style.display = 'block';
+    document.getElementById('search-results-area').scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  } catch (err) {
+    errorEl.textContent = '网络错误，请重试';
+    errorEl.classList.add('show');
+  } finally {
+    btnEl.disabled = false;
+    btnText.textContent = '🔍 重新搜索';
+    spinner.classList.remove('show');
+  }
+}
+
+function renderSearchResults() {
+  const { results, total, page, totalPages } = searchState;
+  const start = (page - 1) * 10 + 1;
+  const end = Math.min(page * 10, total);
+
+  // Stats
+  document.getElementById('search-stats').textContent =
+    total > 0 ? `找到 ${total.toLocaleString()} 套房源 · 按最新排序 · 第${start}-${end}套` : '暂无结果';
+  document.getElementById('search-pg-link').href = searchState.lastSearchUrl;
+
+  // Pagination
+  document.getElementById('pg-info').textContent = `${start}-${end} / ${total.toLocaleString()}套`;
+  document.getElementById('pg-prev').disabled = page <= 1;
+  document.getElementById('pg-next').disabled = page >= totalPages;
+
+  // Results list
+  const listEl = document.getElementById('search-results-list');
+  if (results.length === 0) {
+    listEl.innerHTML = '<div class="history-empty">没有找到符合条件的房源</div>';
+    return;
+  }
+
+  listEl.innerHTML = results.map((r, i) => {
+    const agentBlocked = r.agent?.blocked;
+    const clientLine = [
+      r.address || '—',
+      (r.beds != null && r.baths != null) ? `${r.beds}房${r.baths}卫` : '',
+      r.priceDisplay || '',
+      r.areaDisplay || '',
+      r.furnishing || '',
+      r.availability || '',
+    ].filter(Boolean).join('  ');
+
+    return `
+    <div class="listing-row" style="margin-bottom:10px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+        <span style="font-size:11px;font-weight:700;color:var(--text3);">房源 ${start + i}</span>
+        <span style="font-size:10px;color:var(--text3);">${r.listedDate ? '上架 ' + r.listedDate : ''}</span>
+      </div>
+      <a href="${r.link}" target="_blank" style="font-size:12px;color:var(--accent-j);word-break:break-all;display:block;margin-bottom:6px;">🔗 ${r.link}</a>
+      <div style="font-size:13px;font-weight:500;color:var(--text);margin-bottom:4px;">${clientLine || '—'}</div>
+      ${r.mrt ? `<div style="font-size:12px;color:var(--text2);">🚇 ${r.mrt}</div>` : ''}
+      ${r.floor || r.tenure ? `<div style="font-size:11px;color:var(--text3);margin-top:2px;">${[r.floor, r.tenure, r.leaseTerm].filter(Boolean).join(' · ')}</div>` : ''}
+      <div style="border-top:1px dashed var(--border);margin:8px 0 6px;"></div>
+      <div style="font-size:11px;color:var(--text2);">
+        ${agentBlocked ? '<span style="color:var(--accent-y)">⚠️ 中介信息需点链接查看</span>' : `
+        👤 <strong>${r.agent?.name || '—'}</strong>
+        ${r.agent?.phone ? `&nbsp;📞 ${r.agent.phone}` : ''}
+        ${r.agent?.agency ? `&nbsp;·&nbsp;${r.agent.agency}` : ''}
+        ${r.agent?.cea ? `&nbsp;·&nbsp;CEA: ${r.agent.cea}` : ''}
+        `}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function changePage(dir) {
+  const newPage = searchState.page + dir;
+  if (newPage < 1 || newPage > searchState.totalPages) return;
+  doSearch(newPage);
+}
+
+function copyToExcel() {
+  const { results, page } = searchState;
+  if (results.length === 0) { alert('没有搜索结果'); return; }
+
+  const headers = ['链接','地址','价格','卧室','浴室','面积(sqft)','家具','入住日期','MRT','上架日期','中介姓名','中介电话','公司','CEA'];
+  const rows = results.map(r => [
+    r.link || '',
+    r.address || '',
+    r.priceRaw || '',
+    r.beds != null ? r.beds : '',
+    r.baths != null ? r.baths : '',
+    r.areaSqft || '',
+    r.furnishing || '',
+    r.availability || '',
+    r.mrt || '',
+    r.listedDate || '',
+    r.agent?.name || '',
+    r.agent?.phone || '',
+    r.agent?.agency || '',
+    r.agent?.cea || '',
+  ].join('\t'));
+
+  const text = [headers.join('\t'), ...rows].join('\n');
+  navigator.clipboard.writeText(text).then(() => {
+    alert(`已复制 ${results.length} 套房源数据到剪贴板，直接粘贴到Excel即可`);
+  });
+}
+
+function sendToListing() {
+  const { results } = searchState;
+  if (results.length === 0) { alert('没有搜索结果'); return; }
+
+  // Switch to listing tab and pre-fill with results
+  switchTab('listing');
+  // Clear existing rows
+  listingRows = [];
+  listingIdCounter = 0;
+  // Add each result as a listing row
+  results.forEach(r => {
+    listingIdCounter++;
+    const raw = [
+      r.address,
+      r.beds != null && r.baths != null ? `${r.beds} Beds ${r.baths} Baths` : '',
+      r.priceDisplay,
+      r.areaDisplay,
+      r.furnishing,
+      r.availability,
+    ].filter(Boolean).join('  ');
+    listingRows.push({ id: listingIdCounter, link: r.link || '', fallback: raw, time: '', status: 'ok', fetched: null });
+  });
+  renderListingRows();
+  alert(`已将 ${results.length} 套房源导入到"房源"标签页，可在那里生成发客户消息`);
+}
+
+// ===== END SEARCH LOGIC =====
+
+
 let listingRows = [];
 let listingMode = 'list';
 let listingIdCounter = 0;
