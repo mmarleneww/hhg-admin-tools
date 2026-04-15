@@ -358,8 +358,8 @@
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5px;background:var(--border);">
         <div style="background:var(--surface);padding:14px 13px;cursor:pointer;" onclick="switchTab('search');setTimeout(()=>setFindStep(1),100)">
           <div style="font-size:18px;margin-bottom:4px;">🔍</div>
-          <div style="font-size:13px;font-weight:600;">① 搜索房源</div>
-          <div style="font-size:10px;color:var(--text3);margin-top:2px;line-height:1.4;">按条件批量搜，勾选shortlist</div>
+          <div style="font-size:13px;font-weight:600;">① 找房</div>
+          <div style="font-size:10px;color:var(--text3);margin-top:2px;line-height:1.4;">按条件搜房，勾选满意的</div>
         </div>
         <div style="background:var(--surface);padding:14px 13px;cursor:pointer;" onclick="switchTab('search');setTimeout(()=>document.getElementById('single-url-input')?.scrollIntoView({behavior:'smooth'}),300)">
           <div style="font-size:18px;margin-bottom:4px;">🔗</div>
@@ -428,10 +428,14 @@
   <div class="page-inner">
 
     <!-- 3-step workflow tabs -->
-    <div style="display:flex;gap:0;background:var(--surface2);border-radius:10px;padding:3px;margin-bottom:16px;">
-      <button id="step-btn-1" class="mode-btn active" onclick="setFindStep(1)" style="flex:1;border-radius:8px;font-size:12px;">① 搜房</button>
-      <button id="step-btn-2" class="mode-btn" onclick="setFindStep(2)" style="flex:1;border-radius:8px;font-size:12px;">② 整理房源</button>
-      <button id="step-btn-3" class="mode-btn" onclick="setFindStep(3)" style="flex:1;border-radius:8px;font-size:12px;">③ 约看房</button>
+    <div style="display:flex;gap:0;background:var(--surface2);border-radius:10px;padding:3px;margin-bottom:8px;">
+      <button id="step-btn-1" class="mode-btn active" onclick="setFindStep(1)" style="flex:1;border-radius:8px;font-size:12px;">找房</button>
+      <button id="step-btn-2" class="mode-btn" onclick="setFindStep(2)" style="flex:1;border-radius:8px;font-size:12px;">发房源</button>
+      <button id="step-btn-3" class="mode-btn" onclick="setFindStep(3)" style="flex:1;border-radius:8px;font-size:12px;">约看房</button>
+    </div>
+    <!-- Reset button -->
+    <div style="display:flex;justify-content:flex-end;margin-bottom:12px;">
+      <button onclick="resetFindTab()" style="font-size:11px;color:var(--text3);background:none;border:1px solid var(--border);border-radius:20px;padding:4px 12px;cursor:pointer;">🗑 清除数据</button>
     </div>
 
     <!-- STEP 1: 搜房 -->
@@ -553,7 +557,7 @@
         <span id="shortlist-count" style="font-size:13px;font-weight:600;color:var(--accent-j);"></span>
         <div style="display:flex;gap:8px;">
           <button onclick="clearShortlist()" style="font-size:12px;color:var(--text3);background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:6px 12px;cursor:pointer;">清空</button>
-          <button onclick="sendShortlistToListing()" style="font-size:12px;font-weight:600;color:#fff;background:var(--accent-j);border:none;border-radius:8px;padding:6px 14px;cursor:pointer;">✉️ 发给客户 →</button>
+          <button onclick="sendShortlistToListing()" style="font-size:12px;font-weight:600;color:#fff;background:var(--accent-j);border:none;border-radius:8px;padding:6px 14px;cursor:pointer;">② 整理发送 →</button>
         </div>
       </div>
 
@@ -572,11 +576,7 @@
 
     <!-- STEP 2+3: 整理房源 & 约看 (listing logic) -->
     <div id="find-step-2" style="display:none;">
-      <!-- Mode toggle inside step 2/3 -->
-      <div style="display:flex;gap:0;background:var(--surface2);border-radius:10px;padding:3px;margin-bottom:14px;">
-        <button class="mode-btn active" id="mode-list-btn" onclick="setListingMode('list')" style="flex:1;border-radius:8px;font-size:12px;">📋 房源列表</button>
-        <button class="mode-btn" id="mode-view-btn" onclick="setListingMode('viewing')" style="flex:1;border-radius:8px;font-size:12px;">📅 看房安排</button>
-      </div>
+      <!-- Step 2 = list mode, Step 3 = viewing mode (no inner toggle needed) -->
 
       <!-- Client info -->
       <div class="card" style="margin-bottom:12px;">
@@ -584,20 +584,38 @@
           <label>客户称呼</label>
           <input type="text" id="listing-client" placeholder="如：老板、张总、Simon">
         </div>
-        <div class="field-group" style="margin-bottom:6px;">
-          <label>开头语 <span style="font-size:10px;color:var(--text3)">选一个或自定义</span></label>
-          <div style="display:flex;flex-direction:column;gap:6px;" id="intro-presets">
-            <div class="intro-preset" onclick="selectIntro(0)" style="padding:8px 12px;border-radius:8px;border:1.5px solid var(--border);font-size:12px;color:var(--text2);cursor:pointer;background:var(--surface);">这是我们为您精心挑选的几套房源，都符合您的要求，价格也在预算范围内 😊</div>
-            <div class="intro-preset" onclick="selectIntro(1)" style="padding:8px 12px;border-radius:8px;border:1.5px solid var(--border);font-size:12px;color:var(--text2);cursor:pointer;background:var(--surface);">根据您的需求，我们找到以下几套合适的房源，供您参考～</div>
-            <div class="intro-preset" onclick="selectIntro(2)" style="padding:8px 12px;border-radius:8px;border:1.5px solid var(--border);font-size:12px;color:var(--text2);cursor:pointer;background:var(--surface);">老板好！以下是最新筛选的房源，性价比不错，欢迎查看 🏠</div>
-          </div>
-          <input type="text" id="listing-intro" placeholder="或自定义开头语（留空则直接展示房源）" style="margin-top:8px;">
+        <div class="field-group" style="margin-bottom:0;">
+          <label>开头语</label>
+          <select id="listing-intro-select" onchange="onIntroSelect(this.value)" style="width:100%;margin-bottom:6px;">
+            <option value="">— 不加开头语 —</option>
+            <option value="这是我们为您精选的几套房源，都比较符合您的要求，价格也在预算范围内 😊">这是我们为您精选的几套房源，都比较符合您的要求，价格也在预算范围内 😊</option>
+            <option value="根据您的需求，我们整理了以下几套较合适的房源，供您参考～">根据您的需求，我们整理了以下几套较合适的房源，供您参考～</option>
+            <option value="先发几套您看看，有喜欢的我们再重点约看 🏠">先发几套您看看，有喜欢的我们再重点约看 🏠</option>
+            <option value="这几套是目前市场上相对更适合您的选择，整体条件比较均衡。">这几套是目前市场上相对更适合您的选择，整体条件比较均衡。</option>
+            <option value="这几套是最近新出的房源，状态都比较新，您可以先看看～">这几套是最近新出的房源，状态都比较新，您可以先看看～</option>
+            <option value="这几套性价比都不错，在目前预算范围内算比较有竞争力。">这几套性价比都不错，在目前预算范围内算比较有竞争力。</option>
+            <option value="这几套条件都不错，如果有喜欢的建议尽快安排看房，因为近期流动比较快。">这几套条件都不错，如果有喜欢的建议尽快安排看房，因为近期流动比较快。</option>
+            <option value="__custom__">✏️ 自定义...</option>
+          </select>
+          <input type="text" id="listing-intro" placeholder="自定义开头语..." style="display:none;">
+        </div>
+      </div>
+
+      <!-- Batch paste links -->
+      <div style="margin-bottom:10px;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+          <label style="font-size:12px;font-weight:500;color:var(--text2);margin:0;">批量粘贴链接</label>
+          <span style="font-size:10px;color:var(--text3);">每行一个，或空格/逗号分隔</span>
+        </div>
+        <div style="display:flex;gap:8px;align-items:flex-start;">
+          <textarea id="batch-links-input" rows="3" placeholder="从Excel/微信复制多个PG链接粘贴到这里&#10;https://www.propertyguru.com.sg/listing/...&#10;https://www.propertyguru.com.sg/listing/..." style="flex:1;font-size:12px;"></textarea>
+          <button onclick="addBatchLinks()" style="white-space:nowrap;padding:10px 14px;background:var(--accent-j);color:#fff;border:none;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;flex-shrink:0;">+ 批量加入</button>
         </div>
       </div>
 
       <!-- Listings container -->
       <div id="listings-container"></div>
-      <button class="btn-add-listing" onclick="addListingRow()">＋ 添加房源</button>
+      <button class="btn-add-listing" onclick="addListingRow()">＋ 单个添加</button>
 
       <!-- Viewing extra -->
       <div id="viewing-extra" style="display:none;">
@@ -776,22 +794,95 @@ if (sessionStorage.getItem('hhg_auth') === '1') {
 }
 // ===== END PASSWORD =====
 
-// ===== INTRO PRESETS =====
-const INTRO_PRESETS = [
-  '这是我们为您精心挑选的几套房源，都符合您的要求，价格也在预算范围内 😊',
-  '根据您的需求，我们找到以下几套合适的房源，供您参考～',
-  '老板好！以下是最新筛选的房源，性价比不错，欢迎查看 🏠',
-];
-let selectedIntroIdx = -1;
+// ===== INTRO & RESET =====
+function onIntroSelect(val) {
+  const customInput = document.getElementById('listing-intro');
+  if (val === '__custom__') {
+    customInput.style.display = '';
+    customInput.value = '';
+    customInput.focus();
+  } else {
+    customInput.style.display = 'none';
+    customInput.value = val;
+  }
+}
 
-function selectIntro(idx) {
-  selectedIntroIdx = idx;
-  document.getElementById('listing-intro').value = INTRO_PRESETS[idx];
-  document.querySelectorAll('.intro-preset').forEach((el, i) => {
-    el.style.borderColor = i === idx ? 'var(--accent-j)' : 'var(--border)';
-    el.style.background = i === idx ? 'var(--accent-j-light)' : 'var(--surface)';
-    el.style.color = i === idx ? 'var(--accent-j)' : 'var(--text2)';
+function resetFindTab() {
+  // Clear search
+  const freetext = document.getElementById('s-freetext');
+  if (freetext) freetext.value = '';
+  const minp = document.getElementById('s-minprice');
+  if (minp) minp.value = '';
+  const maxp = document.getElementById('s-maxprice');
+  if (maxp) maxp.value = '';
+  searchState.results = [];
+  searchState.total = 0;
+  searchState.totalPages = 0;
+  searchState.page = 1;
+  searchState.mrtSearch = false;
+  shortlistMap.clear();
+  shortlistIds.clear();
+  const resultsArea = document.getElementById('search-results-area');
+  if (resultsArea) resultsArea.style.display = 'none';
+  // Reset property type pills
+  togglePropType('ALL');
+  searchState.bedrooms = [];
+  [0,1,2,3,4,5].forEach(i => {
+    const el = document.getElementById('bd-' + i);
+    if (el) el.className = 'person-pill';
   });
+  // Clear listing rows
+  listingRows = [];
+  listingIdCounter = 0;
+  const lc = document.getElementById('listings-container');
+  if (lc) lc.innerHTML = '';
+  // Clear batch input
+  const bi = document.getElementById('batch-links-input');
+  if (bi) bi.value = '';
+  // Clear intro
+  const sel = document.getElementById('listing-intro-select');
+  if (sel) sel.value = '';
+  const intro = document.getElementById('listing-intro');
+  if (intro) { intro.value = ''; intro.style.display = 'none'; }
+  // Clear result
+  const result = document.getElementById('listing-result');
+  if (result) result.classList.remove('show');
+  // Reset to step 1
+  setFindStep(1);
+  alert('已清除全部数据 ✓');
+}
+
+// ===== BATCH LINKS =====
+function addBatchLinks() {
+  const raw = document.getElementById('batch-links-input')?.value?.trim();
+  if (!raw) { alert('请先粘贴链接'); return; }
+  
+  // Split by newlines, commas, spaces — extract PG links
+  const tokens = raw.split(/[\n\r\t ,]+/);
+  const links = tokens.filter(t => t.includes('propertyguru.com.sg/listing/') || t.includes('propertyguru.com.sg'));
+  
+  if (links.length === 0) {
+    alert('没有找到有效的PropertyGuru链接，请检查格式');
+    return;
+  }
+  
+  links.forEach(link => {
+    // avoid duplicates
+    if (!listingRows.find(r => r.link === link)) {
+      addListingRow({ link, status: 'idle', fetched: null });
+    }
+  });
+  
+  renderListingRows();
+  document.getElementById('batch-links-input').value = '';
+  
+  // Auto-fetch all added rows
+  const toFetch = listingRows.filter(r => r.status === 'idle' && r.link.includes('propertyguru'));
+  if (toFetch.length > 0) {
+    toFetch.forEach(r => fetchListing(r.id));
+  }
+  
+  alert(`已加入 ${links.length} 条链接，正在自动读取信息...`);
 }
 
 let selectedPerson = '';
@@ -812,29 +903,36 @@ function switchTab(tab) {
 let currentFindStep = 1;
 function setFindStep(step) {
   currentFindStep = step;
-  [1, 2].forEach(s => {
-    const el = document.getElementById('find-step-' + s);
-    if (el) el.style.display = s === step ? '' : 'none';
+  // step 1 shows find-step-1, steps 2+3 show find-step-2
+  const s1 = document.getElementById('find-step-1');
+  const s2 = document.getElementById('find-step-2');
+  if (s1) s1.style.display = step === 1 ? '' : 'none';
+  if (s2) s2.style.display = step >= 2 ? '' : 'none';
+  // Button active states
+  [1, 2, 3].forEach(s => {
     const btn = document.getElementById('step-btn-' + s);
     if (btn) btn.classList.toggle('active', s === step);
   });
-  // step 3 = viewing mode in step 2
-  if (step === 3) {
-    const el = document.getElementById('find-step-2');
-    if (el) el.style.display = '';
-    document.getElementById('step-btn-2').classList.remove('active');
-    document.getElementById('step-btn-3').classList.add('active');
-    setListingMode('viewing');
+  // Set list mode for step 2, viewing mode for step 3
+  if (step === 2) {
+    listingMode = 'list';
+    document.getElementById('listing-btn-text').textContent = '生成房源列表';
+    document.getElementById('viewing-extra').style.display = 'none';
     if (listingRows.length === 0) addListingRow();
-  } else if (step === 2) {
-    setListingMode('list');
+  } else if (step === 3) {
+    listingMode = 'viewing';
+    document.getElementById('listing-btn-text').textContent = '生成看房安排';
+    document.getElementById('viewing-extra').style.display = 'block';
     if (listingRows.length === 0) addListingRow();
   }
 }
 
 function switchToStep2() {
   switchTab('search');
-  setTimeout(() => setFindStep(2), 100);
+  setTimeout(() => {
+    setFindStep(2);
+    if (listingRows.length === 0) addListingRow();
+  }, 100);
 }
 
 // Set home date
@@ -1487,10 +1585,10 @@ let listingIdCounter = 0;
 
 function setListingMode(mode) {
   listingMode = mode;
-  document.getElementById('mode-list-btn').classList.toggle('active', mode === 'list');
-  document.getElementById('mode-view-btn').classList.toggle('active', mode === 'viewing');
-  document.getElementById('viewing-extra').style.display = mode === 'viewing' ? 'block' : 'none';
-  document.getElementById('listing-btn-text').textContent = mode === 'list' ? '生成房源列表' : '生成看房安排';
+  const viewExtra = document.getElementById('viewing-extra');
+  if (viewExtra) viewExtra.style.display = mode === 'viewing' ? 'block' : 'none';
+  const btnText = document.getElementById('listing-btn-text');
+  if (btnText) btnText.textContent = mode === 'list' ? '生成房源列表' : '生成看房安排';
   renderListingRows();
 }
 
@@ -1644,15 +1742,17 @@ async function generateListing() {
   let systemPrompt, userPrompt;
 
   if (listingMode === 'list') {
-    const intro = document.getElementById('listing-intro').value.trim();
+    const introSel = document.getElementById('listing-intro-select')?.value || '';
+    const introCustom = document.getElementById('listing-intro')?.value?.trim() || '';
+    const intro = introSel === '__custom__' ? introCustom : (introSel || introCustom);
     systemPrompt = `你是新加坡房地产中介"好好过 Haohaoguo Realty"的AI助手。
 任务：根据房源信息，整理成发给客户的微信消息，格式如下：
 
 ${intro ? '[开头语]\n\n' : ''}【1】🏠 [小区名]
 💰 $[月租] | [X]房[X]卫 | [面积]sq.ft
 🛋 [家具情况] | [入住日期]
-[💡 亮点（如有）]
-🔗 [链接]
+[💡 亮点（如有，以💡开头，否则省略此行）]
+🔗 [PropertyGuru链接，原样粘贴，不要修改]
 
 【2】🏠 [小区名]
 ...（以此类推）
@@ -1663,6 +1763,7 @@ ${intro ? '[开头语]\n\n' : ''}【1】🏠 [小区名]
 - 面积加sq.ft，家具：Fully Furnished→家具齐全，Partial Furnished→配备部分家具，Unfurnished→无家具
 - 入住日期：Ready to Move→马上入住，否则保留英文日期
 - 亮点行：如果有亮点内容则加💡开头，没有则省略这行
+- 🔗 后面必须是完整的PropertyGuru URL（https://...），直接原样输出，不要替换成"链接"文字
 - 开头语：如果有开头语则放在第一套房源前面
 - 最后加一行：如有疑问欢迎随时告知 😊
 - 直接输出消息，不要加任何前缀`;
@@ -1688,8 +1789,8 @@ ${listingsText}`;
 【1】🏠 [小区名]
 💰 $[月租] | [X]房[X]卫 | [面积]sq.ft
 🛋 [家具情况] | [入住日期]
-[💡 亮点（如有）]
-🔗 [链接]
+[💡 亮点（如有，以💡开头，否则省略此行）]
+🔗 [PropertyGuru链接，原样粘贴，不要修改]
 【已确定[时间]】（已确认的才加，等待确认的省略）
 
 规则：
