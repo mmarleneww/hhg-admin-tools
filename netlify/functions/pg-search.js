@@ -9,6 +9,74 @@ const HEADERS = {
 let cachedBuildId = null;
 let cacheTime = 0;
 
+// ─── MRT Station Code Lookup ─────────────────────────────────────────────────
+const MRT_LOOKUP = {
+  // EWL
+  "pasir ris":["EW1"],"tampines":["EW2","DT32"],"simei":["EW3"],"tanah merah":["EW4"],
+  "bedok":["EW5"],"kembangan":["EW6"],"eunos":["EW7"],"paya lebar":["EW8","CC9"],
+  "aljunied":["EW9"],"kallang":["EW10"],"lavender":["EW11"],"bugis":["EW12","DT14"],
+  "city hall":["EW13","NS25"],"raffles place":["EW14","NS26"],"tanjong pagar":["EW15"],
+  "outram park":["EW16","NE3","TE17"],"tiong bahru":["EW17"],"redhill":["EW18"],
+  "queenstown":["EW19"],"commonwealth":["EW20"],"buona vista":["EW21","CC22"],
+  "dover":["EW22"],"clementi":["EW23"],"jurong east":["EW24","NS1"],
+  "chinese garden":["EW25"],"lakeside":["EW26"],"boon lay":["EW27"],
+  "pioneer":["EW28"],"joo koon":["EW29"],"gul circle":["EW30"],
+  "tuas crescent":["EW31"],"tuas west road":["EW32"],"tuas link":["EW33"],
+  "expo":["EW34","CG1"],"changi airport":["CG2"],
+  // NSL
+  "bukit batok":["NS2"],"bukit gombak":["NS3"],"choa chu kang":["NS4"],
+  "yew tee":["NS5"],"kranji":["NS7"],"marsiling":["NS8"],
+  "woodlands":["NS9","TE2"],"admiralty":["NS10"],"sembawang":["NS11"],
+  "canberra":["NS12"],"yishun":["NS13"],"khatib":["NS14"],"yio chu kang":["NS15"],
+  "ang mo kio":["NS16"],"bishan":["NS17","CC15"],"braddell":["NS18"],
+  "toa payoh":["NS19"],"novena":["NS20"],"newton":["NS21","DT11"],
+  "orchard":["NS22","TE14"],"somerset":["NS23"],"dhoby ghaut":["NS24","NE6","CC1"],
+  "city hall":["NS25","EW13"],"raffles place":["NS26","EW14"],
+  "marina bay":["NS27","CE2","TE20"],"marina south pier":["NS28"],
+  // NEL
+  "harbourfront":["NE1","CC29"],"outram park":["NE3","EW16","TE17"],
+  "chinatown":["NE4","DT19"],"clarke quay":["NE5"],"dhoby ghaut":["NE6","NS24","CC1"],
+  "little india":["NE7","DT12"],"farrer park":["NE8"],"boon keng":["NE9"],
+  "potong pasir":["NE10"],"woodleigh":["NE11"],"serangoon":["NE12","CC13"],
+  "kovan":["NE13"],"hougang":["NE14"],"buangkok":["NE15"],
+  "sengkang":["NE16"],"punggol":["NE17"],
+  // CCL
+  "bayfront":["CE1","DT16"],"promenade":["CC4","DT15"],"nicoll highway":["CC5"],
+  "stadium":["CC6"],"mountbatten":["CC7"],"dakota":["CC8"],
+  "macpherson":["CC10","DT26"],"tai seng":["CC11"],"bartley":["CC12"],
+  "lorong chuan":["CC14"],"marymount":["CC16"],"caldecott":["CC17","TE9"],
+  "botanic gardens":["CC19","DT9"],"farrer road":["CC20"],
+  "holland village":["CC21"],"one-north":["CC23"],"kent ridge":["CC24"],
+  "haw par villa":["CC25"],"pasir panjang":["CC26"],"labrador park":["CC27"],
+  "telok blangah":["CC28"],
+  // DTL
+  "bukit panjang":["DT1"],"cashew":["DT2"],"hillview":["DT3"],
+  "beauty world":["DT5"],"king albert park":["DT6"],"sixth avenue":["DT7"],
+  "tan kah kee":["DT8"],"stevens":["DT10","TE11"],
+  "rochor":["DT13"],"bayfront":["DT16","CE1"],"downtown":["DT17"],
+  "telok ayer":["DT18"],"fort canning":["DT20"],"bencoolen":["DT21"],
+  "jalan besar":["DT22"],"bendemeer":["DT23"],"geylang bahru":["DT24"],
+  "mattar":["DT25"],"ubi":["DT27"],"kaki bukit":["DT28"],
+  "bedok north":["DT29"],"bedok reservoir":["DT30"],"tampines west":["DT31"],
+  "tampines east":["DT33"],"upper changi":["DT34"],
+  // TEL
+  "woodlands north":["TE1"],"woodlands south":["TE3"],"springleaf":["TE4"],
+  "lentor":["TE5"],"mayflower":["TE6"],"bright hill":["TE7"],"upper thomson":["TE8"],
+  "mount pleasant":["TE10"],"napier":["TE12"],"orchard boulevard":["TE13"],
+  "great world":["TE15"],"havelock":["TE16"],"maxwell":["TE18"],
+  "shenton way":["TE19"],"marina south":["TE21"],
+};
+
+function detectMrtSearch(text) {
+  const lower = text.toLowerCase().trim();
+  const cleaned = lower.replace(/\s*(mrt|lrt|station)\s*$/i, "").trim();
+  if (MRT_LOOKUP[cleaned]) return MRT_LOOKUP[cleaned];
+  for (const [name, codes] of Object.entries(MRT_LOOKUP)) {
+    if (name === cleaned || name.includes(cleaned) || cleaned.includes(name)) return codes;
+  }
+  return null;
+}
+
 async function scraperFetch(url, wantJson = false) {
   const key = process.env.SCRAPER_API_KEY;
   if (!key) throw new Error("SCRAPER_API_KEY not configured");
@@ -39,20 +107,16 @@ exports.handler = async function (event) {
 
   const { listingType="rent", freetext="", bedrooms=[], propertyTypes=[], minPrice, maxPrice, page=1, _extractUrl } = body;
 
-  // Single URL extraction mode
+  // ── Single URL extraction mode ────────────────────────────────────────────
   if (_extractUrl) {
     try {
       const resp = await scraperFetch(_extractUrl);
       if (!resp.ok) return json({ success: false, error: `Listing page returned ${resp.status}` });
       const html = await resp.text();
-
-      // Extract from page title
       const titleMatch = html.match(/<title>([^<]+)<\/title>/i);
       const title = titleMatch?.[1] || '';
       const agentFromTitle = title.match(/by ([^,]+),\s*\d+/i)?.[1]?.trim() || '';
       const addressFromTitle = title.split(',')[0]?.trim() || '';
-
-      // Extract fields
       const phoneMatch = html.match(/"\+65(\d{8})"/);
       const phone = phoneMatch ? '+65' + phoneMatch[1] : '';
       const ceaMatch = html.match(/R\d{7}[A-Z]/);
@@ -70,25 +134,20 @@ exports.handler = async function (event) {
       const mrtMatch = html.match(/(\d+)\s*m\s*\((\d+)\s*mins?\)\s*from\s*([^\n<]{5,50}(?:MRT|LRT))/i);
       const tenureMatch = html.match(/(Freehold|Leasehold\s*\d*)/i);
       const leaseMatch = html.match(/(\d+)\s+years?\s+lease/i);
-      // Listed date
       const listedMatch = html.match(/Listed\s+on\s+(\d{1,2}\s+\w+\s+\d{4})/i);
       const listedDate = listedMatch?.[1] || '';
-
+      const projectMatch = html.match(/"project(?:Name)?"\s*:\s*"([^"]+)"/i);
+      const projectName = projectMatch?.[1] || '';
       const listing = {
-        link: _extractUrl,
-        address: addressFromTitle,
-        priceRaw,
-        priceDisplay: priceRaw ? `$${Number(priceRaw).toLocaleString()}` : '',
+        link: _extractUrl, projectName,
+        address: projectName || addressFromTitle, streetAddress: addressFromTitle,
+        priceRaw, priceDisplay: priceRaw ? `$${Number(priceRaw).toLocaleString()}` : '',
         beds: bedsMatch ? parseInt(bedsMatch[1]) : null,
         baths: bathsMatch ? parseInt(bathsMatch[1]) : null,
-        areaSqft,
-        areaDisplay: areaSqft ? `${areaSqft.toLocaleString()} sqft` : '',
-        furnishing: furnishMatch?.[1] || '',
-        availability: availMatch?.[1] || '',
+        areaSqft, areaDisplay: areaSqft ? `${areaSqft.toLocaleString()} sqft` : '',
+        furnishing: furnishMatch?.[1] || '', availability: availMatch?.[1] || '',
         mrt: mrtMatch ? `${mrtMatch[1]}m (${mrtMatch[2]}mins) from ${mrtMatch[3].trim()}` : '',
-        tenure: tenureMatch?.[1] || '',
-        leaseTerm: leaseMatch?.[0] || '',
-        listedDate,
+        tenure: tenureMatch?.[1] || '', leaseTerm: leaseMatch?.[0] || '', listedDate,
         agent: { name: agentFromTitle, phone, cea, agency, blocked: false },
       };
       return json({ success: true, listing });
@@ -97,8 +156,15 @@ exports.handler = async function (event) {
     }
   }
 
+  // ── Build search query parameters ────────────────────────────────────────
   const qp = new URLSearchParams();
-  if (freetext) qp.set("freetext", freetext);
+  const mrtCodes = freetext ? detectMrtSearch(freetext) : null;
+  if (mrtCodes) {
+    for (const code of mrtCodes) qp.append("mrtStations", code);
+    qp.set("_freetextDisplay", freetext);
+  } else if (freetext) {
+    qp.set("freetext", freetext);
+  }
   if (bedrooms.length > 0) qp.set("bedrooms", bedrooms.join(","));
   if (minPrice) qp.set("minPrice", String(minPrice));
   if (maxPrice) qp.set("maxPrice", String(maxPrice));
@@ -111,9 +177,9 @@ exports.handler = async function (event) {
   if (propertyTypes.length > 0) {
     qp.set("propertyTypeGroup", "N");
     for (const t of propertyTypes) {
-      if (t === "CONDO") { qp.append("propertyTypeCode", "CONDO"); qp.append("propertyTypeCode", "APT"); qp.append("propertyTypeCode", "EXCO"); }
-      else if (t === "LANDED") { qp.append("propertyTypeCode", "TERRA"); qp.append("propertyTypeCode", "DETAC"); qp.append("propertyTypeCode", "SEMI"); qp.append("propertyTypeCode", "BUNG"); qp.append("propertyTypeCode", "GCONDO"); }
-      else if (t === "HDB") { qp.append("propertyTypeCode", "HDB"); qp.set("propertyTypeGroup", "H"); }
+      if (t === "CONDO") { qp.append("propertyTypeCode","CONDO"); qp.append("propertyTypeCode","APT"); qp.append("propertyTypeCode","EXCO"); }
+      else if (t === "LANDED") { qp.append("propertyTypeCode","TERRA"); qp.append("propertyTypeCode","DETAC"); qp.append("propertyTypeCode","SEMI"); qp.append("propertyTypeCode","BUNG"); qp.append("propertyTypeCode","GCONDO"); }
+      else if (t === "HDB") { qp.append("propertyTypeCode","HDB"); qp.set("propertyTypeGroup","H"); }
     }
   }
 
@@ -121,49 +187,33 @@ exports.handler = async function (event) {
   const searchUrl = `${PG_BASE}/${pgPage}?${qp.toString()}`;
 
   try {
-    // Step 1: Get buildId via ScraperAPI
     let buildId = await getBuildId();
     if (!buildId) return json({ success: false, error: "Could not get PG buildId", blocked: true, searchUrl });
-
-    // Step 2: Fetch Next.js JSON API via ScraperAPI
     const jsonUrl = `${PG_BASE}/_next/data/${buildId}/${pgPage}.json?${qp.toString()}`;
     let resp = await scraperFetch(jsonUrl, true);
-
-    // If stale buildId, refresh once
     if (!resp.ok) {
       cachedBuildId = null;
       buildId = await getBuildId();
       if (buildId) resp = await scraperFetch(`${PG_BASE}/_next/data/${buildId}/${pgPage}.json?${qp.toString()}`, true);
       if (!resp || !resp.ok) return json({ success: false, error: `API ${resp?.status}`, blocked: true, searchUrl });
     }
-
     const raw = await resp.json();
     const pageData = raw?.pageProps?.pageData?.data;
     const listingsObj = pageData?.listingsData || {};
     const paginationData = pageData?.paginationData || {};
-
     const rawListings = Object.values(listingsObj).map(item => item.listingData).filter(Boolean);
     const total = paginationData.totalCount || paginationData.total || rawListings.length;
     const totalPages = paginationData.totalPages || Math.ceil(total / 10);
-
-    if (rawListings.length === 0) return json({ success: true, total: 0, page, totalPages: 0, listings: [], searchUrl });
-
-    // Client-side price filter as backup (PG sometimes returns results outside range)
+    if (rawListings.length === 0) return json({ success: true, total: 0, page, totalPages: 0, listings: [], searchUrl, mrtSearch: !!mrtCodes });
     const filtered = rawListings.filter(r => {
       const price = r.price?.value || 0;
       if (minPrice && price < Number(minPrice)) return false;
       if (maxPrice && price > Number(maxPrice)) return false;
       return true;
     });
-
     const listings = filtered.map(r => formatListing(r, listingType));
-
-    // Enrich phone from listing detail pages (parallel, best-effort)
     const enriched = await Promise.all(listings.map(l => enrichPhone(l)));
-    const filteredTotal = total; // keep original total for pagination
-
-    return json({ success: true, total: filteredTotal, page, totalPages, listings: enriched, searchUrl, blocked: false });
-
+    return json({ success: true, total, page, totalPages, listings: enriched, searchUrl, blocked: false, mrtSearch: !!mrtCodes });
   } catch (err) {
     return json({ success: false, error: err.message || "Server error", searchUrl });
   }
@@ -174,7 +224,6 @@ function json(obj) {
 }
 
 function formatListing(r, listingType) {
-  // Price: try multiple fields (PG uses different fields for rent vs sale)
   let priceRaw = r.price?.value || 0;
   if (!priceRaw && r.asking_price_cents) priceRaw = Math.round(r.asking_price_cents / 100);
   if (!priceRaw && r.asking_price) priceRaw = r.asking_price;
@@ -190,31 +239,39 @@ function formatListing(r, listingType) {
       if (f.text?.includes("sqft")) areaSqft = parseInt(f.text.replace(/[^\d]/g, "")) || null;
     });
   }
+  if (beds === null) beds = r.bedrooms ?? r.bedroom_lower ?? null;
+  if (baths === null) baths = r.bathrooms ?? null;
+  if (areaSqft === null && r.floor_size) areaSqft = parseInt(r.floor_size) || null;
 
-  const address = r.fullAddress?.split(",")[0]?.trim() || r.localizedTitle?.split(",")[0]?.trim() || r.name || "";
-  const mrt = r.mrt?.nearbyText || r.nearbyTransports?.[0]?.text || "";
-  const availability = r.availabilityInfo || r.availability || "";
-  // listedDate: try multiple paths
-  const listedDate = r.recency?.text?.replace(/^Listed on\s*/i, "")
-    || r.listedDate
-    || r.posted_at?.split("T")[0]
+  // Project name is the condo/development name — most important field
+  const projectName = r.project?.name || r.projectName || r.project_name || "";
+  const streetAddress = r.address || r.street || "";
+  const displayAddress = projectName
+    || r.fullAddress?.split(",")[0]?.trim()
+    || r.localizedTitle?.split(",")[0]?.trim()
+    || r.name
+    || streetAddress.split(",")[0]?.trim()
     || "";
 
+  const mrt = r.mrt?.nearbyText || r.nearbyTransports?.[0]?.text || "";
+  const availability = r.availabilityInfo || r.availability || "";
+  const listedDate = r.recency?.text?.replace(/^Listed on\s*/i, "")
+    || r.listedDate || r.posted_at?.split("T")[0] || "";
+
   return {
-    link: r.url || "",
-    address,
+    link: r.url ? (r.url.startsWith("http") ? r.url : PG_BASE + r.url) : "",
+    projectName, address: displayAddress, streetAddress,
     priceRaw, priceDisplay,
     beds, baths, areaSqft,
     areaDisplay: areaSqft ? `${areaSqft.toLocaleString()} sqft` : "",
     furnishing: "", availability, mrt, listedDate,
-    propertyType: r.typeText || "",
-    tenure: "", leaseTerm: "",
+    propertyType: r.typeText || r.property_type || "",
+    tenure: r.tenure || "", leaseTerm: "",
     agent: {
       name: r.agent?.name || "",
-      cea: r.agent?.license || "",
-      agency: r.agency?.name || "",
-      phone: "",
-      blocked: false,
+      cea: r.agent?.license || r.agent?.cea || "",
+      agency: r.agency?.name || r.agent?.agencyName || "",
+      phone: "", blocked: false,
     },
   };
 }
@@ -235,10 +292,18 @@ async function enrichPhone(listing) {
       const am = html.match(/([\d,]+)\s*sqft/i);
       if (am) { listing.areaSqft = parseInt(am[1].replace(/,/g,"")); listing.areaDisplay = `${listing.areaSqft.toLocaleString()} sqft`; }
     }
-    const lm = html.match(/(\d+)\s+years?\s+lease/i);
-    if (lm) listing.leaseTerm = lm[0];
-    const tm = html.match(/(Freehold|Leasehold\s*\d*)/i);
-    if (tm) listing.tenure = tm[1];
+    if (!listing.leaseTerm) {
+      const lm = html.match(/(\d+)\s+years?\s+lease/i);
+      if (lm) listing.leaseTerm = lm[0];
+    }
+    if (!listing.tenure) {
+      const tm = html.match(/(Freehold|Leasehold\s*\d*)/i);
+      if (tm) listing.tenure = tm[1];
+    }
+    if (!listing.projectName) {
+      const pm = html.match(/"project(?:Name)?"\s*:\s*"([^"]+)"/i);
+      if (pm) { listing.projectName = pm[1]; listing.address = pm[1]; }
+    }
   } catch {}
   return listing;
 }
