@@ -70,6 +70,9 @@ exports.handler = async function (event) {
       const mrtMatch = html.match(/(\d+)\s*m\s*\((\d+)\s*mins?\)\s*from\s*([^\n<]{5,50}(?:MRT|LRT))/i);
       const tenureMatch = html.match(/(Freehold|Leasehold\s*\d*)/i);
       const leaseMatch = html.match(/(\d+)\s+years?\s+lease/i);
+      // Listed date
+      const listedMatch = html.match(/Listed\s+on\s+(\d{1,2}\s+\w+\s+\d{4})/i);
+      const listedDate = listedMatch?.[1] || '';
 
       const listing = {
         link: _extractUrl,
@@ -85,6 +88,7 @@ exports.handler = async function (event) {
         mrt: mrtMatch ? `${mrtMatch[1]}m (${mrtMatch[2]}mins) from ${mrtMatch[3].trim()}` : '',
         tenure: tenureMatch?.[1] || '',
         leaseTerm: leaseMatch?.[0] || '',
+        listedDate,
         agent: { name: agentFromTitle, phone, cea, agency, blocked: false },
       };
       return json({ success: true, listing });
@@ -107,9 +111,9 @@ exports.handler = async function (event) {
   if (propertyTypes.length > 0) {
     qp.set("propertyTypeGroup", "N");
     for (const t of propertyTypes) {
-      if (t === "CONDO") { qp.append("propertyTypeCode", "CONDO"); qp.append("propertyTypeCode", "APT"); }
-      else if (t === "LANDED") { qp.append("propertyTypeCode", "TERRA"); qp.append("propertyTypeCode", "DETAC"); qp.append("propertyTypeCode", "SEMI"); }
-      else if (t === "HDB") qp.append("propertyTypeCode", "HDB");
+      if (t === "CONDO") { qp.append("propertyTypeCode", "CONDO"); qp.append("propertyTypeCode", "APT"); qp.append("propertyTypeCode", "EXCO"); }
+      else if (t === "LANDED") { qp.append("propertyTypeCode", "TERRA"); qp.append("propertyTypeCode", "DETAC"); qp.append("propertyTypeCode", "SEMI"); qp.append("propertyTypeCode", "BUNG"); qp.append("propertyTypeCode", "GCONDO"); }
+      else if (t === "HDB") { qp.append("propertyTypeCode", "HDB"); qp.set("propertyTypeGroup", "H"); }
     }
   }
 
@@ -170,7 +174,11 @@ function json(obj) {
 }
 
 function formatListing(r, listingType) {
-  const priceRaw = r.price?.value || 0;
+  // Price: try multiple fields (PG uses different fields for rent vs sale)
+  let priceRaw = r.price?.value || 0;
+  if (!priceRaw && r.asking_price_cents) priceRaw = Math.round(r.asking_price_cents / 100);
+  if (!priceRaw && r.asking_price) priceRaw = r.asking_price;
+  if (!priceRaw && r.price?.localeStringValue) priceRaw = parseInt(r.price.localeStringValue.replace(/[^\d]/g,'')) || 0;
   const priceDisplay = priceRaw ? (listingType === "rent" ? `$${Number(priceRaw).toLocaleString()}/mo` : `$${Number(priceRaw).toLocaleString()}`) : "";
 
   let beds = null, baths = null, areaSqft = null;
@@ -183,10 +191,14 @@ function formatListing(r, listingType) {
     });
   }
 
-  const address = r.fullAddress?.split(",")[0]?.trim() || r.localizedTitle?.split(",")[0]?.trim() || "";
-  const mrt = r.mrt?.nearbyText || "";
-  const availability = r.availabilityInfo || "";
-  const listedDate = r.recency?.text?.replace("Listed on ", "") || "";
+  const address = r.fullAddress?.split(",")[0]?.trim() || r.localizedTitle?.split(",")[0]?.trim() || r.name || "";
+  const mrt = r.mrt?.nearbyText || r.nearbyTransports?.[0]?.text || "";
+  const availability = r.availabilityInfo || r.availability || "";
+  // listedDate: try multiple paths
+  const listedDate = r.recency?.text?.replace(/^Listed on\s*/i, "")
+    || r.listedDate
+    || r.posted_at?.split("T")[0]
+    || "";
 
   return {
     link: r.url || "",
