@@ -1,296 +1,170 @@
+// PropertyGuru uses Next.js - we call their /_next/data/ JSON API
+// This returns structured JSON without needing JS rendering or ScraperAPI
+
+const PG_BASE = "https://www.propertyguru.com.sg";
 const HEADERS = {
   "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
-  "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+  "Accept": "application/json, text/html, */*",
   "Accept-Language": "en-US,en;q=0.9",
-  "Cache-Control": "no-cache",
   "Referer": "https://www.propertyguru.com.sg/",
+  "Cache-Control": "no-cache",
 };
 
-// Wrap URL with ScraperAPI if key is configured
-function scraperUrl(url) {
-  const key = process.env.SCRAPER_API_KEY;
-  if (!key) return url;
-  return `http://api.scraperapi.com?api_key=${key}&url=${encodeURIComponent(url)}&render=false`;
-}
+let cachedBuildId = null;
+let cacheTime = 0;
 
-async function fetchWithFallback(url) {
-  // Try direct fetch first (fast, free)
+async function getBuildId() {
+  const now = Date.now();
+  if (cachedBuildId && now - cacheTime < 3600000) return cachedBuildId;
   try {
-    const r = await fetch(url, { headers: HEADERS, redirect: "follow" });
-    if (r.ok) {
-      const html = await r.text();
-      if (!html.includes("cf-browser-verification") && !html.includes("Just a moment")) {
-        return { html, blocked: false };
-      }
-    }
+    const resp = await fetch(`${PG_BASE}/property-for-rent`, { headers: HEADERS });
+    if (!resp.ok) return null;
+    const html = await resp.text();
+    const match = html.match(/"buildId"\s*:\s*"([^"]+)"/);
+    if (match) { cachedBuildId = match[1]; cacheTime = now; return cachedBuildId; }
   } catch {}
-
-  // Fallback: ScraperAPI
-  const key = process.env.SCRAPER_API_KEY;
-  if (!key) return { html: null, blocked: true, reason: "no_proxy" };
-
-  try {
-    const proxyUrl = `http://api.scraperapi.com?api_key=${key}&url=${encodeURIComponent(url)}&render=false`;
-    const r2 = await fetch(proxyUrl, { headers: { "Accept": "text/html" } });
-    if (r2.ok) {
-      const html = await r2.text();
-      return { html, blocked: false };
-    }
-    return { html: null, blocked: true, reason: `scraperapi_${r2.status}` };
-  } catch (e) {
-    return { html: null, blocked: true, reason: e.message };
-  }
+  return null;
 }
 
 exports.handler = async function (event) {
-  if (event.httpMethod !== "POST") {
-    return { statusCode: 405, body: "Method Not Allowed" };
-  }
+  if (event.httpMethod !== "POST") return { statusCode: 405, body: "Method Not Allowed" };
 
   let body;
   try { body = JSON.parse(event.body); }
   catch { return { statusCode: 400, body: JSON.stringify({ error: "Invalid JSON" }) }; }
 
-  const { listingType = "rent", freetext = "", bedrooms = [], propertyTypes = [], minPrice, maxPrice, page = 1, _debug = false } = body;
+  const { listingType="rent", freetext="", bedrooms=[], propertyTypes=[], minPrice, maxPrice, page=1 } = body;
 
-  // Build PG search URL
-  const baseUrl = listingType === "rent"
-    ? "https://www.propertyguru.com.sg/property-for-rent"
-    : "https://www.propertyguru.com.sg/property-for-sale";
-
-  const params = new URLSearchParams();
-  if (freetext) params.set("freetext", freetext);
-  if (bedrooms.length > 0) params.set("bedrooms", bedrooms.join(","));
-  if (minPrice) params.set("minPrice", minPrice);
-  if (maxPrice) params.set("maxPrice", maxPrice);
-  if (listingType === "rent") params.set("listingType", "rent");
-  params.set("isCommercial", "false");
-  params.set("sort", "date");
-  params.set("order", "desc");
-  params.set("locale", "en");
-  if (page > 1) params.set("page", page);
-
-  // Property type codes
+  const qp = new URLSearchParams();
+  if (freetext) qp.set("freetext", freetext);
+  if (bedrooms.length > 0) qp.set("bedrooms", bedrooms.join(","));
+  if (minPrice) qp.set("minPrice", String(minPrice));
+  if (maxPrice) qp.set("maxPrice", String(maxPrice));
+  if (listingType === "rent") qp.set("listingType", "rent");
+  qp.set("isCommercial", "false");
+  qp.set("sort", "date");
+  qp.set("order", "desc");
+  qp.set("locale", "en");
+  if (page > 1) qp.set("page", String(page));
   if (propertyTypes.length > 0) {
-    params.set("propertyTypeGroup", "N");
+    qp.set("propertyTypeGroup", "N");
     for (const t of propertyTypes) {
-      if (t === "CONDO") { params.append("propertyTypeCode", "CONDO"); params.append("propertyTypeCode", "APT"); }
-      else if (t === "LANDED") { params.append("propertyTypeCode", "TERRA"); params.append("propertyTypeCode", "DETAC"); params.append("propertyTypeCode", "SEMI"); }
-      else if (t === "HDB") { params.append("propertyTypeCode", "HDB"); }
+      if (t === "CONDO") { qp.append("propertyTypeCode", "CONDO"); qp.append("propertyTypeCode", "APT"); }
+      else if (t === "LANDED") { qp.append("propertyTypeCode", "TERRA"); qp.append("propertyTypeCode", "DETAC"); qp.append("propertyTypeCode", "SEMI"); }
+      else if (t === "HDB") qp.append("propertyTypeCode", "HDB");
     }
   }
 
-  const searchUrl = `${baseUrl}?${params.toString()}`;
+  const pgPage = listingType === "rent" ? "property-for-rent" : "property-for-sale";
+  const searchUrl = `${PG_BASE}/${pgPage}?${qp.toString()}`;
 
   try {
-    // Step 1: Fetch search results page
-    const { html, blocked, reason } = await fetchWithFallback(searchUrl);
+    const buildId = await getBuildId();
+    if (!buildId) return { statusCode: 200, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ success: false, error: "Could not get PG buildId", blocked: true, searchUrl }) };
 
-    if (blocked) {
+    const jsonUrl = `${PG_BASE}/_next/data/${buildId}/${pgPage}.json?${qp.toString()}`;
+    let jsonResp = await fetch(jsonUrl, { headers: { ...HEADERS, "Accept": "application/json" }, redirect: "follow" });
+
+    if (!jsonResp.ok) {
+      // buildId stale - refresh and retry
+      cachedBuildId = null;
+      const freshId = await getBuildId();
+      if (freshId) {
+        jsonResp = await fetch(`${PG_BASE}/_next/data/${freshId}/${pgPage}.json?${qp.toString()}`, { headers: { ...HEADERS, "Accept": "application/json" } });
+      }
+      if (!jsonResp.ok) return { statusCode: 200, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ success: false, error: `API returned ${jsonResp.status}`, blocked: true, searchUrl }) };
+    }
+
+    const jsonData = await jsonResp.json();
+    const props = jsonData?.pageProps || {};
+    const rawListings = props.listings || props.data?.listings || [];
+    const total = props.total || props.totalListings || props.data?.total || rawListings.length;
+
+    // If no listings found, return debug info
+    if (rawListings.length === 0) {
       return { statusCode: 200, headers: { "Content-Type": "application/json" }, body: JSON.stringify({
-        success: false,
-        error: reason === "no_proxy"
-          ? "PropertyGuru blocked direct access. Please configure SCRAPER_API_KEY in Netlify environment variables."
-          : `Fetch blocked (${reason})`,
-        blocked: true,
-        searchUrl
+        success: true, total: 0, page, totalPages: 0, listings: [], searchUrl,
+        _debug: { propKeys: Object.keys(props).slice(0, 20), buildId }
       })};
     }
 
-    // Step 2: Parse listings from HTML
-    const listings = parseListings(html, listingType);
-    const total = parseTotal(html);
-    const totalPages = Math.ceil(total / 10);
+    const listings = rawListings.slice(0, 10).map(r => formatListing(r, listingType));
 
-    // Debug mode: return HTML snippet to diagnose parsing
-    if (_debug) {
-      const listingLinks = (html.match(/href="\/listing\/[^"]+"/g) || []).slice(0, 5);
-      const snippet = html.substring(html.indexOf('listing') > 0 ? html.indexOf('/listing/') - 100 : 0, 2000);
-      return {
-        statusCode: 200,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ success: true, total, listingsFound: listings.length, listingLinks, snippet: snippet.substring(0, 1000), searchUrl }),
-      };
-    }
+    // Enrich with agent phone from listing pages (parallel)
+    const enriched = await Promise.all(listings.map(l => enrichAgent(l)));
 
-    // Step 3: Fetch agent details for each listing (parallel, with timeout)
-    const enriched = await Promise.all(
-      listings.map(listing => fetchAgentDetails(listing))
-    );
+    return { statusCode: 200, headers: { "Content-Type": "application/json" }, body: JSON.stringify({
+      success: true, total, page, totalPages: Math.ceil(total / 10), listings: enriched, searchUrl, blocked: false
+    })};
 
-    return {
-      statusCode: 200,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ success: true, total, page, totalPages, listings: enriched, searchUrl, blocked: false }),
-    };
   } catch (err) {
-    return {
-      statusCode: 200,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ success: false, error: err.message || "Server error", blocked: false }),
-    };
+    return { statusCode: 200, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ success: false, error: err.message || "Server error", searchUrl }) };
   }
 };
 
-function parseTotal(html) {
-  const m = html.match(/(\d[\d,]+)\s+(?:Listings?|Homes?|Houses?|Properties?|Apartments?)/i);
-  if (m) return parseInt(m[1].replace(/,/g, ""), 10);
-  return 0;
+function formatListing(r, listingType) {
+  const priceRaw = r.asking_price_cents ? Math.round(r.asking_price_cents / 100) : (r.price || r.asking_price || 0);
+  const beds = r.bedrooms ?? r.bedroom_count ?? null;
+  const baths = r.bathrooms ?? r.bathroom_count ?? null;
+  const areaSqft = r.floor_area ?? r.land_area ?? null;
+  const address = r.project_name || r.name || r.address_name || r.formatted_address || "";
+  const listingId = r.id || r.listing_id || "";
+  const link = r.url
+    ? (r.url.startsWith("http") ? r.url : PG_BASE + r.url)
+    : (listingId ? `${PG_BASE}/listing/${listingId}` : "");
+
+  const mrtData = r.mrt_stations?.[0] || r.nearest_mrt;
+  const mrt = mrtData
+    ? `${mrtData.distance_in_meters || mrtData.distance}m (${mrtData.walk_time_in_minutes || mrtData.walk_time}mins) from ${mrtData.mrt_station || mrtData.name}`
+    : (r.mrt_description || "");
+
+  const furnishMap = { fully_furnished: "Fully Furnished", partial_furnished: "Partial Furnished", unfurnished: "Unfurnished" };
+  const furnishing = furnishMap[r.furnishing?.toLowerCase?.()] || r.furnishing_description || r.furnishing || "";
+  const availability = r.availability_date_display || r.available_from || r.availability || "";
+  const listedDate = r.listing_date_display || r.listing_date || r.listed_on || "";
+
+  return {
+    link,
+    address,
+    streetAddress: r.street || r.address || "",
+    priceRaw,
+    priceDisplay: priceRaw ? (listingType === "rent" ? `$${Number(priceRaw).toLocaleString()}/mo` : `$${Number(priceRaw).toLocaleString()}`) : "",
+    beds, baths, areaSqft,
+    areaDisplay: areaSqft ? `${Number(areaSqft).toLocaleString()} sqft` : "",
+    furnishing, availability, mrt, listedDate,
+    propertyType: r.property_type_name || r.property_type || "",
+    tenure: r.tenure || "",
+    leaseTerm: r.lease_term || r.minimum_lease || "",
+    agent: {
+      name: r.agent_name || r.agent?.name || "",
+      phone: r.agent_phone || r.agent?.phone || r.agent?.mobile || "",
+      agency: r.agent_company || r.agent?.company || r.agency_name || "",
+      cea: r.agent_cea || r.agent?.cea_number || r.agent?.registration_number || "",
+      blocked: false,
+    },
+  };
 }
 
-function parseListings(html, listingType) {
-  const listings = [];
-
-  // Extract listing links - these are the most reliable anchor
-  const linkPattern = /href="(\/listing\/[^"]+?)"/g;
-  const seen = new Set();
-  let match;
-
-  while ((match = linkPattern.exec(html)) !== null) {
-    const path = match[1];
-    // Skip media/floorplan anchors
-    if (path.includes("#") || path.includes("media")) continue;
-    const fullLink = "https://www.propertyguru.com.sg" + path;
-    if (seen.has(fullLink)) continue;
-    seen.add(fullLink);
-
-    // Extract listing ID from URL
-    const idMatch = path.match(/(\d{6,})$/);
-    if (!idMatch) continue;
-    const listingId = idMatch[1];
-
-    // Find context around this link in HTML (300 chars before/after)
-    const idx = html.indexOf(match[0]);
-    const ctx = html.substring(Math.max(0, idx - 500), idx + 1500);
-
-    const listing = extractFromContext(ctx, fullLink, listingType);
-    if (listing.price || listing.address) {
-      listings.push(listing);
-    }
-
-    if (listings.length >= 10) break;
-  }
-
-  return listings;
-}
-
-function extractFromContext(ctx, link, listingType) {
-  // Strip HTML tags for text extraction
-  const text = ctx.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ");
-
-  const listing = { link, agent: {} };
-
-  // Address / project name
-  const addrMatch = text.match(/(?:for[- ](?:rent|sale)[- ][^$\d]{3,60}?)(?=\s*S?\$|\s*\d+ Bed)/i) ||
-                    text.match(/([A-Z][A-Za-z\s']+(?:Residences?|Park|Hill|Green|View|Heights?|Gardens?|Place|Court|Lodge|Ville|Tower|One|The [A-Z][a-z]+)?)\s+(?:\d|S\$)/);
-  if (addrMatch) listing.address = addrMatch[1]?.trim().replace(/^for[- ](?:rent|sale)[- ]/i, "").trim();
-
-  // Price
-  const priceMatch = text.match(/S\$\s*([\d,]+)\s*\/?\s*(?:mo(?:nth)?)?/i);
-  if (priceMatch) {
-    listing.priceRaw = parseInt(priceMatch[1].replace(/,/g, ""), 10);
-    listing.priceDisplay = listingType === "rent"
-      ? `$${Number(listing.priceRaw).toLocaleString()}/mo`
-      : `$${Number(listing.priceRaw).toLocaleString()}`;
-  }
-
-  // Beds
-  const bedsMatch = text.match(/(\d+)\s*Bed/i);
-  if (bedsMatch) listing.beds = parseInt(bedsMatch[1], 10);
-
-  // Baths
-  const bathsMatch = text.match(/(\d+)\s*Bath/i);
-  if (bathsMatch) listing.baths = parseInt(bathsMatch[1], 10);
-
-  // Area
-  const areaMatch = text.match(/([\d,]+)\s*sqft/i);
-  if (areaMatch) {
-    listing.areaSqft = parseInt(areaMatch[1].replace(/,/g, ""), 10);
-    listing.areaDisplay = `${listing.areaSqft.toLocaleString()} sqft`;
-  }
-
-  // Availability
-  const availMatch = text.match(/Available\s+from\s+(\d{1,2}\s+\w+\s+\d{4}|\w+\s+\d{1,2})/i) ||
-                     text.match(/(Ready to move in|Immediately)/i);
-  if (availMatch) listing.availability = availMatch[1] || availMatch[0];
-
-  // MRT
-  const mrtMatch = text.match(/(\d+)\s*m\s*\((\d+)\s*mins?\)\s*from\s*([^\n,<]{5,50}(?:MRT|LRT))/i);
-  if (mrtMatch) listing.mrt = `${mrtMatch[1]}m (${mrtMatch[2]}mins) from ${mrtMatch[3].trim()}`;
-
-  // Listed date
-  const listedMatch = text.match(/Listed\s+on\s+(\d{1,2}\s+\w+\s+\d{4})/i);
-  if (listedMatch) listing.listedDate = listedMatch[1];
-
-  // Property type
-  const typeMatch = text.match(/(Condominium|HDB|Apartment|Landed|Semi-detached|Terraced|Detached|Bungalow)/i);
-  if (typeMatch) listing.propertyType = typeMatch[1];
-
-  return listing;
-}
-
-async function fetchAgentDetails(listing) {
+async function enrichAgent(listing) {
   if (!listing.link) return listing;
-
+  // Skip if we already have phone from JSON data
+  if (listing.agent?.phone) return listing;
   try {
-    const { html, blocked } = await fetchWithFallback(listing.link);
-
-    if (blocked || !html) {
-      listing.agent = { blocked: true };
-      return listing;
-    }
-
-    // Agent name from page title: "..., by Will Lee, 500106468"
-    const titleMatch = html.match(/<title>([^<]+)<\/title>/i);
-    if (titleMatch) {
-      const agentFromTitle = titleMatch[1].match(/by ([^,]+),\s*\d+/i);
-      if (agentFromTitle) listing.agent.name = agentFromTitle[1].trim();
-
-      // Also extract address from title if not already set
-      if (!listing.address) {
-        const addrFromTitle = titleMatch[1].split(",")[0]?.trim();
-        if (addrFromTitle) listing.address = addrFromTitle;
-      }
-    }
-
-    // Phone: "+6591234567" pattern in HTML source
+    const resp = await fetch(listing.link, { headers: HEADERS, redirect: "follow" });
+    if (!resp.ok) return listing;
+    const html = await resp.text();
     const phoneMatch = html.match(/"\+65(\d{8})"/);
     if (phoneMatch) listing.agent.phone = "+65" + phoneMatch[1];
-
-    // CEA number
     const ceaMatch = html.match(/R\d{7}[A-Z]/);
-    if (ceaMatch) listing.agent.cea = ceaMatch[0];
-
-    // Agency from agent card text
-    const agencyMatch = html.match(/(ERA\s+REALTY|PROPNEX|ORANGETEE[^"<]{0,20}|HUTTONS[^"<]{0,20}|KNIGHT\s+FRANK|SAVILLS|SLP[^"<]{0,20}|NAVIS[^"<]{0,20}|REMAX|Dennis\s+WENGE[^"<]{0,20}|C2[^"<]{0,20}REALTY)/i);
-    if (agencyMatch) listing.agent.agency = agencyMatch[1].trim();
-
-    // Furnishing (more reliable from detail page)
-    const furnishMatch = html.match(/(Fully [Ff]urnished|Partial(?:ly)? [Ff]urnished|Unfurnished)/i);
-    if (furnishMatch) listing.furnishing = furnishMatch[1];
-
-    // Floor level
-    const floorMatch = html.match(/(High|Mid(?:dle)?|Low|Upper|Ground)\s+[Ff]loor/i);
-    if (floorMatch) listing.floor = floorMatch[0];
-
-    // Tenure
-    const tenureMatch = html.match(/(Freehold|Leasehold\s*\d*)/i);
-    if (tenureMatch) listing.tenure = tenureMatch[1];
-
-    // Lease term
-    const leaseMatch = html.match(/(\d+)\s+years?\s+lease/i);
-    if (leaseMatch) listing.leaseTerm = leaseMatch[0];
-
-    // Availability - more detailed from detail page
-    if (!listing.availability) {
-      const availMatch = html.match(/Available\s+from\s+(\d{1,2}\s+\w+(?:\s+\d{4})?)/i) ||
-                         html.match(/(Ready to move in|Immediately available)/i);
-      if (availMatch) listing.availability = availMatch[1] || availMatch[0];
+    if (ceaMatch && !listing.agent.cea) listing.agent.cea = ceaMatch[0];
+    if (!listing.agent.name) {
+      const titleMatch = html.match(/<title>[^<]*by ([^,<]+),\s*\d+/i);
+      if (titleMatch) listing.agent.name = titleMatch[1].trim();
     }
-
-    return listing;
-  } catch (err) {
-    listing.agent = { blocked: true, error: err.message };
-    return listing;
-  }
+    if (!listing.furnishing) {
+      const furnishMatch = html.match(/(Fully [Ff]urnished|Partial(?:ly)? [Ff]urnished|Unfurnished)/i);
+      if (furnishMatch) listing.furnishing = furnishMatch[1];
+    }
+  } catch {}
+  return listing;
 }
