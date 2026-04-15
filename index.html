@@ -1809,7 +1809,7 @@ async function generateListing() {
 任务：根据房源信息，整理成发给客户的微信消息，格式如下：
 
 ${intro ? '[开头语]\n\n' : ''}【1】🏠 [小区名]
-💰 $[月租] | [X]房[X]卫 | [面积]sq.ft
+💰 $[月租] | [X]房[X]卫 | [面积]sqft
 🛋 [家具情况] | [入住日期]
 [💡 亮点（如有，以💡开头，否则省略此行）]
 🔗 [PropertyGuru链接，原样粘贴，不要修改]
@@ -1820,11 +1820,11 @@ ${intro ? '[开头语]\n\n' : ''}【1】🏠 [小区名]
 规则：
 - 编号用【1】【2】格式，前面加🏠
 - 价格格式：$X,XXX（不加/mo）
-- 面积加sq.ft，家具：Fully Furnished→家具齐全，Partial Furnished→配备部分家具，Unfurnished→无家具
+- 面积加sqft，家具：Fully Furnished→家具齐全，Partial Furnished→配备部分家具，Unfurnished→无家具
 - 入住日期：Ready to Move→马上入住，否则保留英文日期
 - 亮点行：如果有亮点内容则加💡开头，没有则省略这行
 - 🔗 后面必须是完整的PropertyGuru URL（https://www.propertyguru.com.sg/listing/...），直接原样输出
-- ⚠️ 绝对不要把面积（如484sq.ft）变成链接，sq.ft是纯文字
+- ⚠️ 绝对不要把面积（如484sqft）变成链接，sqft是纯文字
 - ⚠️ 每行只能有一个链接，且链接只能出现在🔗那一行
 - 开头语：如果有开头语则放在第一套房源前面
 - 最后加一行：如有疑问欢迎随时告知 😊
@@ -1850,7 +1850,7 @@ ${listingsText}`;
 [备注（如有）]
 
 【1】🏠 [小区名]
-💰 $[月租] | [X]房[X]卫 | [面积]sq.ft
+💰 $[月租] | [X]房[X]卫 | [面积]sqft
 🛋 [家具情况] | [入住日期]
 [💡 亮点（如有，以💡开头，否则省略此行）]
 🔗 [PropertyGuru链接，原样粘贴，不要修改]
@@ -1862,7 +1862,7 @@ ${listingsText}`;
 - 亮点有则加💡，无则省略
 - 等待确认的房源不加【已确定】行
 - 🔗 后面必须是完整的PropertyGuru URL，直接原样输出
-- ⚠️ 面积（如484sq.ft）是纯文字，不是链接，不要变成超链接格式
+- ⚠️ 面积（如484sqft）是纯文字，不是链接，不要变成超链接格式
 - 直接输出消息，不要加前缀`;
 
     const viewingIntroSel = document.getElementById('viewing-intro-select')?.value || '';
