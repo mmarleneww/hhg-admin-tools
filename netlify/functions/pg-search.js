@@ -37,7 +37,61 @@ exports.handler = async function (event) {
   try { body = JSON.parse(event.body); }
   catch { return { statusCode: 400, body: JSON.stringify({ error: "Invalid JSON" }) }; }
 
-  const { listingType="rent", freetext="", bedrooms=[], propertyTypes=[], minPrice, maxPrice, page=1 } = body;
+  const { listingType="rent", freetext="", bedrooms=[], propertyTypes=[], minPrice, maxPrice, page=1, _extractUrl } = body;
+
+  // Single URL extraction mode
+  if (_extractUrl) {
+    try {
+      const resp = await scraperFetch(_extractUrl);
+      if (!resp.ok) return json({ success: false, error: `Listing page returned ${resp.status}` });
+      const html = await resp.text();
+
+      // Extract from page title
+      const titleMatch = html.match(/<title>([^<]+)<\/title>/i);
+      const title = titleMatch?.[1] || '';
+      const agentFromTitle = title.match(/by ([^,]+),\s*\d+/i)?.[1]?.trim() || '';
+      const addressFromTitle = title.split(',')[0]?.trim() || '';
+
+      // Extract fields
+      const phoneMatch = html.match(/"\+65(\d{8})"/);
+      const phone = phoneMatch ? '+65' + phoneMatch[1] : '';
+      const ceaMatch = html.match(/R\d{7}[A-Z]/);
+      const cea = ceaMatch?.[0] || '';
+      const agencyMatch = html.match(/(ERA\s+REALTY|PROPNEX[^"<]{0,20}|ORANGETEE[^"<]{0,20}|HUTTONS[^"<]{0,20}|KNIGHT\s+FRANK|SAVILLS|SLP[^"<]{0,20}|NAVIS[^"<]{0,20})/i);
+      const agency = agencyMatch?.[1]?.trim() || '';
+      const priceMatch = html.match(/S\$\s*([\d,]+)\s*\/?\s*mo/i) || html.match(/S\$\s*([\d,]+)/);
+      const priceRaw = priceMatch ? parseInt(priceMatch[1].replace(/,/g,'')) : 0;
+      const bedsMatch = html.match(/(\d+)\s*Bed/i);
+      const bathsMatch = html.match(/(\d+)\s*Bath/i);
+      const areaMatch = html.match(/([\d,]+)\s*sqft/i);
+      const areaSqft = areaMatch ? parseInt(areaMatch[1].replace(/,/g,'')) : null;
+      const furnishMatch = html.match(/(Fully [Ff]urnished|Partial(?:ly)? [Ff]urnished|Unfurnished)/i);
+      const availMatch = html.match(/Available\s+from\s+([\d\w\s]+?)(?:\n|<)/i) || html.match(/(Ready to move in)/i);
+      const mrtMatch = html.match(/(\d+)\s*m\s*\((\d+)\s*mins?\)\s*from\s*([^\n<]{5,50}(?:MRT|LRT))/i);
+      const tenureMatch = html.match(/(Freehold|Leasehold\s*\d*)/i);
+      const leaseMatch = html.match(/(\d+)\s+years?\s+lease/i);
+
+      const listing = {
+        link: _extractUrl,
+        address: addressFromTitle,
+        priceRaw,
+        priceDisplay: priceRaw ? `$${Number(priceRaw).toLocaleString()}` : '',
+        beds: bedsMatch ? parseInt(bedsMatch[1]) : null,
+        baths: bathsMatch ? parseInt(bathsMatch[1]) : null,
+        areaSqft,
+        areaDisplay: areaSqft ? `${areaSqft.toLocaleString()} sqft` : '',
+        furnishing: furnishMatch?.[1] || '',
+        availability: availMatch?.[1] || '',
+        mrt: mrtMatch ? `${mrtMatch[1]}m (${mrtMatch[2]}mins) from ${mrtMatch[3].trim()}` : '',
+        tenure: tenureMatch?.[1] || '',
+        leaseTerm: leaseMatch?.[0] || '',
+        agent: { name: agentFromTitle, phone, cea, agency, blocked: false },
+      };
+      return json({ success: true, listing });
+    } catch (err) {
+      return json({ success: false, error: err.message });
+    }
+  }
 
   const qp = new URLSearchParams();
   if (freetext) qp.set("freetext", freetext);
@@ -90,12 +144,21 @@ exports.handler = async function (event) {
 
     if (rawListings.length === 0) return json({ success: true, total: 0, page, totalPages: 0, listings: [], searchUrl });
 
-    const listings = rawListings.map(r => formatListing(r, listingType));
+    // Client-side price filter as backup (PG sometimes returns results outside range)
+    const filtered = rawListings.filter(r => {
+      const price = r.price?.value || 0;
+      if (minPrice && price < Number(minPrice)) return false;
+      if (maxPrice && price > Number(maxPrice)) return false;
+      return true;
+    });
 
-    // Step 3: Enrich phone from listing detail pages (via ScraperAPI, parallel)
+    const listings = filtered.map(r => formatListing(r, listingType));
+
+    // Enrich phone from listing detail pages (parallel, best-effort)
     const enriched = await Promise.all(listings.map(l => enrichPhone(l)));
+    const filteredTotal = total; // keep original total for pagination
 
-    return json({ success: true, total, page, totalPages, listings: enriched, searchUrl, blocked: false });
+    return json({ success: true, total: filteredTotal, page, totalPages, listings: enriched, searchUrl, blocked: false });
 
   } catch (err) {
     return json({ success: false, error: err.message || "Server error", searchUrl });
