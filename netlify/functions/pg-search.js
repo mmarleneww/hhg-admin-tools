@@ -202,8 +202,11 @@ exports.handler = async function (event) {
     const listingsObj = pageData?.listingsData || {};
     const paginationData = pageData?.paginationData || {};
     const rawListings = Object.values(listingsObj).map(item => item.listingData).filter(Boolean);
-    const total = paginationData.totalCount || paginationData.total || rawListings.length;
-    const totalPages = paginationData.totalPages || Math.ceil(total / 10);
+    const pageSize = rawListings.length || 20;  // actual listings per page (PG returns ~20-21)
+    const totalPages = paginationData.totalPages || 1;
+    // PG JSON has no totalCount field — estimate from totalPages × pageSize
+    const total = paginationData.totalCount || paginationData.total
+      || (totalPages > 1 ? totalPages * pageSize : rawListings.length);
     if (rawListings.length === 0) return json({ success: true, total: 0, page, totalPages: 0, listings: [], searchUrl, mrtSearch: !!mrtCodes });
     const filtered = rawListings.filter(r => {
       const price = r.price?.value || 0;
@@ -224,49 +227,63 @@ function json(obj) {
 }
 
 function formatListing(r, listingType) {
+  // Price
   let priceRaw = r.price?.value || 0;
   if (!priceRaw && r.asking_price_cents) priceRaw = Math.round(r.asking_price_cents / 100);
   if (!priceRaw && r.asking_price) priceRaw = r.asking_price;
   if (!priceRaw && r.price?.localeStringValue) priceRaw = parseInt(r.price.localeStringValue.replace(/[^\d]/g,'')) || 0;
   const priceDisplay = priceRaw ? (listingType === "rent" ? `$${Number(priceRaw).toLocaleString()}/mo` : `$${Number(priceRaw).toLocaleString()}`) : "";
 
-  let beds = null, baths = null, areaSqft = null;
-  if (r.listingFeatures) {
+  // Beds / baths / area — CONFIRMED from live PG JSON:
+  // r.bedrooms, r.bathrooms, r.floorArea are direct fields
+  // r.area.localeStringValue is "807 sqft"
+  let beds = r.bedrooms ?? null;
+  let baths = r.bathrooms ?? null;
+  let areaSqft = r.floorArea ? parseInt(r.floorArea) || null : null;
+  if (!areaSqft && r.area?.localeStringValue) {
+    areaSqft = parseInt(r.area.localeStringValue.replace(/[^\d]/g, "")) || null;
+  }
+  // Fallback to listingFeatures if direct fields missing
+  if ((beds === null || areaSqft === null) && r.listingFeatures) {
     const feats = Array.isArray(r.listingFeatures) ? r.listingFeatures.flat() : [];
     feats.forEach(f => {
-      if (f.dataAutomationId === "listing-card-v2-bedrooms") beds = parseInt(f.text) || null;
-      if (f.dataAutomationId === "listing-card-v2-bathrooms") baths = parseInt(f.text) || null;
-      if (f.text?.includes("sqft")) areaSqft = parseInt(f.text.replace(/[^\d]/g, "")) || null;
+      if (f.dataAutomationId === "listing-card-v2-bedrooms" && beds === null) beds = parseInt(f.text) || null;
+      if (f.dataAutomationId === "listing-card-v2-bathrooms" && baths === null) baths = parseInt(f.text) || null;
+      if (f.text?.includes("sqft") && areaSqft === null) areaSqft = parseInt(f.text.replace(/[^\d]/g, "")) || null;
     });
   }
-  if (beds === null) beds = r.bedrooms ?? r.bedroom_lower ?? null;
-  if (baths === null) baths = r.bathrooms ?? null;
-  if (areaSqft === null && r.floor_size) areaSqft = parseInt(r.floor_size) || null;
 
-  // Project name is the condo/development name — most important field
-  const projectName = r.project?.name || r.projectName || r.project_name || "";
-  const streetAddress = r.address || r.street || "";
-  const displayAddress = projectName
-    || r.fullAddress?.split(",")[0]?.trim()
-    || r.localizedTitle?.split(",")[0]?.trim()
-    || r.name
-    || streetAddress.split(",")[0]?.trim()
-    || "";
+  // CONFIRMED from live PG JSON:
+  // localizedTitle = condo/project name e.g. "Principal Garden"
+  // fullAddress    = street address e.g. "91 Prince Charles Crescent"
+  const projectName = r.localizedTitle || "";
+  const streetAddress = r.fullAddress || "";
+  const displayAddress = projectName || streetAddress.split(",")[0]?.trim() || "";
 
-  const mrt = r.mrt?.nearbyText || r.nearbyTransports?.[0]?.text || "";
+  // MRT — r.mrt.nearbyText confirmed e.g. "14 min (1.17 km) from EW18 Redhill MRT Station"
+  const mrt = r.mrt?.nearbyText || "";
+
   const availability = r.availabilityInfo || r.availability || "";
-  const listedDate = r.recency?.text?.replace(/^Listed on\s*/i, "")
-    || r.listedDate || r.posted_at?.split("T")[0] || "";
+
+  // Listed date — CONFIRMED: r.postedOn.text = "15 Apr 2026"
+  // r.recency.text = "Listed on Apr 15, 2026 (1h ago)"
+  const listedDate = r.postedOn?.text
+    || r.recency?.text?.replace(/^Listed on\s*/i, "").replace(/\s*\(.*\)$/, "").trim()
+    || "";
 
   return {
     link: r.url ? (r.url.startsWith("http") ? r.url : PG_BASE + r.url) : "",
-    projectName, address: displayAddress, streetAddress,
+    projectName,
+    address: displayAddress,
+    streetAddress,
     priceRaw, priceDisplay,
     beds, baths, areaSqft,
     areaDisplay: areaSqft ? `${areaSqft.toLocaleString()} sqft` : "",
-    furnishing: "", availability, mrt, listedDate,
-    propertyType: r.typeText || r.property_type || "",
-    tenure: r.tenure || "", leaseTerm: "",
+    furnishing: "",
+    availability, mrt, listedDate,
+    propertyType: r.typeText || "",
+    tenure: r.additionalData?.tenure || "",
+    leaseTerm: "",
     agent: {
       name: r.agent?.name || "",
       cea: r.agent?.license || r.agent?.cea || "",
@@ -282,27 +299,28 @@ async function enrichPhone(listing) {
     const resp = await scraperFetch(listing.link);
     if (!resp.ok) return listing;
     const html = await resp.text();
+    // Phone number from HTML source
     const phoneMatch = html.match(/"\+65(\d{8})"/);
     if (phoneMatch) listing.agent.phone = "+65" + phoneMatch[1];
+    // Furnishing (not in search JSON, only in detail page)
     if (!listing.furnishing) {
       const fm = html.match(/(Fully [Ff]urnished|Partial(?:ly)? [Ff]urnished|Unfurnished)/i);
       if (fm) listing.furnishing = fm[1];
     }
+    // Area fallback
     if (!listing.areaSqft) {
       const am = html.match(/([\d,]+)\s*sqft/i);
       if (am) { listing.areaSqft = parseInt(am[1].replace(/,/g,"")); listing.areaDisplay = `${listing.areaSqft.toLocaleString()} sqft`; }
     }
+    // Lease term
     if (!listing.leaseTerm) {
       const lm = html.match(/(\d+)\s+years?\s+lease/i);
       if (lm) listing.leaseTerm = lm[0];
     }
+    // Tenure fallback
     if (!listing.tenure) {
       const tm = html.match(/(Freehold|Leasehold\s*\d*)/i);
       if (tm) listing.tenure = tm[1];
-    }
-    if (!listing.projectName) {
-      const pm = html.match(/"project(?:Name)?"\s*:\s*"([^"]+)"/i);
-      if (pm) { listing.projectName = pm[1]; listing.address = pm[1]; }
     }
   } catch {}
   return listing;
