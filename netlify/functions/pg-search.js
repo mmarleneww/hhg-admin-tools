@@ -6,8 +6,15 @@ const HEADERS = {
   "Referer": "https://www.propertyguru.com.sg/",
 };
 
+// Wrap URL with ScraperAPI if key is configured
+function scraperUrl(url) {
+  const key = process.env.SCRAPER_API_KEY;
+  if (!key) return url;
+  return `http://api.scraperapi.com?api_key=${key}&url=${encodeURIComponent(url)}&render=false`;
+}
+
 async function fetchWithFallback(url) {
-  // Try direct fetch first
+  // Try direct fetch first (fast, free)
   try {
     const r = await fetch(url, { headers: HEADERS, redirect: "follow" });
     if (r.ok) {
@@ -46,6 +53,7 @@ exports.handler = async function (event) {
 
   const { listingType = "rent", freetext = "", bedrooms = [], propertyTypes = [], minPrice, maxPrice, page = 1, _debug = false } = body;
 
+  // Build PG search URL
   const baseUrl = listingType === "rent"
     ? "https://www.propertyguru.com.sg/property-for-rent"
     : "https://www.propertyguru.com.sg/property-for-sale";
@@ -62,6 +70,7 @@ exports.handler = async function (event) {
   params.set("locale", "en");
   if (page > 1) params.set("page", page);
 
+  // Property type codes
   if (propertyTypes.length > 0) {
     params.set("propertyTypeGroup", "N");
     for (const t of propertyTypes) {
@@ -74,30 +83,40 @@ exports.handler = async function (event) {
   const searchUrl = `${baseUrl}?${params.toString()}`;
 
   try {
+    // Step 1: Fetch search results page
     const { html, blocked, reason } = await fetchWithFallback(searchUrl);
 
     if (blocked) {
       return { statusCode: 200, headers: { "Content-Type": "application/json" }, body: JSON.stringify({
         success: false,
-        error: reason === "no_proxy" ? "PG blocked. Set SCRAPER_API_KEY in Netlify env vars." : `Blocked (${reason})`,
-        blocked: true, searchUrl
+        error: reason === "no_proxy"
+          ? "PropertyGuru blocked direct access. Please configure SCRAPER_API_KEY in Netlify environment variables."
+          : `Fetch blocked (${reason})`,
+        blocked: true,
+        searchUrl
       })};
     }
 
+    // Step 2: Parse listings from HTML
     const listings = parseListings(html, listingType);
     const total = parseTotal(html);
     const totalPages = Math.ceil(total / 10);
 
+    // Debug mode: return HTML snippet to diagnose parsing
     if (_debug) {
-      const links = (html.match(/href="\/listing\/[^"]+"/g) || []).slice(0, 5);
-      const hasListingText = html.includes('/listing/');
-      const htmlLen = html.length;
-      const sample = html.substring(0, 500);
-      return { statusCode: 200, headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ success: true, total, listingsFound: listings.length, links, hasListingText, htmlLen, sample, searchUrl }) };
+      const listingLinks = (html.match(/href="\/listing\/[^"]+"/g) || []).slice(0, 5);
+      const snippet = html.substring(html.indexOf('listing') > 0 ? html.indexOf('/listing/') - 100 : 0, 2000);
+      return {
+        statusCode: 200,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ success: true, total, listingsFound: listings.length, listingLinks, snippet: snippet.substring(0, 1000), searchUrl }),
+      };
     }
 
-    const enriched = await Promise.all(listings.map(l => fetchAgentDetails(l)));
+    // Step 3: Fetch agent details for each listing (parallel, with timeout)
+    const enriched = await Promise.all(
+      listings.map(listing => fetchAgentDetails(listing))
+    );
 
     return {
       statusCode: 200,
@@ -105,124 +124,168 @@ exports.handler = async function (event) {
       body: JSON.stringify({ success: true, total, page, totalPages, listings: enriched, searchUrl, blocked: false }),
     };
   } catch (err) {
-    return { statusCode: 200, headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ success: false, error: err.message || "Server error" }) };
+    return {
+      statusCode: 200,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ success: false, error: err.message || "Server error", blocked: false }),
+    };
   }
 };
 
 function parseTotal(html) {
-  const m = html.match(/(\d[\d,]+)\s+(?:Listings?|Homes?|Houses?|Properties?|Apartments?|Condominiums?)/i);
-  return m ? parseInt(m[1].replace(/,/g, ""), 10) : 0;
+  const m = html.match(/(\d[\d,]+)\s+(?:Listings?|Homes?|Houses?|Properties?|Apartments?)/i);
+  if (m) return parseInt(m[1].replace(/,/g, ""), 10);
+  return 0;
 }
 
 function parseListings(html, listingType) {
   const listings = [];
+
+  // Extract listing links - these are the most reliable anchor
+  const linkPattern = /href="(\/listing\/[^"]+?)"/g;
   const seen = new Set();
-  const linkPattern = /href="(\/listing\/[^"#]+?)"/g;
   let match;
 
   while ((match = linkPattern.exec(html)) !== null) {
     const path = match[1];
-    if (path.includes("media") || path.includes("floor")) continue;
+    // Skip media/floorplan anchors
+    if (path.includes("#") || path.includes("media")) continue;
     const fullLink = "https://www.propertyguru.com.sg" + path;
     if (seen.has(fullLink)) continue;
     seen.add(fullLink);
 
+    // Extract listing ID from URL
     const idMatch = path.match(/(\d{6,})$/);
     if (!idMatch) continue;
+    const listingId = idMatch[1];
 
+    // Find context around this link in HTML (300 chars before/after)
     const idx = html.indexOf(match[0]);
-    const ctx = html.substring(Math.max(0, idx - 500), idx + 2000);
+    const ctx = html.substring(Math.max(0, idx - 500), idx + 1500);
+
     const listing = extractFromContext(ctx, fullLink, listingType);
-    if (listing.priceRaw || listing.address) listings.push(listing);
+    if (listing.price || listing.address) {
+      listings.push(listing);
+    }
+
     if (listings.length >= 10) break;
   }
+
   return listings;
 }
 
 function extractFromContext(ctx, link, listingType) {
+  // Strip HTML tags for text extraction
   const text = ctx.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ");
+
   const listing = { link, agent: {} };
 
-  // Address from title tag in context
-  const titleM = ctx.match(/title="([^"]{3,80})"/);
-  const h2M = ctx.match(/<h2[^>]*>([^<]{3,80})<\/h2>/i);
-  if (titleM) listing.address = titleM[1].trim();
-  else if (h2M) listing.address = h2M[1].trim();
+  // Address / project name
+  const addrMatch = text.match(/(?:for[- ](?:rent|sale)[- ][^$\d]{3,60}?)(?=\s*S?\$|\s*\d+ Bed)/i) ||
+                    text.match(/([A-Z][A-Za-z\s']+(?:Residences?|Park|Hill|Green|View|Heights?|Gardens?|Place|Court|Lodge|Ville|Tower|One|The [A-Z][a-z]+)?)\s+(?:\d|S\$)/);
+  if (addrMatch) listing.address = addrMatch[1]?.trim().replace(/^for[- ](?:rent|sale)[- ]/i, "").trim();
 
-  // Price S$3,700
-  const priceM = text.match(/S\$\s*([\d,]+)\s*\/?(mo)?/i);
-  if (priceM) {
-    listing.priceRaw = parseInt(priceM[1].replace(/,/g, ""), 10);
-    listing.priceDisplay = listingType === "rent" ? `$${listing.priceRaw.toLocaleString()}/mo` : `$${listing.priceRaw.toLocaleString()}`;
+  // Price
+  const priceMatch = text.match(/S\$\s*([\d,]+)\s*\/?\s*(?:mo(?:nth)?)?/i);
+  if (priceMatch) {
+    listing.priceRaw = parseInt(priceMatch[1].replace(/,/g, ""), 10);
+    listing.priceDisplay = listingType === "rent"
+      ? `$${Number(listing.priceRaw).toLocaleString()}/mo`
+      : `$${Number(listing.priceRaw).toLocaleString()}`;
   }
 
-  // Beds/Baths
-  const bedsM = text.match(/(\d+)\s*Bed/i);
-  const bathsM = text.match(/(\d+)\s*Bath/i);
-  if (bedsM) listing.beds = parseInt(bedsM[1], 10);
-  if (bathsM) listing.baths = parseInt(bathsM[1], 10);
+  // Beds
+  const bedsMatch = text.match(/(\d+)\s*Bed/i);
+  if (bedsMatch) listing.beds = parseInt(bedsMatch[1], 10);
+
+  // Baths
+  const bathsMatch = text.match(/(\d+)\s*Bath/i);
+  if (bathsMatch) listing.baths = parseInt(bathsMatch[1], 10);
 
   // Area
-  const areaM = text.match(/([\d,]+)\s*sqft/i);
-  if (areaM) { listing.areaSqft = parseInt(areaM[1].replace(/,/g,""),10); listing.areaDisplay = `${listing.areaSqft.toLocaleString()} sqft`; }
-
-  // MRT
-  const mrtM = text.match(/(\d+)\s*m\s*\((\d+)\s*mins?\)\s*from\s*([^\n,<]{5,50}(?:MRT|LRT))/i);
-  if (mrtM) listing.mrt = `${mrtM[1]}m (${mrtM[2]}mins) from ${mrtM[3].trim()}`;
+  const areaMatch = text.match(/([\d,]+)\s*sqft/i);
+  if (areaMatch) {
+    listing.areaSqft = parseInt(areaMatch[1].replace(/,/g, ""), 10);
+    listing.areaDisplay = `${listing.areaSqft.toLocaleString()} sqft`;
+  }
 
   // Availability
-  const availM = text.match(/Available\s+from\s+(\d{1,2}\s+\w+(?:\s+\d{4})?)/i) || text.match(/(Ready to move in)/i);
-  if (availM) listing.availability = availM[1];
+  const availMatch = text.match(/Available\s+from\s+(\d{1,2}\s+\w+\s+\d{4}|\w+\s+\d{1,2})/i) ||
+                     text.match(/(Ready to move in|Immediately)/i);
+  if (availMatch) listing.availability = availMatch[1] || availMatch[0];
+
+  // MRT
+  const mrtMatch = text.match(/(\d+)\s*m\s*\((\d+)\s*mins?\)\s*from\s*([^\n,<]{5,50}(?:MRT|LRT))/i);
+  if (mrtMatch) listing.mrt = `${mrtMatch[1]}m (${mrtMatch[2]}mins) from ${mrtMatch[3].trim()}`;
 
   // Listed date
-  const listedM = text.match(/Listed\s+on\s+(\d{1,2}\s+\w+\s+\d{4})/i);
-  if (listedM) listing.listedDate = listedM[1];
+  const listedMatch = text.match(/Listed\s+on\s+(\d{1,2}\s+\w+\s+\d{4})/i);
+  if (listedMatch) listing.listedDate = listedMatch[1];
 
   // Property type
-  const typeM = text.match(/(Condominium|HDB|Apartment|Landed|Terraced|Detached|Bungalow|Semi-detached)/i);
-  if (typeM) listing.propertyType = typeM[1];
+  const typeMatch = text.match(/(Condominium|HDB|Apartment|Landed|Semi-detached|Terraced|Detached|Bungalow)/i);
+  if (typeMatch) listing.propertyType = typeMatch[1];
 
   return listing;
 }
 
 async function fetchAgentDetails(listing) {
   if (!listing.link) return listing;
+
   try {
     const { html, blocked } = await fetchWithFallback(listing.link);
-    if (blocked || !html) { listing.agent = { blocked: true }; return listing; }
 
-    const titleM = html.match(/<title>([^<]+)<\/title>/i);
-    if (titleM) {
-      const agentM = titleM[1].match(/by ([^,]+),\s*\d+/i);
-      if (agentM) listing.agent.name = agentM[1].trim();
-      if (!listing.address) listing.address = titleM[1].split(",")[0]?.trim();
+    if (blocked || !html) {
+      listing.agent = { blocked: true };
+      return listing;
     }
 
-    const phoneM = html.match(/"+65(\d{8})"/);
-    if (phoneM) listing.agent.phone = "+65" + phoneM[1];
+    // Agent name from page title: "..., by Will Lee, 500106468"
+    const titleMatch = html.match(/<title>([^<]+)<\/title>/i);
+    if (titleMatch) {
+      const agentFromTitle = titleMatch[1].match(/by ([^,]+),\s*\d+/i);
+      if (agentFromTitle) listing.agent.name = agentFromTitle[1].trim();
 
-    const ceaM = html.match(/R\d{7}[A-Z]/);
-    if (ceaM) listing.agent.cea = ceaM[0];
+      // Also extract address from title if not already set
+      if (!listing.address) {
+        const addrFromTitle = titleMatch[1].split(",")[0]?.trim();
+        if (addrFromTitle) listing.address = addrFromTitle;
+      }
+    }
 
-    const agencyM = html.match(/(ERA\s+REALTY|PROPNEX|ORANGETEE[^"<]{0,20}|HUTTONS[^"<]{0,20}|KNIGHT\s+FRANK|SAVILLS|SLP|NAVIS|ERA)/i);
-    if (agencyM) listing.agent.agency = agencyM[1].trim();
+    // Phone: "+6591234567" pattern in HTML source
+    const phoneMatch = html.match(/"\+65(\d{8})"/);
+    if (phoneMatch) listing.agent.phone = "+65" + phoneMatch[1];
 
-    const furnishM = html.match(/(Fully [Ff]urnished|Partial(?:ly)? [Ff]urnished|Unfurnished)/i);
-    if (furnishM) listing.furnishing = furnishM[1];
+    // CEA number
+    const ceaMatch = html.match(/R\d{7}[A-Z]/);
+    if (ceaMatch) listing.agent.cea = ceaMatch[0];
 
-    const floorM = html.match(/(High|Mid(?:dle)?|Low|Upper|Ground)\s+[Ff]loor/i);
-    if (floorM) listing.floor = floorM[0];
+    // Agency from agent card text
+    const agencyMatch = html.match(/(ERA\s+REALTY|PROPNEX|ORANGETEE[^"<]{0,20}|HUTTONS[^"<]{0,20}|KNIGHT\s+FRANK|SAVILLS|SLP[^"<]{0,20}|NAVIS[^"<]{0,20}|REMAX|Dennis\s+WENGE[^"<]{0,20}|C2[^"<]{0,20}REALTY)/i);
+    if (agencyMatch) listing.agent.agency = agencyMatch[1].trim();
 
-    const tenureM = html.match(/(Freehold|Leasehold\s*\d*)/i);
-    if (tenureM) listing.tenure = tenureM[1];
+    // Furnishing (more reliable from detail page)
+    const furnishMatch = html.match(/(Fully [Ff]urnished|Partial(?:ly)? [Ff]urnished|Unfurnished)/i);
+    if (furnishMatch) listing.furnishing = furnishMatch[1];
 
-    const leaseM = html.match(/(\d+)\s+years?\s+lease/i);
-    if (leaseM) listing.leaseTerm = leaseM[0];
+    // Floor level
+    const floorMatch = html.match(/(High|Mid(?:dle)?|Low|Upper|Ground)\s+[Ff]loor/i);
+    if (floorMatch) listing.floor = floorMatch[0];
 
+    // Tenure
+    const tenureMatch = html.match(/(Freehold|Leasehold\s*\d*)/i);
+    if (tenureMatch) listing.tenure = tenureMatch[1];
+
+    // Lease term
+    const leaseMatch = html.match(/(\d+)\s+years?\s+lease/i);
+    if (leaseMatch) listing.leaseTerm = leaseMatch[0];
+
+    // Availability - more detailed from detail page
     if (!listing.availability) {
-      const availM = html.match(/Available\s+from\s+(\d{1,2}\s+\w+(?:\s+\d{4})?)/i) || html.match(/(Ready to move in)/i);
-      if (availM) listing.availability = availM[1] || availM[0];
+      const availMatch = html.match(/Available\s+from\s+(\d{1,2}\s+\w+(?:\s+\d{4})?)/i) ||
+                         html.match(/(Ready to move in|Immediately available)/i);
+      if (availMatch) listing.availability = availMatch[1] || availMatch[0];
     }
 
     return listing;
