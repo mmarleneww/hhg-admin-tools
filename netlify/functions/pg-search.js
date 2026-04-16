@@ -112,32 +112,99 @@ exports.handler = async function (event) {
     try {
       // Detect listing type from URL
       const isForSale = _extractUrl.includes('/for-sale') || _extractUrl.includes('property-for-sale');
-      const listingType = isForSale ? 'sale' : 'rent';
+      const lType = isForSale ? 'sale' : 'rent';
 
-      // Fetch the listing page HTML
+      // Fetch the listing page (one request only)
       const resp = await scraperFetch(_extractUrl);
       if (!resp.ok) return json({ success: false, error: `Listing page returned ${resp.status}` });
       const html = await resp.text();
 
-      // Priority 1: Extract __NEXT_DATA__ JSON embedded in page (same quality as search results)
+      // ── Priority 1: Parse __NEXT_DATA__ JSON (detail page structure) ──────
       const nextDataMatch = html.match(/<script id="__NEXT_DATA__"[^>]*>([\s\S]*?)<\/script>/);
       if (nextDataMatch) {
         try {
           const nextData = JSON.parse(nextDataMatch[1]);
-          const pageData = nextData?.props?.pageProps?.pageData?.data;
-          const r = pageData?.listingData
-                 || nextData?.props?.pageProps?.listing
-                 || null;
+          const data = nextData?.props?.pageProps?.pageData?.data;
+          const r = data?.listingDetail;
+
           if (r) {
-            let listing = formatListing(r, listingType);
-            listing.link = _extractUrl;
-            // Enrich phone from HTML we already have (single fetch, no extra cost)
-            const phoneMatch = html.match(/"\+65(\d{8})"/);
-            if (phoneMatch) listing.agent.phone = '+65' + phoneMatch[1];
-            if (!listing.furnishing) {
-              const fm = html.match(/(Fully [Ff]urnished|Partial(?:ly)? [Ff]urnished|Unfurnished)/i);
-              if (fm) listing.furnishing = fm[1];
+            // Project name
+            const projectName = r.project?.metaByType?.verified?.name
+                             || r.project?.metaByType?.unverified?.name
+                             || r.title?.en || '';
+
+            // Price
+            const priceRaw = r.price?.min || r.price?.max || 0;
+            const priceDisplay = priceRaw
+              ? (lType === 'rent' ? `$${Number(priceRaw).toLocaleString()}/mo` : `$${Number(priceRaw).toLocaleString()}`)
+              : '';
+
+            // Beds / Baths / Area — from propertyOverviewData.propertyInfo.amenities
+            const amenities = data?.propertyOverviewData?.propertyInfo?.amenities || [];
+            let beds = null, baths = null, areaSqft = null;
+            for (const a of amenities) {
+              if (a.unit === 'Bed' || a.unit === 'Beds') beds = parseInt(a.value) || null;
+              else if (a.unit === 'Bath' || a.unit === 'Baths') baths = parseInt(a.value) || null;
+              else if (a.unit === 'sqft') areaSqft = parseInt(a.value) || null;
             }
+
+            // MRT
+            const mrtObj = r.pointOfInterest?.mrt?.[0];
+            const mrt = mrtObj
+              ? `${mrtObj.walkingDurationMins} mins (${(mrtObj.walkingDistanceKm * 1000).toFixed(0)}m) from ${mrtObj.name}`
+              : '';
+
+            // Availability date
+            const availRaw = r.dates?.available?.date || '';
+            let availability = '';
+            if (availRaw) {
+              const dt = new Date(availRaw);
+              availability = dt.toLocaleDateString('en-SG', { day: 'numeric', month: 'short', year: 'numeric' });
+            }
+
+            // Listed date
+            const postedRaw = r.dates?.firstPosted?.date || '';
+            let listedDate = '';
+            if (postedRaw) {
+              const dt = new Date(postedRaw);
+              listedDate = dt.toLocaleDateString('en-SG', { day: 'numeric', month: 'short', year: 'numeric' });
+            }
+
+            // Furnishing — from detailsData.metatable.items
+            const metaItems = data?.detailsData?.metatable?.items || [];
+            let furnishing = '';
+            for (const item of metaItems) {
+              if (/fully furnished/i.test(item.value)) { furnishing = 'Fully Furnished'; break; }
+              if (/partial(?:ly)? furnished/i.test(item.value)) { furnishing = 'Partially Furnished'; break; }
+              if (/unfurnished/i.test(item.value)) { furnishing = 'Unfurnished'; break; }
+            }
+
+            // Tenure & lease
+            const tenure = r.project?.metaByType?.verified?.tenure?.text
+                        || r.project?.metaByType?.unverified?.tenure?.text || '';
+            const leaseTerm = r.lease?.text || '';
+
+            // Agent info — phone is directly in JSON!
+            const agent = r.lister?.metaByType?.agent || {};
+            const agentName = agent.name || '';
+            const agentPhone = agent.contacts?.[0]?.value || '';
+            const agentCea = agent.license || '';
+            const agencyName = r.organization?.name || '';
+
+            // Street address
+            const streetAddress = r.location?.address?.full || r.location?.address?.street || '';
+
+            const listing = {
+              link: _extractUrl,
+              projectName,
+              address: projectName || streetAddress,
+              streetAddress,
+              priceRaw, priceDisplay,
+              beds, baths, areaSqft,
+              areaDisplay: areaSqft ? `${areaSqft.toLocaleString()} sqft` : '',
+              furnishing, availability, mrt, listedDate, tenure, leaseTerm,
+              agent: { name: agentName, phone: agentPhone, cea: agentCea, agency: agencyName, blocked: false },
+            };
             return json({ success: true, listing });
           }
         } catch (parseErr) {
@@ -145,37 +212,33 @@ exports.handler = async function (event) {
         }
       }
 
-      // Priority 2: Regex fallback with improved patterns
+      // ── Priority 2: Regex fallback (improved) ─────────────────────────────
       const titleMatch = html.match(/<title>([^<]+)<\/title>/i);
       const title = titleMatch?.[1] || '';
       const agentFromTitle = title.match(/by ([^,]+),\s*\d+/i)?.[1]?.trim() || '';
       const addressFromTitle = title.split(',')[0]?.trim() || '';
 
       const projectMatch = html.match(/"localizedTitle"\s*:\s*"([^"]+)"/i)
-                        || html.match(/"projectName"\s*:\s*"([^"]+)"/i)
-                        || html.match(/"project"\s*:\s*"([^"]+)"/i);
+                        || html.match(/"projectName"\s*:\s*"([^"]+)"/i);
       const projectName = projectMatch?.[1] || addressFromTitle;
-
       const phoneMatch = html.match(/"\+65(\d{8})"/);
       const phone = phoneMatch ? '+65' + phoneMatch[1] : '';
       const ceaMatch = html.match(/R\d{7}[A-Z]/);
       const cea = ceaMatch?.[0] || '';
-      const agencyMatch = html.match(/(ERA\s+REALTY|PROPNEX[^"<]{0,20}|ORANGETEE[^"<]{0,20}|HUTTONS[^"<]{0,20}|KNIGHT\s+FRANK|SAVILLS|SLP[^"<]{0,20}|NAVIS[^"<]{0,20})/i);
+      const agencyMatch = html.match(/(ERA\s+REALTY|PROPNEX[^"<]{0,20}|ORANGETEE[^"<]{0,20}|HUTTONS[^"<]{0,20}|KNIGHT\s+FRANK|SAVILLS|SLP[^"<]{0,20}|NAVIS[^"<]{0,20}|CENTURY 21[^"<]{0,20})/i);
       const agency = agencyMatch?.[1]?.trim() || '';
-      const priceMatch = html.match(/"value"\s*:\s*(\d+)/) || html.match(/S\$\s*([\d,]+)\s*\/?\s*mo/i) || html.match(/S\$\s*([\d,]+)/);
+      const priceMatch = html.match(/"value"\s*:\s*(\d+)/) || html.match(/S\$\s*([\d,]+)\s*\/?\s*mo/i);
       const priceRaw = priceMatch ? parseInt((priceMatch[1]||'').replace(/,/g,'')) : 0;
       const bedsMatch = html.match(/"bedrooms"\s*:\s*(\d+)/i) || html.match(/(\d+)\s*Bed/i);
       const bathsMatch = html.match(/"bathrooms"\s*:\s*(\d+)/i) || html.match(/(\d+)\s*Bath/i);
       const areaMatch = html.match(/"floorArea"\s*:\s*"?(\d+)"?/i) || html.match(/([\d,]+)\s*sqft/i);
       const areaSqft = areaMatch ? parseInt((areaMatch[1]||'').replace(/,/g,'')) : null;
       const furnishMatch = html.match(/(Fully [Ff]urnished|Partial(?:ly)? [Ff]urnished|Unfurnished)/i);
-      const availMatch = html.match(/Available\s+from\s+([\d\w\s]+?)(?:\n|<)/i) || html.match(/(Ready to move in)/i);
       const mrtMatch = html.match(/"nearbyText"\s*:\s*"([^"]+)"/i);
-      const tenureMatch = html.match(/(Freehold|Leasehold\s*\d*)/i);
+      const tenureMatch = html.match(/(Freehold|Leasehold[^"<]{0,20})/i);
       const leaseMatch = html.match(/(\d+)\s+years?\s+lease/i);
       const listedMatch = html.match(/"postedOn"[^}]{0,60}"text"\s*:\s*"([^"]+)"/i)
                        || html.match(/Listed\s+on\s+(\d{1,2}\s+\w+\s+\d{4})/i);
-      const listedDate = listedMatch?.[1] || '';
 
       const listing = {
         link: _extractUrl, projectName,
@@ -184,9 +247,12 @@ exports.handler = async function (event) {
         beds: bedsMatch ? parseInt(bedsMatch[1]) : null,
         baths: bathsMatch ? parseInt(bathsMatch[1]) : null,
         areaSqft, areaDisplay: areaSqft ? `${areaSqft.toLocaleString()} sqft` : '',
-        furnishing: furnishMatch?.[1] || '', availability: availMatch?.[1] || '',
+        furnishing: furnishMatch?.[1] || '',
+        availability: '',
         mrt: mrtMatch?.[1] || '',
-        tenure: tenureMatch?.[1] || '', leaseTerm: leaseMatch?.[0] || '', listedDate,
+        tenure: tenureMatch?.[1] || '',
+        leaseTerm: leaseMatch?.[0] || '',
+        listedDate: listedMatch?.[1] || '',
         agent: { name: agentFromTitle, phone, cea, agency, blocked: false },
       };
       return json({ success: true, listing });
@@ -255,7 +321,6 @@ exports.handler = async function (event) {
       return true;
     });
     const listings = filtered.map(r => formatListing(r, listingType));
-    
     return json({ success: true, total, page, totalPages, listings, searchUrl, blocked: false, mrtSearch: !!mrtCodes });
   } catch (err) {
     return json({ success: false, error: err.message || "Server error", searchUrl });
