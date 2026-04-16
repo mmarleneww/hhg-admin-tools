@@ -6,41 +6,30 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>HHG Admin 小助手</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;700&family=JetBrains+Mono:wght@400;500&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap');
 
   :root {
-    --bg: #F5F5F7;
+    --bg: #F7F6F4;
     --surface: #FFFFFF;
-    --surface2: #F8F8FA;
-    --surface3: #EFEFEF;
-    --border: #E4E4E8;
-    --border-light: #EBEBEF;
-    --text: #0D0D0D;
-    --text2: #4A4A52;
-    --text3: #9898A6;
-    --text4: #C4C4CC;
-    --accent-j: #C8102E;
-    --accent-j-hover: #A80D26;
-    --accent-j-light: #FFF0F2;
-    --accent-j-mid: #FFDDE1;
-    --accent-y: #8B6914;
-    --accent-y-light: #FDF6E3;
-    --accent-g: #1B5E3A;
-    --accent-g-light: #EBF5F0;
-    --accent-gold: #C8102E;
-    --accent-gold-light: #FFF0F2;
-    --red: #C8102E;
-    --red-light: #FFF0F2;
-    --shadow: 0 1px 3px rgba(0,0,0,0.05), 0 4px 12px rgba(0,0,0,0.05);
-    --shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
-    --shadow-lg: 0 4px 24px rgba(0,0,0,0.08);
-    --radius: 12px;
-    --radius-sm: 8px;
-    --radius-lg: 16px;
-    --radius-xl: 20px;
+    --surface2: #F4F3F1;
+    --border: #E8E5E0;
+    --text: #1A1A1A;
+    --text2: #5A5A5A;
+    --text3: #9A9A9A;
+    --accent-j: #D42B2B;
+    --accent-j-light: #FDEAEA;
+    --accent-y: #B8860B;
+    --accent-y-light: #FEF7E0;
+    --accent-g: #2D6A4F;
+    --accent-g-light: #E8F4EE;
+    --accent-gold: #D42B2B;
+    --accent-gold-light: #FDEAEA;
+    --red: #D42B2B;
+    --red-light: #FDEAEA;
+    --shadow: 0 1px 8px rgba(0,0,0,0.06);
+    --radius: 14px;
+    --radius-sm: 10px;
     --max-w: 680px;
-    --font-body: 'Inter', 'Noto Sans SC', -apple-system, sans-serif;
-    --font-mono: 'JetBrains Mono', monospace;
   }
 
   /* ===== PASSWORD SCREEN ===== */
@@ -52,37 +41,36 @@
   }
   #pw-screen.hidden { display: none; }
   .pw-logo {
-    margin-bottom: 28px;
+    margin-bottom: 32px;
   }
   .pw-logo svg { width: 80px; height: 80px; }
-  .pw-title { font-size: 18px; font-weight: 700; color: var(--text); margin-bottom: 4px; text-align: center; letter-spacing: -0.3px; }
+  .pw-title { font-size: 18px; font-weight: 600; color: var(--text); margin-bottom: 4px; text-align: center; }
   .pw-sub { font-size: 13px; color: var(--text3); margin-bottom: 28px; text-align: center; }
   .pw-input-wrap { position: relative; width: 280px; }
   .pw-input-wrap input {
-    width: 100%; padding: 13px 48px 13px 16px;
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm); font-family: var(--font-body);
+    width: 100%; padding: 14px 48px 14px 16px;
+    border: 1.5px solid var(--border);
+    border-radius: 12px; font-family: 'DM Sans', sans-serif;
     font-size: 15px; outline: none; color: var(--text);
     background: var(--surface2);
-    transition: border-color .15s, box-shadow .15s;
+    transition: border-color .15s;
     letter-spacing: 2px;
   }
-  .pw-input-wrap input:focus { border-color: var(--accent-j); background: #fff; box-shadow: 0 0 0 3px rgba(200,16,46,0.07); }
+  .pw-input-wrap input:focus { border-color: var(--accent-j); background: #fff; }
   .pw-input-wrap button {
     position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
-    background: none; border: none; cursor: pointer; font-size: 18px;
+    background: none; border: none; cursor: pointer; font-size: 20px;
     color: var(--text3); padding: 4px;
   }
   .pw-submit {
-    width: 280px; margin-top: 10px;
+    width: 280px; margin-top: 12px;
     background: var(--accent-j); color: #fff;
-    border: none; border-radius: var(--radius-sm);
-    padding: 13px; font-family: var(--font-body);
-    font-size: 14.5px; font-weight: 600; cursor: pointer;
-    transition: background .15s;
+    border: none; border-radius: 12px;
+    padding: 14px; font-family: 'DM Sans', sans-serif;
+    font-size: 15px; font-weight: 600; cursor: pointer;
+    transition: opacity .15s;
   }
-  .pw-submit:hover { background: var(--accent-j-hover); }
-  .pw-submit:active { opacity: .9; }
+  .pw-submit:active { opacity: .85; }
   .pw-error {
     margin-top: 10px; font-size: 13px; color: var(--red);
     display: none; text-align: center;
@@ -92,19 +80,16 @@
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 
   body {
-    font-family: var(--font-body);
+    font-family: 'DM Sans', sans-serif;
     background: var(--bg);
     color: var(--text);
     min-height: 100vh;
     padding: 0 0 80px;
-    -webkit-font-smoothing: antialiased;
   }
 
   .header {
-    background: rgba(255,255,255,0.92);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border-bottom: 1px solid var(--border-light);
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
     padding: 0;
     position: sticky;
     top: 0;
@@ -113,40 +98,37 @@
   .header-inner {
     max-width: var(--max-w);
     margin: 0 auto;
-    padding: 14px 20px 0;
+    padding: 16px 20px 0;
   }
   .header-top {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 12px;
+    margin-bottom: 14px;
   }
   .logo {
-    display: flex; align-items: center; gap: 9px;
+    display: flex; align-items: center; gap: 10px;
   }
-  .logo-img { width: 30px; height: 30px; border-radius: 7px; }
-  .logo-text { font-size: 15px; font-weight: 700; color: var(--text); letter-spacing: -0.4px; }
-  .logo-sub { font-size: 9.5px; color: var(--text3); font-weight: 500; letter-spacing: 0.8px; text-transform: uppercase; }
+  .logo-img { width: 32px; height: 32px; border-radius: 8px; }
+  .logo-text { font-size: 15px; font-weight: 700; color: var(--text); letter-spacing: -0.3px; }
+  .logo-sub { font-size: 10px; color: var(--text3); font-weight: 400; letter-spacing: 0.5px; }
   .version {
     font-size: 10px; color: var(--text3);
-    font-family: var(--font-mono);
+    font-family: 'DM Mono', monospace;
     background: var(--surface2);
     padding: 3px 8px; border-radius: 20px;
-    border: 1px solid var(--border-light);
-    letter-spacing: 0.3px;
+    border: 1px solid var(--border);
   }
 
   .tabs { display: flex; gap: 0; overflow-x: auto; scrollbar-width: none; }
   .tabs::-webkit-scrollbar { display: none; }
   .tab {
-    flex: 1; text-align: center; padding: 9px 8px 10px;
-    font-size: 12.5px; font-weight: 500; color: var(--text3);
+    flex: 1; text-align: center; padding: 10px 8px;
+    font-size: 13px; font-weight: 500; color: var(--text3);
     border-bottom: 2px solid transparent; cursor: pointer;
-    transition: all .18s; white-space: nowrap; min-width: 44px;
-    letter-spacing: 0.2px;
+    transition: all .15s; white-space: nowrap; min-width: 48px;
   }
-  .tab:hover { color: var(--text2); }
-  .tab.active { color: var(--accent-j); border-bottom-color: var(--accent-j); font-weight: 600; }
+  .tab.active { color: var(--accent-j); border-bottom-color: var(--accent-j); }
 
   .page { display: none; }
   .page.active { display: block; }
@@ -158,75 +140,69 @@
 
   .card {
     background: var(--surface);
-    border: 1px solid var(--border-light);
+    border: 1px solid var(--border);
     border-radius: var(--radius);
     padding: 16px;
     margin-bottom: 12px;
-    box-shadow: var(--shadow-sm);
-    transition: box-shadow .2s;
+    box-shadow: var(--shadow);
   }
-  .card:hover { box-shadow: var(--shadow); }
 
-  label { display: block; font-size: 11.5px; font-weight: 600; color: var(--text2); margin-bottom: 6px; letter-spacing: 0.2px; text-transform: uppercase; }
+  label { display: block; font-size: 12px; font-weight: 500; color: var(--text2); margin-bottom: 6px; }
 
   textarea, input[type=text], select {
     width: 100%;
-    font-family: var(--font-body);
+    font-family: 'DM Sans', sans-serif;
     font-size: 14px; color: var(--text);
     background: var(--surface2);
     border: 1px solid var(--border);
     border-radius: var(--radius-sm);
-    padding: 11px 14px; outline: none;
-    transition: border-color .15s, background .15s;
+    padding: 12px 14px; outline: none;
+    transition: border-color .15s;
     -webkit-appearance: none; resize: none;
   }
   textarea:focus, input[type=text]:focus, select:focus {
     border-color: var(--accent-j); background: var(--surface);
-    box-shadow: 0 0 0 3px rgba(200,16,46,0.07);
   }
   textarea { line-height: 1.6; }
 
-  .person-pills { display: flex; gap: 7px; flex-wrap: wrap; }
+  .person-pills { display: flex; gap: 8px; flex-wrap: wrap; }
   .person-pill {
-    padding: 6px 14px; border-radius: 50px;
-    font-size: 12.5px; font-weight: 500;
-    border: 1px solid var(--border);
+    padding: 7px 16px; border-radius: 50px;
+    font-size: 13px; font-weight: 500;
+    border: 1.5px solid var(--border);
     cursor: pointer; transition: all .15s;
     background: var(--surface); color: var(--text2);
   }
-  .person-pill:hover { border-color: var(--text3); color: var(--text); }
-  .person-pill.active-j { background: var(--accent-j-light); border-color: var(--accent-j-mid); color: var(--accent-j); }
+  .person-pill.active-j { background: var(--accent-j-light); border-color: var(--accent-j); color: var(--accent-j); }
   .person-pill.active-w { background: var(--accent-g-light); border-color: var(--accent-g); color: var(--accent-g); }
   .person-pill.active-y { background: var(--accent-y-light); border-color: var(--accent-y); color: var(--accent-y); }
-  .person-pill.active-g { background: var(--accent-j-light); border-color: var(--accent-j-mid); color: var(--accent-j); }
+  .person-pill.active-g { background: var(--accent-j-light); border-color: var(--accent-j); color: var(--accent-j); }
 
   .urgency-btns { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
   .urgency-btn {
     padding: 10px 6px; border-radius: var(--radius-sm);
     font-size: 12px; font-weight: 500;
-    border: 1px solid var(--border); cursor: pointer;
+    border: 1.5px solid var(--border); cursor: pointer;
     transition: all .15s; background: var(--surface);
     color: var(--text2); text-align: center; line-height: 1.3;
   }
   .urgency-btn.active { border-color: var(--red); background: var(--red-light); color: var(--red); }
 
   .btn-generate {
-    width: 100%; padding: 14px 20px;
+    width: 100%; padding: 16px;
     border-radius: var(--radius);
-    font-family: var(--font-body);
-    font-size: 14.5px; font-weight: 600;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px; font-weight: 600;
     border: none; cursor: pointer;
     transition: all .15s; margin-top: 4px;
     display: flex; align-items: center;
     justify-content: center; gap: 8px;
-    letter-spacing: -0.1px;
   }
   .btn-j { background: var(--accent-j); color: #fff; }
-  .btn-j:hover { background: var(--accent-j-hover); }
-  .btn-j:active { opacity: .9; transform: scale(.99); }
+  .btn-j:active { opacity: .85; transform: scale(.99); }
   .btn-y { background: var(--accent-y); color: #fff; }
   .btn-y:active { opacity: .85; transform: scale(.99); }
-  .btn-generate:disabled { opacity: .45; cursor: not-allowed; transform: none; }
+  .btn-generate:disabled { opacity: .5; cursor: not-allowed; transform: none; }
 
   .spinner {
     width: 16px; height: 16px;
@@ -242,21 +218,21 @@
   .result-box {
     display: none; margin-top: 16px;
     background: var(--surface2);
-    border: 1px solid var(--border-light);
+    border: 1px solid var(--border);
     border-radius: var(--radius); overflow: hidden;
   }
   .result-box.show { display: block; }
   .result-header {
     display: flex; align-items: center;
     justify-content: space-between;
-    padding: 11px 14px;
-    border-bottom: 1px solid var(--border-light);
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--border);
     background: var(--surface);
   }
-  .result-label { font-size: 10.5px; font-weight: 700; color: var(--text3); letter-spacing: .8px; text-transform: uppercase; }
+  .result-label { font-size: 11px; font-weight: 600; color: var(--text3); letter-spacing: .5px; text-transform: uppercase; }
   .btn-copy {
-    font-family: var(--font-body); font-size: 11.5px;
-    font-weight: 600; color: var(--accent-j);
+    font-family: 'DM Sans', sans-serif; font-size: 12px;
+    font-weight: 500; color: var(--accent-j);
     background: var(--accent-j-light); border: none;
     padding: 5px 12px; border-radius: 20px; cursor: pointer; transition: all .15s;
   }
@@ -266,7 +242,7 @@
     padding: 14px; font-size: 13px;
     line-height: 1.7; color: var(--text);
     white-space: pre-wrap; word-break: break-word;
-    font-family: var(--font-mono);
+    font-family: 'DM Mono', monospace;
   }
 
   .error-box {
@@ -300,50 +276,32 @@
   .ht-listing { background: var(--accent-g-light); color: var(--accent-g); }
 
   /* Mode toggle */
-  .mode-toggle { display: flex; gap: 0; margin-bottom: 14px; border: 1px solid var(--border); border-radius: var(--radius-sm); overflow: hidden; }
-  .mode-btn { flex: 1; padding: 9px 8px; font-family: var(--font-body); font-size: 12.5px; font-weight: 500; color: var(--text2); background: var(--surface); border: none; cursor: pointer; transition: all .15s; }
-  .mode-btn:hover { background: var(--surface2); color: var(--text); }
-  .mode-btn.active { background: var(--accent-j); color: #fff; font-weight: 600; }
+  .mode-toggle { display: flex; gap: 0; margin-bottom: 14px; border: 1.5px solid var(--border); border-radius: var(--radius-sm); overflow: hidden; }
+  .mode-btn { flex: 1; padding: 9px 8px; font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 500; color: var(--text2); background: var(--surface); border: none; cursor: pointer; transition: all .15s; }
+  .mode-btn.active { background: var(--accent-j); color: #fff; }
 
   /* Listing rows */
-  .listing-row { background: var(--surface2); border: 1px solid var(--border-light); border-radius: var(--radius-sm); padding: 12px; margin-bottom: 8px; position: relative; transition: border-color .15s; }
-  .listing-row:hover { border-color: var(--border); }
+  .listing-row { background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px; margin-bottom: 8px; position: relative; }
   .listing-row-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
-  .listing-num { font-size: 10.5px; font-weight: 700; color: var(--text4); letter-spacing: 0.5px; text-transform: uppercase; }
-  .btn-remove { font-size: 11px; color: var(--red); background: none; border: none; cursor: pointer; padding: 2px 6px; opacity: 0.7; }
-  .btn-remove:hover { opacity: 1; }
-  .btn-add-listing { width: 100%; padding: 10px; border-radius: var(--radius-sm); font-family: var(--font-body); font-size: 13px; font-weight: 500; color: var(--accent-j); background: var(--accent-j-light); border: 1.5px dashed var(--accent-j-mid); cursor: pointer; margin-bottom: 14px; transition: all .15s; }
-  .btn-add-listing:hover { background: var(--accent-j-mid); }
+  .listing-num { font-size: 11px; font-weight: 700; color: var(--text3); }
+  .btn-remove { font-size: 11px; color: var(--red); background: none; border: none; cursor: pointer; padding: 2px 6px; }
+  .btn-add-listing { width: 100%; padding: 10px; border-radius: var(--radius-sm); font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500; color: var(--accent-j); background: var(--accent-j-light); border: 1.5px dashed var(--accent-j); cursor: pointer; margin-bottom: 14px; transition: all .15s; }
   .btn-add-listing:active { opacity: .7; }
   .btn-g { background: var(--accent-j); color: #fff; }
   .btn-g:active { opacity: .85; transform: scale(.99); }
-  .person-pill.active-g { background: var(--accent-j-light); border-color: var(--accent-j-mid); color: var(--accent-j); }
+  .person-pill.active-g { background: var(--accent-j-light); border-color: var(--accent-j); color: var(--accent-j); }
 
   /* Viewing time input */
-  .time-input { width: 100%; font-family: var(--font-body); font-size: 13px; color: var(--text); background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 7px 10px; outline: none; margin-top: 6px; }
+  .time-input { width: 100%; font-family: 'DM Sans', sans-serif; font-size: 13px; color: var(--text); background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 7px 10px; outline: none; margin-top: 6px; }
   .time-input:focus { border-color: var(--accent-j); }
-  .history-time { font-size: 11px; color: var(--text3); font-family: var(--font-mono); letter-spacing: 0.2px; }
-  .history-preview { font-size: 12.5px; color: var(--text2); line-height: 1.5; }
+  .history-time { font-size: 11px; color: var(--text3); font-family: 'DM Mono', monospace; }
+  .history-preview { font-size: 12px; color: var(--text2); line-height: 1.5; }
   .btn-copy-sm {
     font-size: 11px; font-weight: 500; color: var(--text3);
-    background: var(--surface2); border: 1px solid var(--border-light);
+    background: var(--surface2); border: 1px solid var(--border);
     border-radius: 20px; padding: 4px 10px; cursor: pointer;
-    margin-top: 8px; display: inline-block; transition: all .15s;
+    margin-top: 8px; display: inline-block;
   }
-  .btn-copy-sm:hover { background: var(--surface3); color: var(--text2); }
-
-  .history-empty { text-align: center; padding: 48px 20px; color: var(--text3); font-size: 13px; }
-  .history-item {
-    background: var(--surface); border: 1px solid var(--border-light);
-    border-radius: var(--radius-sm); padding: 14px; margin-bottom: 10px;
-    transition: border-color .15s;
-  }
-  .history-item:hover { border-color: var(--border); }
-  .history-meta { display: flex; justify-content: space-between; margin-bottom: 8px; }
-  .history-type { font-size: 10.5px; font-weight: 700; padding: 3px 9px; border-radius: 20px; letter-spacing: 0.3px; }
-  .ht-daily { background: var(--accent-j-light); color: var(--accent-j); }
-  .ht-repair { background: var(--accent-y-light); color: var(--accent-y); }
-  .ht-listing { background: var(--accent-g-light); color: var(--accent-g); }
 
   @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
   .cursor {
@@ -368,31 +326,6 @@
   <div class="pw-error" id="pw-error">密码不正确，请重试</div>
 </div>
 
-<!-- IDENTITY SCREEN -->
-<div id="identity-screen" class="hidden" style="position:fixed;inset:0;background:var(--bg);z-index:999;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;">
-  <div style="font-size:24px;font-weight:800;color:var(--text);margin-bottom:6px;">你是谁？</div>
-  <div style="font-size:14px;color:var(--text3);margin-bottom:28px;">选择你的身份，7天内不再询问</div>
-  <div style="width:100%;max-width:320px;display:flex;flex-direction:column;gap:10px;" id="identity-btns">
-    <div style="display:flex;gap:10px;">
-      <button onclick="selectIdentity('Jaclyn')" class="id-btn" style="flex:1;padding:14px;border-radius:12px;border:2px solid var(--border);background:var(--surface);font-size:15px;font-weight:600;cursor:pointer;color:var(--text);">Jaclyn</button>
-      <button onclick="selectIdentity('Wiki')" class="id-btn" style="flex:1;padding:14px;border-radius:12px;border:2px solid var(--border);background:var(--surface);font-size:15px;font-weight:600;cursor:pointer;color:var(--text);">Wiki</button>
-    </div>
-    <div style="display:flex;gap:10px;">
-      <button onclick="selectIdentity('Yuting')" class="id-btn" style="flex:1;padding:14px;border-radius:12px;border:2px solid var(--border);background:var(--surface);font-size:15px;font-weight:600;cursor:pointer;color:var(--text);">Yuting</button>
-      <button onclick="selectIdentity('Zico')" class="id-btn" style="flex:1;padding:14px;border-radius:12px;border:2px solid var(--border);background:var(--surface);font-size:15px;font-weight:600;cursor:pointer;color:var(--text);">Zico</button>
-    </div>
-    <div style="display:flex;gap:10px;">
-      <button onclick="selectIdentity('Andy')" class="id-btn" style="flex:1;padding:14px;border-radius:12px;border:2px solid var(--border);background:var(--surface);font-size:15px;font-weight:600;cursor:pointer;color:var(--text);">Andy</button>
-      <button onclick="selectIdentity('Issac')" class="id-btn" style="flex:1;padding:14px;border-radius:12px;border:2px solid var(--border);background:var(--surface);font-size:15px;font-weight:600;cursor:pointer;color:var(--text);">Issac</button>
-    </div>
-    <div style="display:flex;gap:10px;">
-      <button onclick="selectIdentity('Boon Guan')" class="id-btn" style="flex:1;padding:14px;border-radius:12px;border:2px solid var(--border);background:var(--surface);font-size:15px;font-weight:600;cursor:pointer;color:var(--text);">Boon Guan</button>
-      <button onclick="selectIdentity('Connie')" class="id-btn" style="flex:1;padding:14px;border-radius:12px;border:2px solid var(--border);background:var(--surface);font-size:15px;font-weight:600;cursor:pointer;color:var(--text);">Connie</button>
-    </div>
-  </div>
-  <div style="margin-top:16px;font-size:12px;color:var(--text3);" id="identity-current"></div>
-</div>
-
 <div class="header">
   <div class="header-inner">
     <div class="header-top">
@@ -407,7 +340,6 @@
     </div>
     <div class="tabs">
     <div class="tab active" onclick="switchTab('home')">首页</div>
-    <div class="tab" onclick="switchTab('crm')">客户</div>
     <div class="tab" onclick="switchTab('search')">找房</div>
     <div class="tab" onclick="switchTab('daily')">日报</div>
     <div class="tab" onclick="switchTab('repair')">售后</div>
@@ -422,74 +354,70 @@
   <div class="page-inner" style="padding-bottom:60px;">
 
     <!-- 找房跟进 -->
-    <div style="font-size:10.5px;font-weight:700;color:var(--text3);letter-spacing:1.2px;text-transform:uppercase;margin-bottom:10px;display:flex;align-items:center;gap:8px;">找房 & 跟进 <span style="flex:1;height:1px;background:var(--border-light);display:block;"></span></div>
+    <div style="font-size:10px;font-weight:600;color:var(--text3);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;display:flex;align-items:center;gap:6px;">找房 & 跟进 <span style="flex:1;height:1px;background:var(--border);display:block;"></span></div>
 
-    <div style="background:var(--surface);border-radius:var(--radius);border:1px solid var(--border-light);margin-bottom:16px;overflow:hidden;box-shadow:var(--shadow-sm);">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--border-light);">
-        <div style="background:var(--surface);padding:16px 15px;cursor:pointer;transition:background .15s;" onclick="switchTab('search');setTimeout(()=>setFindStep(1),100)" onmouseenter="this.style.background='var(--surface2)'" onmouseleave="this.style.background='var(--surface)'">
-          <div style="font-size:20px;margin-bottom:6px;">🔍</div>
-          <div style="font-size:13px;font-weight:600;color:var(--text);letter-spacing:-0.2px;">① 找房</div>
-          <div style="font-size:11px;color:var(--text3);margin-top:3px;line-height:1.4;">按条件搜房，勾选满意的</div>
+    <div style="background:var(--surface);border-radius:var(--radius-sm);border:1px solid var(--border);margin-bottom:14px;overflow:hidden;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5px;background:var(--border);">
+        <div style="background:var(--surface);padding:14px 13px;cursor:pointer;" onclick="switchTab('search');setTimeout(()=>setFindStep(1),100)">
+          <div style="font-size:18px;margin-bottom:4px;">🔍</div>
+          <div style="font-size:13px;font-weight:600;">① 找房</div>
+          <div style="font-size:10px;color:var(--text3);margin-top:2px;line-height:1.4;">按条件搜房，勾选满意的</div>
         </div>
-        <div style="background:var(--surface);padding:16px 15px;cursor:pointer;transition:background .15s;" onclick="switchTab('search');setTimeout(()=>{switchTab('search');setFindStep(1);toggleExtractor();},300)" onmouseenter="this.style.background='var(--surface2)'" onmouseleave="this.style.background='var(--surface)'">
-          <div style="font-size:20px;margin-bottom:6px;">🔗</div>
-          <div style="font-size:13px;font-weight:600;color:var(--text);letter-spacing:-0.2px;">单链接提取</div>
-          <div style="font-size:11px;color:var(--text3);margin-top:3px;line-height:1.4;">粘贴PG链接，一键提取字段</div>
+        <div style="background:var(--surface);padding:14px 13px;cursor:pointer;" onclick="switchTab('search');setTimeout(()=>{switchTab('search');setFindStep(1);toggleExtractor();},300)">
+          <div style="font-size:18px;margin-bottom:4px;">🔗</div>
+          <div style="font-size:13px;font-weight:600;">单链接提取</div>
+          <div style="font-size:10px;color:var(--text3);margin-top:2px;line-height:1.4;">粘贴PG链接，一键提取字段</div>
         </div>
-        <div style="background:var(--surface);padding:14px 15px;cursor:pointer;grid-column:1/-1;border-top:1px solid var(--border-light);transition:background .15s;display:flex;align-items:center;gap:10px;" onclick="switchToStep2()" onmouseenter="this.style.background='var(--surface2)'" onmouseleave="this.style.background='var(--surface)'">
-          <span style="font-size:16px;">📤</span>
-          <div>
-            <div style="font-size:13px;font-weight:600;color:var(--text);letter-spacing:-0.2px;">② 整理房源 → 发客户消息</div>
-            <div style="font-size:11px;color:var(--text3);margin-top:2px;">shortlist → 加亮点 → 生成微信消息</div>
-          </div>
-          <span style="margin-left:auto;color:var(--text4);font-size:13px;">›</span>
+        <div style="background:var(--surface);padding:14px 13px;cursor:pointer;grid-column:1/-1;" onclick="switchToStep2()">
+          <div style="font-size:13px;font-weight:600;">② 整理房源 → 发客户消息</div>
+          <div style="font-size:10px;color:var(--text3);margin-top:2px;">shortlist → 加亮点 → 生成微信消息</div>
         </div>
       </div>
     </div>
 
     <!-- 日常运营 -->
-    <div style="font-size:10.5px;font-weight:700;color:var(--text3);letter-spacing:1.2px;text-transform:uppercase;margin-bottom:10px;display:flex;align-items:center;gap:8px;">日常运营 <span style="flex:1;height:1px;background:var(--border-light);display:block;"></span></div>
+    <div style="font-size:10px;font-weight:600;color:var(--text3);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;display:flex;align-items:center;gap:6px;">日常运营 <span style="flex:1;height:1px;background:var(--border);display:block;"></span></div>
 
-    <div style="background:var(--surface);border-radius:var(--radius);border:1px solid var(--border-light);margin-bottom:16px;overflow:hidden;box-shadow:var(--shadow-sm);">
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1px;background:var(--border-light);">
-        <div style="background:var(--surface);padding:16px 13px;cursor:pointer;transition:background .15s;" onclick="switchTab('daily')" onmouseenter="this.style.background='var(--surface2)'" onmouseleave="this.style.background='var(--surface)'">
-          <div style="font-size:20px;margin-bottom:6px;">📝</div>
-          <div style="font-size:12.5px;font-weight:600;color:var(--text);">日报整理</div>
-          <div style="font-size:10.5px;color:var(--text3);margin-top:3px;line-height:1.4;">随手记 → 标准日报</div>
+    <div style="background:var(--surface);border-radius:var(--radius-sm);border:1px solid var(--border);margin-bottom:14px;overflow:hidden;">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.5px;background:var(--border);">
+        <div style="background:var(--surface);padding:14px 13px;cursor:pointer;" onclick="switchTab('daily')">
+          <div style="font-size:18px;margin-bottom:4px;">📝</div>
+          <div style="font-size:12px;font-weight:600;">日报整理</div>
+          <div style="font-size:10px;color:var(--text3);margin-top:2px;line-height:1.4;">随手记 → 标准日报</div>
         </div>
-        <div style="background:var(--surface);padding:16px 13px;cursor:pointer;transition:background .15s;" onclick="switchTab('repair')" onmouseenter="this.style.background='var(--surface2)'" onmouseleave="this.style.background='var(--surface)'">
-          <div style="font-size:20px;margin-bottom:6px;">🔧</div>
-          <div style="font-size:12.5px;font-weight:600;color:var(--text);">售后服务</div>
-          <div style="font-size:10.5px;color:var(--text3);margin-top:3px;line-height:1.4;">报修跟进，中英双语</div>
+        <div style="background:var(--surface);padding:14px 13px;cursor:pointer;" onclick="switchTab('repair')">
+          <div style="font-size:18px;margin-bottom:4px;">🔧</div>
+          <div style="font-size:12px;font-weight:600;">售后服务</div>
+          <div style="font-size:10px;color:var(--text3);margin-top:2px;line-height:1.4;">报修跟进，中英双语</div>
         </div>
-        <div style="background:var(--surface);padding:16px 13px;cursor:pointer;transition:background .15s;" onclick="switchTab('history')" onmouseenter="this.style.background='var(--surface2)'" onmouseleave="this.style.background='var(--surface)'">
-          <div style="font-size:20px;margin-bottom:6px;">🗂</div>
-          <div style="font-size:12.5px;font-weight:600;color:var(--text);">历史记录</div>
-          <div style="font-size:10.5px;color:var(--text3);margin-top:3px;line-height:1.4;">所有生成的消息</div>
+        <div style="background:var(--surface);padding:14px 13px;cursor:pointer;" onclick="switchTab('history')">
+          <div style="font-size:18px;margin-bottom:4px;">🗂</div>
+          <div style="font-size:12px;font-weight:600;">历史记录</div>
+          <div style="font-size:10px;color:var(--text3);margin-top:2px;line-height:1.4;">所有生成的消息</div>
         </div>
       </div>
     </div>
 
     <!-- 即将上线 -->
-    <div style="font-size:10.5px;font-weight:700;color:var(--text3);letter-spacing:1.2px;text-transform:uppercase;margin-bottom:10px;display:flex;align-items:center;gap:8px;">即将上线 <span style="flex:1;height:1px;background:var(--border-light);display:block;"></span></div>
+    <div style="font-size:10px;font-weight:600;color:var(--text3);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;display:flex;align-items:center;gap:6px;">即将上线 <span style="flex:1;height:1px;background:var(--border);display:block;"></span></div>
 
-    <div style="background:var(--surface);border-radius:var(--radius);border:1px solid var(--border-light);margin-bottom:14px;overflow:hidden;box-shadow:var(--shadow-sm);">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--border-light);">
-        <div style="background:var(--surface);padding:12px 14px;opacity:0.45;">
-          <div style="font-size:12.5px;font-weight:500;color:var(--text);">💬 看房反馈跟进</div>
-          <div style="font-size:10.5px;color:var(--text3);margin-top:2px;">输入反馈，生成跟进消息</div>
+    <div style="background:var(--surface);border-radius:var(--radius-sm);border:1px solid var(--border);margin-bottom:14px;overflow:hidden;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5px;background:var(--border);">
+        <div style="background:var(--surface);padding:12px 13px;opacity:0.5;">
+          <div style="font-size:12px;font-weight:500;">💬 看房反馈跟进</div>
+          <div style="font-size:10px;color:var(--text3);margin-top:2px;">输入反馈，生成跟进消息</div>
         </div>
-        <div style="background:var(--surface);padding:12px 14px;opacity:0.45;">
-          <div style="font-size:12.5px;font-weight:500;color:var(--text);">📄 合同信息提取</div>
-          <div style="font-size:10.5px;color:var(--text3);margin-top:2px;">上传PDF，提取关键条款</div>
+        <div style="background:var(--surface);padding:12px 13px;opacity:0.5;">
+          <div style="font-size:12px;font-weight:500;">📄 合同信息提取</div>
+          <div style="font-size:10px;color:var(--text3);margin-top:2px;">上传PDF，提取关键条款</div>
         </div>
-        <div style="background:var(--surface);padding:12px 14px;opacity:0.45;">
-          <div style="font-size:12.5px;font-weight:500;color:var(--text);">🧾 发票生成</div>
-          <div style="font-size:10.5px;color:var(--text3);margin-top:2px;">填写项目/金额，生成发票</div>
+        <div style="background:var(--surface);padding:12px 13px;opacity:0.5;">
+          <div style="font-size:12px;font-weight:500;">🧾 发票生成</div>
+          <div style="font-size:10px;color:var(--text3);margin-top:2px;">填写项目/金额，生成发票</div>
         </div>
-        <div style="background:var(--surface);padding:12px 14px;opacity:0.45;">
-          <div style="font-size:12.5px;font-weight:500;color:var(--text);">🎯 客户需求匹配</div>
-          <div style="font-size:10.5px;color:var(--text3);margin-top:2px;">AI推荐合适房源</div>
+        <div style="background:var(--surface);padding:12px 13px;opacity:0.5;">
+          <div style="font-size:12px;font-weight:500;">🎯 客户需求匹配</div>
+          <div style="font-size:10px;color:var(--text3);margin-top:2px;">AI推荐合适房源</div>
         </div>
       </div>
     </div>
@@ -789,201 +717,163 @@
 
 <!-- REPAIR FOLLOW-UP -->
 <div class="page" id="page-repair">
-  <div class="page-inner">
-    <div class="tip"><strong>使用方法：</strong>填入报修信息，选跟进力度，直接复制发给师傅/租客/屋主。</div>
-  <div class="card">
-    <div class="field-group">
-      <label>房源 / 单元</label>
-      <input type="text" id="rep-unit" placeholder="如：D'Leedon #07-04">
-    </div>
-    <div class="field-group">
-      <label>报修类型</label>
-      <select id="rep-type">
-        <option value="">选择类型...</option>
-        <option>空调故障</option>
-        <option>水管漏水</option>
-        <option>电器问题</option>
-        <option>锁/门问题</option>
-        <option>虫害</option>
-        <option>其他</option>
-      </select>
-    </div>
-    <div class="field-group">
-      <label>第三方 / 师傅名字</label>
-      <input type="text" id="rep-vendor" placeholder="如：Cool Air Pte / 王师傅">
-    </div>
-    <div class="field-group">
-      <label>已等待天数</label>
-      <input type="text" id="rep-days" placeholder="如：2天">
-    </div>
-    <div class="field-group">
-      <label>补充说明（可选）</label>
-      <textarea id="rep-notes" rows="3" placeholder="如：租客已多次催促、这周必须解决..."></textarea>
-    </div>
-    <div class="field-group">
-      <label>催单力度</label>
-      <div class="urgency-btns">
-        <div class="urgency-btn" id="urg-1" onclick="selectUrgency(1)">第一次<br>联系<br><span style="font-size:10px;color:#999">礼貌询问</span></div>
-        <div class="urgency-btn" id="urg-2" onclick="selectUrgency(2)">第二次<br>跟进<br><span style="font-size:10px;color:#999">友好坚定</span></div>
-        <div class="urgency-btn" id="urg-3" onclick="selectUrgency(3)">超期<br>升级<br><span style="font-size:10px;color:#999">正式要求</span></div>
-      </div>
-    </div>
-    <div class="field-group">
-      <label>消息语言</label>
-      <div class="person-pills">
-        <div class="person-pill" id="lang-zh" onclick="selectLang('zh')">中文</div>
-        <div class="person-pill" id="lang-en" onclick="selectLang('en')">English</div>
-        <div class="person-pill" id="lang-both" onclick="selectLang('both')">双语</div>
-      </div>
-    </div>
-    <button class="btn-generate btn-y" id="btn-repair" onclick="generateRepair()">
-      <span id="repair-btn-text">生成催单消息</span>
-      <div class="spinner" id="repair-spinner"></div>
-    </button>
-    <div class="result-box" id="repair-result">
-      <div class="result-header">
-        <span class="result-label">生成的消息</span>
-        <button class="btn-copy" id="repair-copy-btn" onclick="copyResult('repair')">复制</button>
-      </div>
-      <div class="result-content" id="repair-result-content"></div>
-    </div>
-    <div class="error-box" id="repair-error"></div>
-  </div><!-- /card -->
-  </div><!-- /page-inner -->
-</div>
-
-<!-- listing page merged into 找房 -->
-
-<!-- CRM PAGE -->
-<div class="page" id="page-crm">
   <div class="page-inner" style="padding-bottom:60px;">
 
-    <!-- 顶部栏：标题 + 新建按钮 -->
-    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;">
-      <div>
-        <div style="font-size:17px;font-weight:700;color:var(--text);letter-spacing:-0.4px;">客户 Pipeline</div>
-        <div style="font-size:12px;color:var(--text3);margin-top:2px;" id="crm-summary-text">加载中...</div>
+    <!-- Sub-tabs -->
+    <div style="display:flex;gap:0;background:var(--surface2);border-radius:10px;padding:3px;margin-bottom:12px;">
+      <button id="as-tab-list"     class="mode-btn active" onclick="asShowTab('list')"     style="flex:1;border-radius:8px;font-size:11px;">📋 进行中</button>
+      <button id="as-tab-resolved" class="mode-btn"        onclick="asShowTab('resolved')" style="flex:1;border-radius:8px;font-size:11px;">✅ 已解决</button>
+      <button id="as-tab-new"      class="mode-btn"        onclick="asShowTab('new')"      style="flex:1;border-radius:8px;font-size:11px;">➕ 新建</button>
+      <button id="as-tab-msg"      class="mode-btn"        onclick="asShowTab('msg')"      style="flex:1;border-radius:8px;font-size:11px;">✉️ 消息</button>
+    </div>
+
+    <!-- ── 进行中案例列表 ── -->
+    <div id="as-view-list">
+      <!-- 筛选栏 -->
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;align-items:center;">
+        <select id="as-filter-owner" onchange="asRenderList()" style="font-size:12px;padding:4px 8px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text);flex:1;min-width:90px;">
+          <option value="">全部负责人</option>
+          <option>Jaclyn</option><option>Wiki</option><option>Yuting</option>
+        </select>
+        <select id="as-filter-status" onchange="asRenderList()" style="font-size:12px;padding:4px 8px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text);flex:1;min-width:90px;">
+          <option value="">全部状态</option>
+          <option value="active">处理中</option>
+          <option value="waiting">等待对方</option>
+          <option value="urgent">⚠️ 紧急</option>
+        </select>
+        <select id="as-sort" onchange="asRenderList()" style="font-size:12px;padding:4px 8px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text);flex:1;min-width:90px;">
+          <option value="newest">最新创建</option>
+          <option value="oldest">最旧创建</option>
+          <option value="stale">最久未更新</option>
+        </select>
       </div>
-      <button onclick="crmShowNewClient()" style="background:var(--accent-j);color:#fff;border:none;border-radius:var(--radius-sm);padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer;letter-spacing:-0.1px;transition:background .15s;" onmouseenter="this.style.background='var(--accent-j-hover)'" onmouseleave="this.style.background='var(--accent-j)'">+ 新客户</button>
+      <div id="as-list-container"></div>
+      <div id="as-list-empty" style="display:none;text-align:center;padding:40px 20px;color:var(--text3);font-size:13px;">
+        暂无进行中的案例<br><span style="font-size:12px;">点「新建」开始跟踪</span>
+      </div>
     </div>
 
-    <!-- 筛选栏 -->
-    <div style="display:flex;gap:5px;overflow-x:auto;padding-bottom:4px;margin-bottom:12px;-webkit-overflow-scrolling:touch;scrollbar-width:none;">
-      <button id="crm-f-all" onclick="crmSetFilter('all')" style="white-space:nowrap;padding:5px 13px;border-radius:20px;font-size:12px;font-weight:600;border:1.5px solid var(--accent-j);background:var(--accent-j);color:#fff;cursor:pointer;transition:all .15s;">全部</button>
-      <button id="crm-f-新客户" onclick="crmSetFilter('新客户')" style="white-space:nowrap;padding:5px 13px;border-radius:20px;font-size:12px;font-weight:500;border:1px solid var(--border);background:var(--surface);color:var(--text2);cursor:pointer;transition:all .15s;">新客户</button>
-      <button id="crm-f-发房源" onclick="crmSetFilter('发房源')" style="white-space:nowrap;padding:5px 13px;border-radius:20px;font-size:12px;font-weight:500;border:1px solid var(--border);background:var(--surface);color:var(--text2);cursor:pointer;transition:all .15s;">发房源</button>
-      <button id="crm-f-看房中" onclick="crmSetFilter('看房中')" style="white-space:nowrap;padding:5px 13px;border-radius:20px;font-size:12px;font-weight:500;border:1px solid var(--border);background:var(--surface);color:var(--text2);cursor:pointer;transition:all .15s;">看房中</button>
-      <button id="crm-f-谈Offer" onclick="crmSetFilter('谈Offer')" style="white-space:nowrap;padding:5px 13px;border-radius:20px;font-size:12px;font-weight:500;border:1px solid var(--border);background:var(--surface);color:var(--text2);cursor:pointer;transition:all .15s;">谈Offer</button>
-      <button id="crm-f-成交" onclick="crmSetFilter('成交')" style="white-space:nowrap;padding:5px 13px;border-radius:20px;font-size:12px;font-weight:500;border:1px solid var(--border);background:var(--surface);color:var(--text2);cursor:pointer;transition:all .15s;">成交</button>
+    <!-- ── 已解决案例 ── -->
+    <div id="as-view-resolved" style="display:none;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+        <div style="font-size:12px;color:var(--text3);">已解决案例</div>
+        <button onclick="asExportCSV()" style="font-size:12px;padding:5px 12px;background:var(--accent-j);color:#fff;border:none;border-radius:8px;cursor:pointer;font-weight:600;">⬇ 导出 CSV</button>
+      </div>
+      <div id="as-resolved-container"></div>
+      <div id="as-resolved-empty" style="display:none;text-align:center;padding:40px 20px;color:var(--text3);font-size:13px;">暂无已解决案例</div>
     </div>
 
-    <!-- 优先级筛选 -->
-    <div style="display:flex;gap:8px;margin-bottom:14px;align-items:center;background:var(--surface2);padding:8px 12px;border-radius:var(--radius-sm);border:1px solid var(--border-light);">
-      <span style="font-size:11.5px;color:var(--text3);font-weight:500;">优先级：</span>
-      <label style="font-size:12px;display:flex;align-items:center;gap:4px;cursor:pointer;">
-        <input type="checkbox" id="crm-priority-high" onchange="crmRenderPipeline()" checked style="accent-color:var(--accent-j);"> 🔴 高
-      </label>
-      <label style="font-size:12px;display:flex;align-items:center;gap:4px;cursor:pointer;">
-        <input type="checkbox" id="crm-priority-mid" onchange="crmRenderPipeline()" checked style="accent-color:var(--accent-j);"> 🟡 中
-      </label>
-      <label style="font-size:12px;display:flex;align-items:center;gap:4px;cursor:pointer;">
-        <input type="checkbox" id="crm-priority-low" onchange="crmRenderPipeline()" checked style="accent-color:var(--accent-j);"> 🟢 普通
-      </label>
-      <select id="crm-filter-admin" onchange="crmRenderPipeline()" style="margin-left:auto;font-size:12px;padding:4px 8px;border-radius:6px;border:1px solid var(--border);background:var(--surface);color:var(--text);">
-        <option value="">全部Admin</option>
-        <option>Jaclyn</option><option>Wiki</option><option>Yuting</option><option>Zico</option>
-      </select>
+    <!-- ── 案例详情 ── -->
+    <div id="as-view-detail" style="display:none;">
+      <button id="as-back-btn" onclick="asShowTab('list')" style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--text2);background:none;border:none;cursor:pointer;margin-bottom:14px;padding:0;">← 返回列表</button>
+      <div id="as-detail-content"></div>
     </div>
 
-    <!-- 客户列表 -->
-    <div id="crm-list-container"></div>
-    <div id="crm-list-empty" style="display:none;text-align:center;padding:40px 20px;color:var(--text3);font-size:13px;">
-      暂无客户<br><span style="font-size:12px;">点「+ 新客户」开始</span>
-    </div>
-
-    <!-- 新建客户表单（滑入） -->
-    <div id="crm-new-panel" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:900;overflow-y:auto;backdrop-filter:blur(4px);">
-      <div style="margin:16px auto 40px;max-width:480px;background:var(--surface);border-radius:var(--radius-lg);padding:22px;box-shadow:var(--shadow-lg);">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
-          <div style="font-size:16px;font-weight:700;color:var(--text);letter-spacing:-0.3px;">新建客户</div>
-          <button onclick="document.getElementById('crm-new-panel').style.display='none'" style="border:none;background:var(--surface2);font-size:16px;cursor:pointer;color:var(--text2);width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;">✕</button>
+    <!-- ── 新建案例 ── -->
+    <div id="as-view-new" style="display:none;">
+      <div class="card">
+        <div class="field-group">
+          <label>物业名称 / 单元</label>
+          <input type="text" id="as-new-property" placeholder="如：Principal Garden #08-12">
         </div>
         <div class="field-group">
-          <label>客户姓名 *</label>
-          <input type="text" id="crm-n-name" placeholder="如：张先生">
+          <label>客户姓名</label>
+          <input type="text" id="as-new-client" placeholder="如：张先生">
         </div>
         <div class="field-group">
-          <label>联系方式</label>
-          <input type="text" id="crm-n-contact" placeholder="微信 / 电话">
-        </div>
-        <div class="field-group">
-          <label>客户类型</label>
-          <div class="person-pills">
-            <div class="person-pill" id="crm-nt-res" onclick="crmSelectType('Residential')">🏠 Residential</div>
-            <div class="person-pill" id="crm-nt-com" onclick="crmSelectType('Commercial')">🏢 Commercial</div>
-          </div>
-        </div>
-        <div class="field-group">
-          <label>优先级</label>
-          <div class="person-pills">
-            <div class="person-pill" id="crm-np-high" onclick="crmSelectPriority('high')">🔴 高（买卖/大额）</div>
-            <div class="person-pill" id="crm-np-mid" onclick="crmSelectPriority('mid')">🟡 中</div>
-            <div class="person-pill" id="crm-np-low" onclick="crmSelectPriority('low')">🟢 普通</div>
-          </div>
-        </div>
-        <div class="field-group">
-          <label>交易类型</label>
-          <div class="person-pills">
-            <div class="person-pill" id="crm-ndeal-rent" onclick="crmSelectDeal('租房')">租房</div>
-            <div class="person-pill" id="crm-ndeal-buy" onclick="crmSelectDeal('买房')">买房</div>
-            <div class="person-pill" id="crm-ndeal-comrent" onclick="crmSelectDeal('商业租赁')">商业租赁</div>
-            <div class="person-pill" id="crm-ndeal-combuy" onclick="crmSelectDeal('商业买卖')">商业买卖</div>
-          </div>
-        </div>
-        <div class="field-group">
-          <label>需求描述</label>
-          <textarea id="crm-n-needs" rows="3" placeholder="预算、区域、户型、特殊需求..."></textarea>
-        </div>
-        <div class="field-group">
-          <label>负责 Admin</label>
-          <div class="person-pills">
-            <div class="person-pill" id="crm-na-j" onclick="crmSelectAdmin('Jaclyn')">Jaclyn</div>
-            <div class="person-pill" id="crm-na-w" onclick="crmSelectAdmin('Wiki')">Wiki</div>
-            <div class="person-pill" id="crm-na-y" onclick="crmSelectAdmin('Yuting')">Yuting</div>
-            <div class="person-pill" id="crm-na-z" onclick="crmSelectAdmin('Zico')">Zico</div>
-          </div>
-        </div>
-        <div class="field-group">
-          <label>负责 Agent</label>
-          <div class="person-pills">
-            <div class="person-pill" id="crm-nag-andy" onclick="crmSelectAgent('Andy')">Andy</div>
-            <div class="person-pill" id="crm-nag-issac" onclick="crmSelectAgent('Issac')">Issac</div>
-            <div class="person-pill" id="crm-nag-boon" onclick="crmSelectAgent('Boon Guan')">Boon Guan</div>
-            <div class="person-pill" id="crm-nag-connie" onclick="crmSelectAgent('Connie')">Connie</div>
-          </div>
-        </div>
-        <div class="field-group">
-          <label>来源</label>
-          <select id="crm-n-source">
-            <option value="">选择来源...</option>
-            <option>转介绍</option><option>广告</option><option>自然流量</option><option>其他</option>
+          <label>问题类型</label>
+          <select id="as-new-type">
+            <option value="">选择类型...</option>
+            <option>空调故障</option><option>水管漏水</option><option>电器问题</option>
+            <option>锁/门问题</option><option>虫害</option><option>押金纠纷</option>
+            <option>合同问题</option><option>屋主vs租客责任界定</option><option>其他</option>
           </select>
         </div>
-        <button class="btn-generate btn-j" onclick="crmCreateClient()" style="margin-top:8px;"><span>创建客户</span></button>
+        <div class="field-group">
+          <label>我方角色</label>
+          <div class="person-pills">
+            <div class="person-pill" id="as-role-tenant"   onclick="asSelectRole('tenant')">🧑 代表租客</div>
+            <div class="person-pill" id="as-role-landlord" onclick="asSelectRole('landlord')">🏠 代表房东</div>
+          </div>
+        </div>
+        <div class="field-group">
+          <label>负责人</label>
+          <div class="person-pills">
+            <div class="person-pill" id="as-owner-j" onclick="asSelectOwner('Jaclyn')">Jaclyn</div>
+            <div class="person-pill" id="as-owner-w" onclick="asSelectOwner('Wiki')">Wiki</div>
+            <div class="person-pill" id="as-owner-y" onclick="asSelectOwner('Yuting')">Yuting</div>
+          </div>
+        </div>
+        <div class="field-group">
+          <label>初始备注</label>
+          <textarea id="as-new-notes" rows="3" placeholder="简单描述问题情况..."></textarea>
+        </div>
+        <button class="btn-generate btn-j" onclick="asCreateCase()"><span>创建案例</span></button>
       </div>
     </div>
 
-    <!-- 客户详情面板 -->
-    <div id="crm-detail-panel" style="display:none;position:fixed;inset:0;background:var(--bg);z-index:900;overflow-y:auto;">
-      <div style="max-width:480px;margin:0 auto;padding:16px 16px 80px;">
-        <button onclick="crmCloseDetail()" style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--text2);background:none;border:none;cursor:pointer;margin-bottom:16px;padding:6px 0;font-weight:500;">← 返回</button>
-        <div id="crm-detail-content"></div>
+    <!-- ── 生成消息 ── -->
+    <div id="as-view-msg" style="display:none;">
+      <div class="tip" style="margin-bottom:12px;"><strong>使用方法：</strong>选择案例或直接填写，生成对应语言的跟进消息。</div>
+      <div class="card">
+        <div class="field-group">
+          <label>关联案例（可选）</label>
+          <select id="rep-case-select" onchange="asPreFillFromCase()">
+            <option value="">不关联案例，手动填写</option>
+          </select>
+        </div>
+        <div class="field-group">
+          <label>房源 / 单元</label>
+          <input type="text" id="rep-unit" placeholder="如：D'Leedon #07-04">
+        </div>
+        <div class="field-group">
+          <label>报修类型</label>
+          <select id="rep-type">
+            <option value="">选择类型...</option>
+            <option>空调故障</option><option>水管漏水</option><option>电器问题</option>
+            <option>锁/门问题</option><option>虫害</option><option>押金纠纷</option>
+            <option>合同问题</option><option>其他</option>
+          </select>
+        </div>
+        <div class="field-group">
+          <label>发给谁</label>
+          <div class="person-pills">
+            <div class="person-pill" id="msg-to-agent"    onclick="asMsgSelectTo('agent')">对方中介<br><span style="font-size:10px;opacity:.7">WhatsApp英文</span></div>
+            <div class="person-pill" id="msg-to-client"   onclick="asMsgSelectTo('client')">我方租客<br><span style="font-size:10px;opacity:.7">微信中文</span></div>
+            <div class="person-pill" id="msg-to-landlord" onclick="asMsgSelectTo('landlord')">我方房东<br><span style="font-size:10px;opacity:.7">微信中文</span></div>
+          </div>
+        </div>
+        <div class="field-group">
+          <label>跟进力度</label>
+          <div class="urgency-btns">
+            <div class="urgency-btn" id="urg-1" onclick="selectUrgency(1)">第一次<br>联系<br><span style="font-size:10px;color:#999">礼貌询问</span></div>
+            <div class="urgency-btn" id="urg-2" onclick="selectUrgency(2)">第二次<br>跟进<br><span style="font-size:10px;color:#999">友好坚定</span></div>
+            <div class="urgency-btn" id="urg-3" onclick="selectUrgency(3)">超期<br>升级<br><span style="font-size:10px;color:#999">正式要求</span></div>
+          </div>
+        </div>
+        <div class="field-group">
+          <label>补充说明（可选）</label>
+          <textarea id="rep-notes" rows="3" placeholder="如：已等待3天、租客多次催促..."></textarea>
+        </div>
+        <button class="btn-generate btn-y" id="btn-repair" onclick="generateRepair()">
+          <span id="repair-btn-text">生成消息</span>
+          <div class="spinner" id="repair-spinner"></div>
+        </button>
+        <div class="result-box" id="repair-result">
+          <div class="result-header">
+            <span class="result-label">生成的消息</span>
+            <button class="btn-copy" id="repair-copy-btn" onclick="copyResult('repair')">复制</button>
+          </div>
+          <div class="result-content" id="repair-result-content"></div>
+        </div>
+        <div class="error-box" id="repair-error"></div>
       </div>
     </div>
 
   </div>
 </div>
 
+<!-- listing page merged into 找房 -->
 
 
 <!-- INVOICE -->
@@ -1101,15 +991,6 @@ function checkPassword() {
   if (val === PW_HASH) {
     sessionStorage.setItem('hhg_auth', '1');
     document.getElementById('pw-screen').classList.add('hidden');
-    // Check if identity is already set (within 7 days)
-    const savedId = localStorage.getItem('hhg_identity');
-    const savedTime = parseInt(localStorage.getItem('hhg_identity_time') || '0');
-    const sevenDays = 7 * 24 * 60 * 60 * 1000;
-    if (savedId && (Date.now() - savedTime < sevenDays)) {
-      showIdentityCurrent(savedId);
-    } else {
-      document.getElementById('identity-screen').style.display='flex';
-    }
   } else {
     document.getElementById('pw-error').classList.add('show');
     document.getElementById('pw-input').value = '';
@@ -1125,14 +1006,6 @@ function togglePwVisibility() {
 // Auto-bypass if already authenticated this session
 if (sessionStorage.getItem('hhg_auth') === '1') {
   document.getElementById('pw-screen').classList.add('hidden');
-  const savedId = localStorage.getItem('hhg_identity');
-  const savedTime = parseInt(localStorage.getItem('hhg_identity_time') || '0');
-  const sevenDays = 7 * 24 * 60 * 60 * 1000;
-  if (!savedId || (Date.now() - savedTime >= sevenDays)) {
-    document.getElementById('identity-screen').style.display='flex';
-  } else {
-    showIdentityCurrent(savedId);
-  }
 }
 // ===== END PASSWORD =====
 
@@ -1285,16 +1158,13 @@ let selectedLang = '';
 let history = JSON.parse(localStorage.getItem('hhg_history') || '[]');
 
 function switchTab(tab) {
-  // Track usage
-  trackUsage(tab);
-  const ids = ['home', 'crm', 'search', 'daily', 'repair', 'invoice', 'history'];
+  // listing is now inside search tab
+  const ids = ['home', 'search', 'daily', 'repair', 'invoice', 'history'];
   document.querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('active', ids[i] === tab));
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   const pageEl = document.getElementById('page-' + tab);
   if (pageEl) pageEl.classList.add('active');
   if (tab === 'history') renderHistory();
-  if (tab === 'repair') { asRenderList(); asPopulateCaseSelect(); }
-  if (tab === 'crm') crmRenderPipeline();
 }
 
 let currentFindStep = 1;
@@ -1464,466 +1334,383 @@ ${notes}`;
 function generateRepair() {
   const unit = document.getElementById('rep-unit').value.trim();
   const type = document.getElementById('rep-type').value;
-  const vendor = document.getElementById('rep-vendor').value.trim();
-  const days = document.getElementById('rep-days').value.trim();
   const notes = document.getElementById('rep-notes').value.trim();
 
-  if (!unit || !type || !vendor) { alert('请填写房源、报修类型和师傅/公司名称'); return; }
-  if (!selectedUrgency) { alert('请选择催单力度'); return; }
-  if (!selectedLang) { alert('请选择消息语言'); return; }
+  if (!unit || !type) { alert('请填写房源和问题类型'); return; }
+  if (!selectedUrgency) { alert('请选择跟进力度'); return; }
+  if (!asMsgTo) { alert('请选择发给谁'); return; }
 
   const urgencyDesc = {
-    1: `第一次联系，语气礼貌友好，询问是否可以安排上门时间`,
-    2: `第二次跟进，已等待${days || '2天'}，友好但需要明确表达需要一个确认时间，租客在等待`,
-    3: `超期升级，已等待${days || '5天以上'}，语气正式，说明若今日内无法给出确认时间将考虑更换承包商`
-  };
-  const langDesc = {
-    zh: '只用中文写消息',
-    en: 'Write the message in English only',
-    both: '先写中文版本，再附上英文翻译'
+    1: '第一次联系，语气礼貌友好',
+    2: '第二次跟进，需要明确表达期待回复',
+    3: '超期升级，语气正式，说明问题紧迫性'
   };
 
-  const system = `你是新加坡房地产中介公司"好好过 Haohaoguo Realty"的AI助手。
-帮助Admin生成专业的WhatsApp催单消息，发给第三方承包商/维修师傅。
-要求：专业但礼貌，代表公司身份，简洁不超过5句话，WhatsApp格式。
-语言要求：${langDesc[selectedLang]}
+  let system, user;
+  if (asMsgTo === 'agent') {
+    system = `You are an admin at HaoHaoGuo Realty, a Singapore property agency.
+Write a professional WhatsApp follow-up message to the opposing agent regarding a property issue.
+Requirements: Professional but friendly, concise (max 5 sentences), WhatsApp format, English only.
+Output the message directly, no preamble.`;
+    user = `Follow-up message to opposing agent:\nProperty: ${unit}\nIssue type: ${type}\nUrgency: ${urgencyDesc[selectedUrgency]}${notes ? '\nContext: ' + notes : ''}`;
+  } else {
+    const recipient = asMsgTo === 'client' ? '租客' : '房东';
+    system = `你是新加坡房地产中介公司"好好过 Haohaoguo Realty"的Admin。
+帮助生成发给${recipient}的微信跟进消息，告知售后进展。
+要求：口语化但专业，简洁（不超过5句），中文，微信格式。
 直接输出消息内容，不要加任何前缀说明。`;
-
-  const user = `催单消息：
-房源：${unit}
-维修类型：${type}
-第三方/师傅：${vendor}
-等待时间：${days || '未记录'}
-场景：${urgencyDesc[selectedUrgency]}${notes ? '\n补充：' + notes : ''}`;
-
-  runGenerate('repair', system, user, { unit, type, vendor });
-}
-
-
-// ===== IDENTITY & USAGE TRACKING =====
-var currentUser = '';
-
-function showIdentityCurrent(name) {
-  currentUser = name;
-  const el = document.getElementById('identity-current');
-  if (el) el.textContent = '当前身份：' + name;
-  // Update header if exists
-  updateUserBadge(name);
-}
-
-function selectIdentity(name) {
-  localStorage.setItem('hhg_identity', name);
-  localStorage.setItem('hhg_identity_time', Date.now().toString());
-  currentUser = name;
-  document.getElementById('identity-screen').style.display = 'none';
-  showIdentityCurrent(name);
-  showToast('✓ 欢迎，' + name + '！');
-}
-
-function updateUserBadge(name) {
-  // Add/update user badge in header
-  let badge = document.getElementById('user-badge');
-  if (!badge) {
-    badge = document.createElement('div');
-    badge.id = 'user-badge';
-    badge.style.cssText = 'font-size:11px;color:var(--text3);cursor:pointer;padding:4px 8px;background:var(--surface2);border-radius:8px;';
-    badge.onclick = () => {
-      if (confirm('切换身份？')) {
-        localStorage.removeItem('hhg_identity');
-        localStorage.removeItem('hhg_identity_time');
-        document.getElementById('identity-screen').style.display='flex';
-      }
-    };
-    const headerTop = document.querySelector('.header-top');
-    if (headerTop) headerTop.appendChild(badge);
+    user = `发给${recipient}的进展通知：\n房源：${unit}\n问题类型：${type}\n跟进力度：${urgencyDesc[selectedUrgency]}${notes ? '\n补充：' + notes : ''}`;
   }
-  badge.textContent = '👤 ' + name;
+  runGenerate('repair', system, user, { unit, type });
 }
 
-// Initialize identity on load
-(function() {
-  const savedId = localStorage.getItem('hhg_identity');
-  const savedTime = parseInt(localStorage.getItem('hhg_identity_time') || '0');
-  const sevenDays = 7 * 24 * 60 * 60 * 1000;
-  if (savedId && (Date.now() - savedTime < sevenDays)) {
-    currentUser = savedId;
-    updateUserBadge(savedId);
+// ===== AFTER-SALES MANAGEMENT =====
+let asRole = '';
+let asOwner = '';
+let asMsgTo = '';
+
+function asShowTab(tab) {
+  const views = ['list','resolved','new','msg','detail'];
+  views.forEach(t => {
+    const v = document.getElementById('as-view-' + t);
+    if (v) v.style.display = 'none';
+  });
+  ['list','resolved','new','msg'].forEach(t => {
+    const b = document.getElementById('as-tab-' + t);
+    if (b) b.classList.toggle('active', t === tab);
+  });
+  const v = document.getElementById('as-view-' + tab);
+  if (v) v.style.display = '';
+  if (tab === 'list') { asRenderList(); asPopulateCaseSelect(); }
+  if (tab === 'resolved') asRenderResolved();
+  if (tab === 'msg') asPopulateCaseSelect();
+  // Update back button destination
+  const backBtn = document.getElementById('as-back-btn');
+  if (backBtn) backBtn.setAttribute('onclick', `asShowTab('${tab === 'detail' ? 'list' : tab}')`);
+}
+
+function asSelectRole(r) {
+  asRole = r;
+  ['tenant','landlord'].forEach(x =>
+    document.getElementById('as-role-' + x).className = 'person-pill' + (x === r ? ' active-j' : ''));
+}
+
+function asSelectOwner(o) {
+  asOwner = o;
+  const map = {j:'Jaclyn', w:'Wiki', y:'Yuting'};
+  ['j','w','y'].forEach(x =>
+    document.getElementById('as-owner-' + x).className = 'person-pill' + (map[x] === o ? ' active-j' : ''));
+}
+
+function asMsgSelectTo(t) {
+  asMsgTo = t;
+  ['agent','client','landlord'].forEach(x =>
+    document.getElementById('msg-to-' + x).className = 'person-pill' + (x === t ? ' active-j' : ''));
+}
+
+// ── Lark Bitable data layer ───────────────────────────────────────────────────
+const LARK_FN = '/.netlify/functions/lark-bitable';
+let asCache = null;  // in-memory cache to avoid repeated fetches
+
+async function asLark(body) {
+  const res = await fetch(LARK_FN, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  return res.json();
+}
+
+async function asGetCases() {
+  if (asCache) return asCache;
+  const data = await asLark({ action: 'list' });
+  if (data.success) {
+    asCache = data.cases;
+    return asCache;
   }
-})();
+  console.error('Lark list failed:', data.error);
+  return [];
+}
 
-// Usage tracking - send to Lark Bitable
-const USAGE_KEY = 'hhg_usage_buffer';
+function asInvalidateCache() { asCache = null; }
 
-function trackUsage(action, detail) {
-  const user = currentUser || localStorage.getItem('hhg_identity') || 'Unknown';
-  const entry = {
-    user, action: action || 'unknown',
-    detail: detail || '',
-    time: new Date().toISOString(),
-    ts: Date.now(),
+async function asCreateCase() {
+  const property = document.getElementById('as-new-property').value.trim();
+  const client   = document.getElementById('as-new-client').value.trim();
+  const type     = document.getElementById('as-new-type').value;
+  const notes    = document.getElementById('as-new-notes').value.trim();
+  if (!property || !type || !asRole || !asOwner) {
+    alert('请填写物业、问题类型，并选择我方角色和负责人'); return;
+  }
+  const btn = document.querySelector('#as-view-new .btn-generate');
+  if (btn) { btn.disabled = true; btn.querySelector('span').textContent = '创建中...'; }
+
+  const newCase = {
+    id: Date.now().toString(),
+    property, client, type,
+    role: asRole, owner: asOwner,
+    status: 'active', notes,
+    timeline: [{ time: Date.now(), text: '案例创建' + (notes ? '：' + notes : '') }],
+    createdAt: Date.now(), updatedAt: Date.now(),
   };
-  // Buffer locally
-  let buf = [];
-  try { buf = JSON.parse(localStorage.getItem(USAGE_KEY) || '[]'); } catch {}
-  buf.push(entry);
-  // Flush if > 10 entries
-  if (buf.length >= 10) {
-    flushUsage(buf);
-    buf = [];
-  }
-  localStorage.setItem(USAGE_KEY, JSON.stringify(buf));
+  const data = await asLark({ action: 'create', case: newCase });
+  if (btn) { btn.disabled = false; btn.querySelector('span').textContent = '创建案例'; }
+
+  if (!data.success) { alert('创建失败：' + data.error); return; }
+  asInvalidateCache();
+
+  // Reset form
+  ['as-new-property','as-new-client','as-new-notes'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('as-new-type').value = '';
+  asRole = ''; asOwner = '';
+  ['tenant','landlord'].forEach(x => document.getElementById('as-role-' + x).className = 'person-pill');
+  ['j','w','y'].forEach(x => document.getElementById('as-owner-' + x).className = 'person-pill');
+  showToast('✓ 案例已创建');
+  asShowTab('list');
 }
 
-async function flushUsage(entries) {
-  if (!entries || entries.length === 0) return;
-  try {
-    await fetch('/.netlify/functions/lark-bitable', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'log_usage', entries }),
-    });
-    localStorage.setItem(USAGE_KEY, '[]');
-  } catch {}
+function asDaysSince(ts) { return Math.floor((Date.now() - ts) / 86400000); }
+
+function asCardHTML(c, isResolved) {
+  const now = Date.now();
+  const daysSinceCreated = asDaysSince(c.createdAt);
+  const daysSinceUpdated = asDaysSince(c.updatedAt);
+  const statusColors  = { active:'#2D6A4F', waiting:'#B8860B', urgent:'#D42B2B', resolved:'#555' };
+  const statusLabels  = { active:'处理中', waiting:'等待对方', urgent:'⚠️ 紧急', resolved:'已解决' };
+  const typeIcons = {'空调故障':'❄️','水管漏水':'💧','电器问题':'⚡','锁/门问题':'🔒','虫害':'🐛','押金纠纷':'💰','合同问题':'📄','屋主vs租客责任界定':'⚖️','其他':'🔧'};
+  const sc = statusColors[c.status] || '#555';
+  const sl = statusLabels[c.status] || c.status;
+  const icon = typeIcons[c.type] || '🔧';
+  const roleLabel = c.role === 'tenant' ? '代表租客' : '代表房东';
+  const staleBadge = !isResolved && daysSinceUpdated >= 3
+    ? `<span style="background:#FDEAEA;color:#D42B2B;font-size:10px;padding:2px 6px;border-radius:10px;">${daysSinceUpdated}天未更新</span>` : '';
+  const clickHandler = isResolved
+    ? `asOpenDetail('${c.id}','resolved')`
+    : `asOpenDetail('${c.id}','list')`;
+  const deleteBtn = `<button onclick="event.stopPropagation();asDeleteCase('${c.id}')" style="background:#FEE;border:1px solid #FCC;color:#C33;font-size:11px;padding:3px 8px;border-radius:6px;cursor:pointer;flex-shrink:0;">删除</button>`;
+  return `<div onclick="${clickHandler}" style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:10px;cursor:pointer;">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:8px;">
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${icon} ${c.property}</div>
+        ${c.client ? `<div style="font-size:12px;color:var(--text2);margin-top:2px;">${c.client}</div>` : ''}
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
+        <span style="background:${sc}22;color:${sc};font-size:11px;font-weight:600;padding:3px 8px;border-radius:10px;white-space:nowrap;">${sl}</span>
+        ${deleteBtn}
+      </div>
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;">
+      <span style="font-size:11px;color:var(--text3);">${c.type}</span>
+      <span style="font-size:11px;color:var(--text3);">·</span>
+      <span style="font-size:11px;color:var(--text3);">${roleLabel}</span>
+      <span style="font-size:11px;color:var(--text3);">·</span>
+      <span style="font-size:11px;color:var(--text3);">${c.owner}</span>
+      <span style="font-size:11px;color:var(--text3);">·</span>
+      <span style="font-size:11px;font-weight:600;color:var(--text2);">已发生 ${daysSinceCreated} 天</span>
+      ${staleBadge}
+    </div>
+  </div>`;
 }
 
-// Flush on page unload
-window.addEventListener('beforeunload', () => {
-  let buf = [];
-  try { buf = JSON.parse(localStorage.getItem(USAGE_KEY) || '[]'); } catch {}
-  if (buf.length > 0) flushUsage(buf);
-});
-
-// ===== CRM PIPELINE =====
-let crmFilterStatus = 'all';
-let crmNewType = '';
-let crmNewPriority = '';
-let crmNewDeal = '';
-let crmNewAdmin = '';
-let crmNewAgent = '';
-let _crmClients = null;        // in-memory cache
-let _crmLoading = false;
-
-// ── Data layer: Lark Bitable (with localStorage fallback) ──────────────────
-async function crmLoadClients(force) {
-  if (_crmClients && !force) return _crmClients;
-  try {
-    const r = await fetch('/.netlify/functions/lark-bitable', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'crm_list' }),
-    });
-    const d = await r.json();
-    if (d.success) {
-      _crmClients = d.clients;
-      return _crmClients;
-    }
-  } catch (e) {}
-  // Fallback to localStorage if Bitable not configured yet
-  try { return JSON.parse(localStorage.getItem('hhg_crm_clients') || '[]'); } catch { return []; }
-}
-
-async function crmSaveClient(client) {
-  // Optimistic update cache
-  if (_crmClients) {
-    const idx = _crmClients.findIndex(c => c.id === client.id);
-    if (idx >= 0) _crmClients[idx] = client; else _crmClients.unshift(client);
-  }
-  try {
-    if (client._lark_id) {
-      await fetch('/.netlify/functions/lark-bitable', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'crm_update', lark_id: client._lark_id, client }),
-      });
-    } else {
-      const r = await fetch('/.netlify/functions/lark-bitable', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'crm_create', client }),
-      });
-      const d = await r.json();
-      if (d.success && d.client) {
-        // Update local object with Lark record_id
-        Object.assign(client, d.client);
-        if (_crmClients) {
-          const idx = _crmClients.findIndex(c => c.id === client.id);
-          if (idx >= 0) _crmClients[idx] = client;
-        }
-      }
-    }
-  } catch (e) {
-    // Fallback: save to localStorage so data isn't lost
-    const local = JSON.parse(localStorage.getItem('hhg_crm_clients') || '[]');
-    const idx = local.findIndex(c => c.id === client.id);
-    if (idx >= 0) local[idx] = client; else local.unshift(client);
-    localStorage.setItem('hhg_crm_clients', JSON.stringify(local));
-  }
-}
-
-async function crmDeleteClient(client) {
-  if (_crmClients) _crmClients = _crmClients.filter(c => c.id !== client.id);
-  if (client._lark_id) {
-    await fetch('/.netlify/functions/lark-bitable', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'crm_delete', lark_id: client._lark_id }),
-    }).catch(() => {});
-  }
-}
-
-function crmSetFilter(status) {
-  crmFilterStatus = status;
-  // Update filter button styles
-  ['all','新客户','发房源','看房中','谈Offer','成交'].forEach(s => {
-    const btn = document.getElementById('crm-f-' + s);
-    if (!btn) return;
-    if (s === status) {
-      btn.style.background = 'var(--accent-j)';
-      btn.style.borderColor = 'var(--accent-j)';
-      btn.style.color = '#fff';
-    } else {
-      btn.style.background = 'var(--surface)';
-      btn.style.borderColor = 'var(--border)';
-      btn.style.color = 'var(--text2)';
-    }
-  });
-  crmRenderPipeline();
-}
-
-async function crmRenderPipeline() {
-  const container = document.getElementById('crm-list-container');
-  const empty = document.getElementById('crm-list-empty');
+async function asRenderList() {
+  const container = document.getElementById('as-list-container');
+  const empty     = document.getElementById('as-list-empty');
   if (!container) return;
+  container.innerHTML = '<div style="text-align:center;padding:30px;color:var(--text3);font-size:13px;">加载中...</div>';
+  const filterOwner  = document.getElementById('as-filter-owner').value;
+  const filterStatus = document.getElementById('as-filter-status').value;
+  const sort         = document.getElementById('as-sort').value;
 
-  // Show loading state
-  if (!_crmClients) {
-    container.innerHTML = '<div style="text-align:center;padding:30px;color:var(--text3);font-size:13px;">加载中...</div>';
-    empty.style.display = 'none';
-  }
+  let cases = (await asGetCases()).filter(c => c.status !== 'resolved');
+  if (filterOwner)  cases = cases.filter(c => c.owner === filterOwner);
+  if (filterStatus) cases = cases.filter(c => c.status === filterStatus);
 
-  const showHigh = document.getElementById('crm-priority-high')?.checked;
-  const showMid  = document.getElementById('crm-priority-mid')?.checked;
-  const showLow  = document.getElementById('crm-priority-low')?.checked;
-  const filterAdmin = document.getElementById('crm-filter-admin')?.value || '';
+  if (sort === 'newest')  cases.sort((a,b) => b.createdAt - a.createdAt);
+  if (sort === 'oldest')  cases.sort((a,b) => a.createdAt - b.createdAt);
+  if (sort === 'stale')   cases.sort((a,b) => a.updatedAt - b.updatedAt);
 
-  let clients = await crmLoadClients();
-
-  // Filter
-  if (crmFilterStatus !== 'all') clients = clients.filter(c => c.status === crmFilterStatus);
-  clients = clients.filter(c => {
-    if (c.priority === 'high' && !showHigh) return false;
-    if (c.priority === 'mid'  && !showMid)  return false;
-    if (c.priority === 'low'  && !showLow)  return false;
-    if (filterAdmin && c.admin !== filterAdmin) return false;
-    return true;
-  });
-
-  // Sort: high priority first, then by updatedAt desc
-  const pOrder = { high: 0, mid: 1, low: 2 };
-  clients.sort((a, b) => {
-    const pd = (pOrder[a.priority] || 1) - (pOrder[b.priority] || 1);
-    if (pd !== 0) return pd;
-    return b.updatedAt - a.updatedAt;
-  });
-
-  // Summary (use full list before filters)
-  const all = await crmLoadClients();
-  const sumEl = document.getElementById('crm-summary-text');
-  if (sumEl) {
-    const active = all.filter(c => c.status !== '成交').length;
-    const deals = all.filter(c => c.status === '成交').length;
-    sumEl.textContent = `进行中 ${active} · 已成交 ${deals}`;
-  }
-
-  if (clients.length === 0) {
+  if (cases.length === 0) {
     container.innerHTML = ''; empty.style.display = ''; return;
   }
   empty.style.display = 'none';
-
-  const statusColors = { '新客户':'#5C85D6','发房源':'#B8860B','看房中':'#2D6A4F','谈Offer':'#8B44AC','成交':'#888' };
-  const priorityIcons = { high:'🔴', mid:'🟡', low:'🟢' };
-  const dealIcons = { '租房':'🏠','买房':'🔑','商业租赁':'🏢','商业买卖':'💼' };
-
-  container.innerHTML = clients.map(c => {
-    const sc = statusColors[c.status] || '#888';
-    const pi = priorityIcons[c.priority] || '';
-    const di = dealIcons[c.deal] || '';
-    const daysSince = Math.floor((Date.now() - c.updatedAt) / 86400000);
-    const staleBadge = daysSince >= 5 ? `<span style="background:var(--accent-j-light);color:var(--accent-j);font-size:10px;font-weight:600;padding:2px 7px;border-radius:10px;">${daysSince}天未更新</span>` : '';
-
-    return `<div onclick="crmOpenDetail('${c.id}')" style="background:var(--surface);border:1px solid var(--border-light);border-radius:var(--radius);padding:14px 16px;margin-bottom:8px;cursor:pointer;border-left:3px solid ${sc};transition:box-shadow .15s,border-color .15s;" onmouseenter="this.style.boxShadow='var(--shadow)';this.style.borderColor='var(--border)'" onmouseleave="this.style.boxShadow='none';this.style.borderLeftColor='${sc}';this.style.borderTopColor='var(--border-light)';this.style.borderRightColor='var(--border-light)';this.style.borderBottomColor='var(--border-light)'">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:8px;">
-        <div>
-          <div style="font-size:14px;font-weight:600;color:var(--text);letter-spacing:-0.2px;">${pi} ${c.name}</div>
-          <div style="font-size:11.5px;color:var(--text3);margin-top:3px;">${di} ${c.deal || ''} ${c.type ? '· ' + c.type : ''}</div>
-        </div>
-        <span style="background:${sc}18;color:${sc};font-size:10.5px;font-weight:600;padding:3px 9px;border-radius:20px;white-space:nowrap;letter-spacing:0.2px;">${c.status}</span>
-      </div>
-      <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;">
-        ${c.admin ? `<span style="font-size:11px;color:var(--text3);">Admin: ${c.admin}</span>` : ''}
-        ${c.agent ? `<span style="font-size:11px;color:var(--text3);">· Agent: ${c.agent}</span>` : ''}
-        ${c.source ? `<span style="font-size:11px;color:var(--text3);">· ${c.source}</span>` : ''}
-        ${staleBadge}
-      </div>
-    </div>`;
-  }).join('');
+  container.innerHTML = cases.map(c => asCardHTML(c, false)).join('');
 }
 
-function crmShowNewClient() {
-  document.getElementById('crm-new-panel').style.display = '';
-  // Reset form
-  ['crm-n-name','crm-n-contact','crm-n-needs'].forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
-  const src = document.getElementById('crm-n-source'); if(src) src.value = '';
-  crmNewType=''; crmNewPriority=''; crmNewDeal=''; crmNewAdmin=''; crmNewAgent='';
-  ['res','com'].forEach(x => document.getElementById('crm-nt-'+x)?.setAttribute('class','person-pill'));
-  ['high','mid','low'].forEach(x => document.getElementById('crm-np-'+x)?.setAttribute('class','person-pill'));
-  ['rent','buy','comrent','combuy'].forEach(x => document.getElementById('crm-ndeal-'+x)?.setAttribute('class','person-pill'));
-  ['j','w','y','z'].forEach(x => document.getElementById('crm-na-'+x)?.setAttribute('class','person-pill'));
-  ['andy','issac','boon','connie'].forEach(x => document.getElementById('crm-nag-'+x)?.setAttribute('class','person-pill'));
+async function asRenderResolved() {
+  const container = document.getElementById('as-resolved-container');
+  const empty     = document.getElementById('as-resolved-empty');
+  if (!container) return;
+  container.innerHTML = '<div style="text-align:center;padding:30px;color:var(--text3);font-size:13px;">加载中...</div>';
+  const cases = (await asGetCases()).filter(c => c.status === 'resolved');
+  if (cases.length === 0) {
+    container.innerHTML = ''; empty.style.display = ''; return;
+  }
+  empty.style.display = 'none';
+  container.innerHTML = cases.map(c => asCardHTML(c, true)).join('');
 }
 
-function crmSelectType(t) {
-  crmNewType = t;
-  ['res','com'].forEach(x => document.getElementById('crm-nt-'+x)?.setAttribute('class','person-pill'));
-  document.getElementById(t==='Residential'?'crm-nt-res':'crm-nt-com')?.setAttribute('class','person-pill active-j');
-}
-function crmSelectPriority(p) {
-  crmNewPriority = p;
-  ['high','mid','low'].forEach(x => document.getElementById('crm-np-'+x)?.setAttribute('class','person-pill'));
-  document.getElementById('crm-np-'+p)?.setAttribute('class','person-pill active-j');
-}
-function crmSelectDeal(d) {
-  crmNewDeal = d;
-  const map = {'租房':'rent','买房':'buy','商业租赁':'comrent','商业买卖':'combuy'};
-  ['rent','buy','comrent','combuy'].forEach(x => document.getElementById('crm-ndeal-'+x)?.setAttribute('class','person-pill'));
-  document.getElementById('crm-ndeal-'+map[d])?.setAttribute('class','person-pill active-j');
-}
-function crmSelectAdmin(a) {
-  crmNewAdmin = a;
-  const map = {'Jaclyn':'j','Wiki':'w','Yuting':'y','Zico':'z'};
-  ['j','w','y','z'].forEach(x => document.getElementById('crm-na-'+x)?.setAttribute('class','person-pill'));
-  document.getElementById('crm-na-'+(map[a]||'j'))?.setAttribute('class','person-pill active-j');
-}
-function crmSelectAgent(a) {
-  crmNewAgent = a;
-  const map = {'Andy':'andy','Issac':'issac','Boon Guan':'boon','Connie':'connie'};
-  ['andy','issac','boon','connie'].forEach(x => document.getElementById('crm-nag-'+x)?.setAttribute('class','person-pill'));
-  document.getElementById('crm-nag-'+(map[a]||'andy'))?.setAttribute('class','person-pill active-j');
-}
-
-async function crmCreateClient() {
-  const name = document.getElementById('crm-n-name')?.value.trim();
-  if (!name) { alert('请填写客户姓名'); return; }
-  const newClient = {
-    id: Date.now().toString(),
-    name,
-    contact: document.getElementById('crm-n-contact')?.value.trim() || '',
-    type: crmNewType || 'Residential',
-    priority: crmNewPriority || 'mid',
-    deal: crmNewDeal || '',
-    needs: document.getElementById('crm-n-needs')?.value.trim() || '',
-    admin: crmNewAdmin || '',
-    agent: crmNewAgent || 'Andy',
-    source: document.getElementById('crm-n-source')?.value || '',
-    status: '新客户',
-    timeline: [{ time: Date.now(), text: '客户创建' + (crmNewAdmin ? '，负责：' + crmNewAdmin : '') }],
-    createdAt: Date.now(),
-    updatedAt: Date.now(),
-  };
-  document.getElementById('crm-new-panel').style.display = 'none';
-  showToast('⏳ 保存中...');
-  await crmSaveClient(newClient);
-  trackUsage('crm_new_client');
-  showToast('✓ 客户已创建');
-  crmRenderPipeline();
-}
-
-async function crmOpenDetail(id) {
-  const clients = await crmLoadClients();
-  const c = clients.find(x => x.id === id);
+async function asOpenDetail(id, fromTab) {
+  const allCases = await asGetCases();
+  const c = allCases.find(x => x.id === id);
   if (!c) return;
-  trackUsage('crm_view_client');
+  ['list','resolved','new','msg'].forEach(t => {
+    const v = document.getElementById('as-view-' + t);
+    if (v) v.style.display = 'none';
+    const b = document.getElementById('as-tab-' + t);
+    if (b) b.classList.remove('active');
+  });
 
-  const statusOptions = ['新客户','发房源','看房中','谈Offer','成交'];
-  const priorityLabels = { high:'🔴 高优先级', mid:'🟡 中', low:'🟢 普通' };
-  const tlHtml = (c.timeline||[]).slice().reverse().map(t => {
+  const backTab = fromTab || 'list';
+  document.getElementById('as-back-btn').setAttribute('onclick', `asShowTab('${backTab}')`);
+
+  const statusOptions = [
+    {v:'active',l:'处理中'},{v:'waiting',l:'等待对方'},{v:'urgent',l:'⚠️ 紧急'},{v:'resolved',l:'已解决'}
+  ];
+  const roleLabel = c.role === 'tenant' ? '🧑 代表租客' : '🏠 代表房东';
+  const daysSinceCreated = asDaysSince(c.createdAt);
+  const timelineHtml = (c.timeline||[]).slice().reverse().map(t => {
     const dt = new Date(t.time);
-    const ts = dt.toLocaleDateString('zh-CN',{month:'2-digit',day:'2-digit'}) + ' ' + dt.toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'});
+    const ts = dt.toLocaleDateString('zh-CN',{month:'2-digit',day:'2-digit'}) + ' ' +
+               dt.toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'});
     return `<div style="padding:8px 0;border-bottom:1px solid var(--border);">
       <div style="font-size:11px;color:var(--text3);margin-bottom:2px;">${ts}</div>
       <div style="font-size:13px;">${t.text}</div>
     </div>`;
   }).join('');
 
-  document.getElementById('crm-detail-content').innerHTML = `
+  document.getElementById('as-detail-content').innerHTML = `
     <div class="card" style="margin-bottom:12px;">
-      <div style="font-size:17px;font-weight:700;color:var(--text);letter-spacing:-0.4px;margin-bottom:4px;">${c.name}</div>
-      ${c.contact ? `<div style="font-size:13px;color:var(--text2);margin-bottom:12px;">📱 ${c.contact}</div>` : ''}
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
-        <div style="background:var(--surface2);padding:10px;border-radius:var(--radius-sm);"><div style="font-size:10.5px;font-weight:600;color:var(--text3);margin-bottom:3px;letter-spacing:0.3px;">类型</div><div style="font-size:13px;font-weight:600;color:var(--text);">${c.type || '—'}</div></div>
-        <div style="background:var(--surface2);padding:10px;border-radius:var(--radius-sm);"><div style="font-size:10.5px;font-weight:600;color:var(--text3);margin-bottom:3px;letter-spacing:0.3px;">优先级</div><div style="font-size:13px;font-weight:600;color:var(--text);">${priorityLabels[c.priority]||c.priority}</div></div>
-        <div style="background:var(--surface2);padding:10px;border-radius:var(--radius-sm);"><div style="font-size:10.5px;font-weight:600;color:var(--text3);margin-bottom:3px;letter-spacing:0.3px;">交易类型</div><div style="font-size:13px;font-weight:600;color:var(--text);">${c.deal||'—'}</div></div>
-        <div style="background:var(--surface2);padding:10px;border-radius:var(--radius-sm);"><div style="font-size:10.5px;font-weight:600;color:var(--text3);margin-bottom:3px;letter-spacing:0.3px;">来源</div><div style="font-size:13px;font-weight:600;color:var(--text);">${c.source||'—'}</div></div>
-        <div style="background:var(--surface2);padding:10px;border-radius:var(--radius-sm);"><div style="font-size:10.5px;font-weight:600;color:var(--text3);margin-bottom:3px;letter-spacing:0.3px;">Admin</div><div style="font-size:13px;font-weight:600;color:var(--text);">${c.admin||'—'}</div></div>
-        <div style="background:var(--surface2);padding:10px;border-radius:var(--radius-sm);"><div style="font-size:10.5px;font-weight:600;color:var(--text3);margin-bottom:3px;letter-spacing:0.3px;">Agent</div><div style="font-size:13px;font-weight:600;color:var(--text);">${c.agent||'—'}</div></div>
+      <div style="font-size:16px;font-weight:700;margin-bottom:4px;">${c.property}</div>
+      ${c.client ? `<div style="font-size:13px;color:var(--text2);margin-bottom:10px;">${c.client}</div>` : ''}
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;">
+        <div><div style="font-size:10px;color:var(--text3);margin-bottom:2px;">问题类型</div><div style="font-size:13px;font-weight:600;">${c.type}</div></div>
+        <div><div style="font-size:10px;color:var(--text3);margin-bottom:2px;">我方角色</div><div style="font-size:13px;font-weight:600;">${roleLabel}</div></div>
+        <div><div style="font-size:10px;color:var(--text3);margin-bottom:2px;">负责人</div><div style="font-size:13px;font-weight:600;">${c.owner}</div></div>
+        <div><div style="font-size:10px;color:var(--text3);margin-bottom:2px;">已发生</div><div style="font-size:13px;font-weight:600;color:var(--accent-j);">${daysSinceCreated} 天</div></div>
       </div>
-      ${c.needs ? `<div style="margin-bottom:14px;"><div style="font-size:10.5px;font-weight:600;color:var(--text3);margin-bottom:6px;letter-spacing:0.3px;">需求备注</div><div style="font-size:13px;background:var(--surface2);padding:10px 12px;border-radius:var(--radius-sm);color:var(--text);line-height:1.6;">${c.needs}</div></div>` : ''}
       <div style="margin-bottom:14px;">
-        <div style="font-size:10.5px;font-weight:600;color:var(--text3);margin-bottom:6px;letter-spacing:0.3px;">当前状态</div>
-        <select onchange="crmUpdateStatus('${c.id}',this.value)" style="width:100%;font-size:13px;padding:9px 10px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface);color:var(--text);">
-          ${statusOptions.map(s=>`<option${c.status===s?' selected':''}>${s}</option>`).join('')}
+        <div style="font-size:10px;color:var(--text3);margin-bottom:4px;">状态</div>
+        <select onchange="asUpdateStatus('${c.id}',this.value)" style="font-size:13px;padding:6px 10px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text);width:100%;">
+          ${statusOptions.map(o=>`<option value="${o.v}"${c.status===o.v?' selected':''}>${o.l}</option>`).join('')}
         </select>
       </div>
-      <div style="font-size:10.5px;font-weight:600;color:var(--text3);margin-bottom:6px;letter-spacing:0.3px;">添加跟进记录</div>
+      <div style="font-size:10px;color:var(--text3);margin-bottom:4px;">添加跟进记录</div>
       <div style="display:flex;gap:8px;">
-        <input type="text" id="crm-note-${c.id}" placeholder="记录最新进展..." style="flex:1;font-size:13px;padding:9px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface2);outline:none;color:var(--text);" onkeydown="if(event.key==='Enter')crmAddNote('${c.id}')">
-        <button onclick="crmAddNote('${c.id}')" style="background:var(--accent-j);color:#fff;border:none;border-radius:var(--radius-sm);padding:9px 16px;font-size:13px;font-weight:600;cursor:pointer;">记录</button>
+        <input type="text" id="detail-note-${c.id}" placeholder="记录最新进展..." style="flex:1;font-size:13px;padding:8px 12px;border:1px solid var(--border);border-radius:8px;background:var(--surface2);outline:none;color:var(--text);" onkeydown="if(event.key==='Enter')asAddNote('${c.id}','${backTab}')">
+        <button onclick="asAddNote('${c.id}','${backTab}')" style="background:var(--accent-j);color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:600;cursor:pointer;">记录</button>
       </div>
     </div>
-    <div style="font-size:10.5px;font-weight:700;color:var(--text3);letter-spacing:1px;margin-bottom:8px;text-transform:uppercase;">跟进时间线</div>
-    <div style="background:var(--surface);border:1px solid var(--border-light);border-radius:var(--radius);padding:12px;">
-      ${tlHtml || '<div style="color:var(--text3);font-size:13px;text-align:center;padding:16px;">暂无记录</div>'}
+    <div style="font-size:11px;font-weight:600;color:var(--text3);letter-spacing:1px;margin-bottom:8px;">跟进时间线</div>
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px;">
+      ${timelineHtml || '<div style="color:var(--text3);font-size:13px;text-align:center;padding:16px;">暂无记录</div>'}
     </div>`;
 
-  document.getElementById('crm-detail-panel').style.display = '';
+  document.getElementById('as-view-detail').style.display = '';
 }
 
-function crmCloseDetail() {
-  document.getElementById('crm-detail-panel').style.display = 'none';
-  crmRenderPipeline();  // this is async but we don't need to await
-}
-
-async function crmUpdateStatus(id, newStatus) {
-  const clients = await crmLoadClients();
-  const c = clients.find(x => x.id === id);
+async function asUpdateStatus(id, newStatus) {
+  const allCases = await asGetCases();
+  const c = allCases.find(x => x.id === id);
   if (!c) return;
+  const labels = { active:'处理中', waiting:'等待对方', urgent:'⚠️ 紧急', resolved:'已解决' };
   c.status = newStatus;
   c.updatedAt = Date.now();
-  c.timeline = c.timeline || [];
-  c.timeline.push({ time: Date.now(), text: '状态更新为：' + newStatus });
-  await crmSaveClient(c);
-  trackUsage('crm_status_update');
-  showToast('✓ 状态已更新');
-  // Re-render detail view to reflect new status
-  crmOpenDetail(id);
+  if (newStatus === 'resolved') c.resolvedAt = Date.now();
+  c.timeline.push({ time: Date.now(), text: '状态更新为：' + (labels[newStatus] || newStatus) });
+  const data = await asLark({ action: 'update', lark_id: c._lark_id, case: c });
+  if (data.success) {
+    asInvalidateCache();
+    showToast('✓ 状态已更新');
+  } else {
+    alert('更新失败：' + data.error);
+  }
 }
 
-async function crmAddNote(id) {
-  const input = document.getElementById('crm-note-' + id);
-  const text = input?.value.trim();
+async function asAddNote(id, fromTab) {
+  const input = document.getElementById('detail-note-' + id);
+  if (!input) return;
+  const text = input.value.trim();
   if (!text) return;
-  const clients = await crmLoadClients();
-  const c = clients.find(x => x.id === id);
+  const allCases = await asGetCases();
+  const c = allCases.find(x => x.id === id);
   if (!c) return;
-  c.timeline = c.timeline || [];
   c.timeline.push({ time: Date.now(), text });
   c.updatedAt = Date.now();
-  if (input) input.value = '';
-  await crmSaveClient(c);
-  crmOpenDetail(id);
-  showToast('✓ 已记录');
+  const data = await asLark({ action: 'update', lark_id: c._lark_id, case: c });
+  if (data.success) {
+    asInvalidateCache();
+    input.value = '';
+    await asOpenDetail(id, fromTab);
+    showToast('✓ 已记录');
+  } else {
+    alert('记录失败：' + data.error);
+  }
 }
 
+async function asDeleteCase(id) {
+  if (!confirm('确定要删除这个案例吗？此操作不可撤销。')) return;
+  const allCases = await asGetCases();
+  const c = allCases.find(x => x.id === id);
+  if (!c) return;
+  const data = await asLark({ action: 'delete', lark_id: c._lark_id });
+  if (data.success) {
+    asInvalidateCache();
+    showToast('✓ 案例已删除');
+    asRenderList();
+    asRenderResolved();
+  } else {
+    alert('删除失败：' + data.error);
+  }
+}
+
+async function asPopulateCaseSelect() {
+  const sel = document.getElementById('rep-case-select');
+  if (!sel) return;
+  const cases = (await asGetCases()).filter(c => c.status !== 'resolved');
+  sel.innerHTML = '<option value="">不关联案例，手动填写</option>' +
+    cases.map(c => `<option value="${c.id}">${c.property}${c.client?' · '+c.client:''} — ${c.type}</option>`).join('');
+}
+
+async function asPreFillFromCase() {
+  const id = document.getElementById('rep-case-select').value;
+  if (!id) return;
+  const cases = await asGetCases();
+  const c = cases.find(x => x.id === id);
+  if (!c) return;
+  document.getElementById('rep-unit').value = c.property + (c.client ? ' (' + c.client + ')' : '');
+  document.getElementById('rep-type').value = c.type;
+}
+
+
+async function asExportCSV() {
+  const cases = await asGetCases();
+  if (cases.length === 0) { alert('暂无案例数据'); return; }
+  const headers = ['ID','物业','客户','问题类型','我方角色','负责人','状态','已发生天数','创建日期','最近更新','解决日期','备注'];
+  const rows = cases.map(c => {
+    const fmt = ts => ts ? new Date(ts).toLocaleDateString('zh-CN') : '';
+    const role = c.role === 'tenant' ? '代表租客' : '代表房东';
+    const status = {active:'处理中',waiting:'等待对方',urgent:'紧急',resolved:'已解决'}[c.status] || c.status;
+    const days = asDaysSince(c.createdAt);
+    return [c.id, c.property, c.client||'', c.type, role, c.owner, status, days, fmt(c.createdAt), fmt(c.updatedAt), fmt(c.resolvedAt), (c.notes||'').replace(/,/g,'，')];
+  });
+  const csv = [headers, ...rows].map(r => r.map(v => `"${v}"`).join(',')).join('\n');
+  const blob = new Blob(['\uFEFF'+csv], { type: 'text/csv;charset=utf-8;' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url; a.download = 'HHG_售后案例_' + new Date().toISOString().slice(0,10) + '.csv';
+  a.click(); URL.revokeObjectURL(url);
+}
+
+// Init when switching to repair tab
+(function() {
+  const orig = window.switchTab;
+  window.switchTab = function(tab) {
+    orig(tab);
+    if (tab === 'repair') { asRenderList(); asPopulateCaseSelect(); }
+  };
+})();
+
+// ===== SEARCH LOGIC =====
 // ===== SEARCH LOGIC =====
 let searchState = {
   type: 'rent',
