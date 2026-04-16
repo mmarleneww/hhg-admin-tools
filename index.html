@@ -2221,13 +2221,29 @@ function renderInvLines() {
   calcInvTotal();
 }
 
+function syncInvLinesFromDOM() {
+  const container = document.getElementById('inv-lines-container');
+  if (!container) return;
+  const selects   = container.querySelectorAll('select');
+  const textareas = container.querySelectorAll('textarea');
+  const amtInputs = container.querySelectorAll('input[type="number"]');
+  const checkboxes= container.querySelectorAll('input[type="checkbox"]');
+  invLines.forEach((line, idx) => {
+    if (selects[idx]   && selects[idx].value)   line.description = selects[idx].value;
+    if (textareas[idx])                          line.detail      = textareas[idx].value;
+    if (amtInputs[idx] && amtInputs[idx].value) line.amount      = amtInputs[idx].value;
+    if (checkboxes[idx])                         line.hasGst      = checkboxes[idx].checked;
+  });
+}
+
 function updateInvLine(id, field, value) {
   const line = invLines.find(l => l.id === id);
   if (line) line[field] = value;
 }
 
 function updateGstDefault(id, descType) {
-  // Stamp Duty, Utility Deposit → no GST by default
+  // Sync DOM first so user-entered values aren't lost when DOM rebuilds
+  syncInvLinesFromDOM();
   const noGstTypes = ['STAMP DUTY', 'UTILITY DEPOSIT'];
   const line = invLines.find(l => l.id === id);
   if (line) {
@@ -2289,24 +2305,8 @@ async function generateInvoice() {
     errEl.classList.add('show');
     return;
   }
-  // Sync DOM values back to invLines before reading
-  // (onchange may not have fired if user didn't blur the field)
-  invLines.forEach(line => {
-    // Find the row container for this line
-    const container = document.getElementById('inv-lines-container');
-    if (!container) return;
-    // Find select for description
-    const selects = container.querySelectorAll('select');
-    const textareas = container.querySelectorAll('textarea');
-    const amtInputs = container.querySelectorAll('input[type="number"]');
-    const checkboxes = container.querySelectorAll('input[type="checkbox"]');
-    // Match by index
-    const idx = invLines.indexOf(line);
-    if (selects[idx])   line.description = selects[idx].value;
-    if (textareas[idx]) line.detail = textareas[idx].value;
-    if (amtInputs[idx]) line.amount = amtInputs[idx].value;
-    if (checkboxes[idx]) line.hasGst = checkboxes[idx].checked;
-  });
+  // Sync any DOM values not yet captured by event handlers
+  syncInvLinesFromDOM();
 
   const lines = invLines.filter(l => l.description && l.amount);
   if (lines.length === 0) {
