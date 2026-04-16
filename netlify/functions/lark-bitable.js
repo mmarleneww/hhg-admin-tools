@@ -188,6 +188,25 @@ exports.handler = async function(event) {
       return json({ success: true, results });
     }
 
+    // ── CREATE BASE: create a new standalone Bitable ──────────────────────────
+    if (action === 'create_base') {
+      const res = await fetch(`${LARK_API}/bitable/v1/apps`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ name: 'HHG 售后案例管理' }),
+      });
+      const data = await res.json();
+      if (data.code !== 0) throw new Error(`Create base failed: code=${data.code} msg=${data.msg}`);
+      const app = data.data?.app;
+      return json({
+        success: true,
+        app_token: app?.app_token,
+        url: app?.url,
+        name: app?.name,
+        msg: '新 Base 创建成功！请把 app_token 更新到 Netlify 环境变量 LARK_BASE_TOKEN'
+      });
+    }
+
     // ── DEBUG: check env vars are set (safe - shows length not value) ────────
     if (action === 'debug') {
       return json({
