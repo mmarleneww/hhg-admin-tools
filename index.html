@@ -2389,16 +2389,19 @@ async function generateInvoice() {
     HL(LM,RM,RY,DARK,0.8);
 
     // TO / INVOICE boxes
-    const BH=34*MM,BT=RY-2,BB=BT-BH,TOW=(RM-LM)*0.56,IX=LM+TOW+2,IW=RM-IX;
+    const BH=42*MM,BT=RY-2,BB=BT-BH,TOW=(RM-LM)*0.56,IX=LM+TOW+2,IW=RM-IX;
     BOX(LM,BB,TOW,BH);BOX(IX,BB,IW,BH);
 
     let ty=BT-14;
     T('TO:',LM+5,ty,{font:HB,size:9,color:GRAY});T(safe(to),LM+22,ty,{font:HB,size:9,color:DARK});
     if(toAddr){safe(toAddr).split(',').map(p=>p.trim()).filter(Boolean).forEach(p=>{ty-=12;T(p,LM+22,ty,{size:8,color:DARK});});}
     if(agencyLic){ty-=12;T('Licence No.: '+safe(agencyLic),LM+5,ty,{size:7.5,color:GRAY});}
-    const ATY=BB+13;
-    T('ATTN:',LM+5,ATY,{font:HB,size:9,color:GRAY});
-    if(attn)T(safe(attn),LM+22,ATY,{size:8,color:DARK});
+    // ATTN flows at least 14pt below previous line, clamped above box bottom
+    const ATY = Math.max(ty - 14, BB+11);
+    const attnLbl='ATTN:';
+    const attnLblW=tw(HB,attnLbl,9);
+    T(attnLbl,LM+5,ATY,{font:HB,size:9,color:GRAY});
+    if(attn)T(safe(attn),LM+5+attnLblW+4,ATY,{size:8,color:DARK});
 
     // INVOICE box
     T('TAX INVOICE',IX+IW/2,BT-15,{font:HB,size:15,color:DARK,align:'center'});
