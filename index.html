@@ -40,6 +40,8 @@
     flex-direction: column;
   }
   #pw-screen.hidden { display: none; }
+  #inv-auth-screen { display: none; }
+  #inv-auth-screen:not(.hidden) { display: flex; }
   .pw-logo {
     margin-bottom: 32px;
   }
@@ -326,7 +328,23 @@
   <div class="pw-error" id="pw-error">密码不正确，请重试</div>
 </div>
 
-<div class="header">
+<!-- INVOICE AUTH SCREEN -->
+<div id="inv-auth-screen" class="hidden" style="position:fixed;inset:0;z-index:9998;background:rgba(0,0,0,0.5);align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:18px;padding:32px 28px;width:300px;box-shadow:0 8px 40px rgba(0,0,0,0.18);display:flex;flex-direction:column;align-items:center;">
+    <div style="font-size:28px;margin-bottom:12px;">🧾</div>
+    <div class="pw-title">发票功能</div>
+    <div class="pw-sub">请输入发票专属密码</div>
+    <div class="pw-input-wrap">
+      <input type="password" id="inv-auth-input" placeholder="发票密码" onkeydown="if(event.key==='Enter')checkInvoicePassword()">
+      <button onclick="toggleInvPwVisibility()" id="inv-auth-eye">👁</button>
+    </div>
+    <button class="pw-submit" onclick="checkInvoicePassword()">确认</button>
+    <div class="pw-error" id="inv-auth-error">密码不正确，请重试</div>
+    <button onclick="document.getElementById('inv-auth-screen').classList.add('hidden')" style="margin-top:12px;font-size:13px;color:var(--text3);background:none;border:none;cursor:pointer;">取消</button>
+  </div>
+</div>
+
+
   <div class="header-inner">
     <div class="header-top">
       <div class="logo">
@@ -893,6 +911,7 @@ const FUNCTION_URL = '/.netlify/functions/hhg-claude';
 
 // ===== PASSWORD =====
 const PW_HASH = 'Hhg2026@';
+const INV_PW = 'Invoice@HHG';
 function checkPassword() {
   const val = document.getElementById('pw-input').value;
   if (val === PW_HASH) {
@@ -1065,6 +1084,11 @@ let selectedLang = '';
 let history = JSON.parse(localStorage.getItem('hhg_history') || '[]');
 
 function switchTab(tab) {
+  // Invoice tab requires secondary password
+  if (tab === 'invoice' && sessionStorage.getItem('hhg_inv_auth') !== '1') {
+    showInvoiceAuth();
+    return;
+  }
   // listing is now inside search tab
   const ids = ['home', 'search', 'daily', 'repair', 'invoice', 'history'];
   document.querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('active', ids[i] === tab));
@@ -1072,6 +1096,33 @@ function switchTab(tab) {
   const pageEl = document.getElementById('page-' + tab);
   if (pageEl) pageEl.classList.add('active');
   if (tab === 'history') renderHistory();
+}
+
+function showInvoiceAuth() {
+  document.getElementById('inv-auth-screen').classList.remove('hidden');
+  document.getElementById('inv-auth-input').value = '';
+  document.getElementById('inv-auth-error').classList.remove('show');
+  setTimeout(() => document.getElementById('inv-auth-input').focus(), 100);
+}
+
+function checkInvoicePassword() {
+  const val = document.getElementById('inv-auth-input').value;
+  if (val === INV_PW) {
+    sessionStorage.setItem('hhg_inv_auth', '1');
+    document.getElementById('inv-auth-screen').classList.add('hidden');
+    switchTab('invoice');
+  } else {
+    document.getElementById('inv-auth-error').classList.add('show');
+    document.getElementById('inv-auth-input').value = '';
+    document.getElementById('inv-auth-input').focus();
+  }
+}
+
+function toggleInvPwVisibility() {
+  const inp = document.getElementById('inv-auth-input');
+  const btn = document.getElementById('inv-auth-eye');
+  if (inp.type === 'password') { inp.type = 'text'; btn.textContent = '🙈'; }
+  else { inp.type = 'password'; btn.textContent = '👁'; }
 }
 
 let currentFindStep = 1;
