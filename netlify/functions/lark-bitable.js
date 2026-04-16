@@ -23,6 +23,7 @@ async function getTenantToken() {
 // ── Field mapping: our case fields → Lark column names ───────────────────────
 // These must match exactly what's in the Bitable table
 const FIELDS = {
+  primary:     'Text',       // Lark primary field - cannot be deleted, use as display title
   id:          'Case ID',
   property:    '物业',
   client:      '客户',
@@ -38,7 +39,10 @@ const FIELDS = {
 };
 
 function caseToFields(c) {
+  // Build a readable title for the primary field
+  const title = [c.property, c.client].filter(Boolean).join(' · ') || c.id || '';
   return {
+    [FIELDS.primary]:    title,
     [FIELDS.id]:         c.id || '',
     [FIELDS.property]:   c.property || '',
     [FIELDS.client]:     c.client || '',
