@@ -40,8 +40,6 @@
     flex-direction: column;
   }
   #pw-screen.hidden { display: none; }
-  #inv-auth-screen { display: none; }
-  #inv-auth-screen:not(.hidden) { display: flex; }
   .pw-logo {
     margin-bottom: 32px;
   }
@@ -328,23 +326,7 @@
   <div class="pw-error" id="pw-error">密码不正确，请重试</div>
 </div>
 
-<!-- INVOICE AUTH SCREEN -->
-<div id="inv-auth-screen" class="hidden" style="position:fixed;inset:0;z-index:9998;background:rgba(0,0,0,0.5);align-items:center;justify-content:center;">
-  <div style="background:#fff;border-radius:18px;padding:32px 28px;width:300px;box-shadow:0 8px 40px rgba(0,0,0,0.18);display:flex;flex-direction:column;align-items:center;">
-    <div style="font-size:28px;margin-bottom:12px;">🧾</div>
-    <div class="pw-title">发票功能</div>
-    <div class="pw-sub">请输入发票专属密码</div>
-    <div class="pw-input-wrap">
-      <input type="password" id="inv-auth-input" placeholder="发票密码" onkeydown="if(event.key==='Enter')checkInvoicePassword()">
-      <button onclick="toggleInvPwVisibility()" id="inv-auth-eye">👁</button>
-    </div>
-    <button class="pw-submit" onclick="checkInvoicePassword()">确认</button>
-    <div class="pw-error" id="inv-auth-error">密码不正确，请重试</div>
-    <button onclick="document.getElementById('inv-auth-screen').classList.add('hidden')" style="margin-top:12px;font-size:13px;color:var(--text3);background:none;border:none;cursor:pointer;">取消</button>
-  </div>
-</div>
-
-
+<div class="header">
   <div class="header-inner">
     <div class="header-top">
       <div class="logo">
@@ -735,66 +717,154 @@
 
 <!-- REPAIR FOLLOW-UP -->
 <div class="page" id="page-repair">
-  <div class="page-inner">
-    <div class="tip"><strong>使用方法：</strong>填入报修信息，选跟进力度，直接复制发给师傅/租客/屋主。</div>
-  <div class="card">
-    <div class="field-group">
-      <label>房源 / 单元</label>
-      <input type="text" id="rep-unit" placeholder="如：D'Leedon #07-04">
+  <div class="page-inner" style="padding-bottom:60px;">
+
+    <!-- Sub-tabs: 案例列表 / 新建案例 -->
+    <div style="display:flex;gap:0;background:var(--surface2);border-radius:10px;padding:3px;margin-bottom:12px;">
+      <button id="as-tab-list" class="mode-btn active" onclick="asShowTab('list')" style="flex:1;border-radius:8px;font-size:12px;">📋 案例列表</button>
+      <button id="as-tab-new" class="mode-btn" onclick="asShowTab('new')" style="flex:1;border-radius:8px;font-size:12px;">➕ 新建案例</button>
+      <button id="as-tab-msg" class="mode-btn" onclick="asShowTab('msg')" style="flex:1;border-radius:8px;font-size:12px;">✉️ 生成消息</button>
     </div>
-    <div class="field-group">
-      <label>报修类型</label>
-      <select id="rep-type">
-        <option value="">选择类型...</option>
-        <option>空调故障</option>
-        <option>水管漏水</option>
-        <option>电器问题</option>
-        <option>锁/门问题</option>
-        <option>虫害</option>
-        <option>其他</option>
-      </select>
-    </div>
-    <div class="field-group">
-      <label>第三方 / 师傅名字</label>
-      <input type="text" id="rep-vendor" placeholder="如：Cool Air Pte / 王师傅">
-    </div>
-    <div class="field-group">
-      <label>已等待天数</label>
-      <input type="text" id="rep-days" placeholder="如：2天">
-    </div>
-    <div class="field-group">
-      <label>补充说明（可选）</label>
-      <textarea id="rep-notes" rows="3" placeholder="如：租客已多次催促、这周必须解决..."></textarea>
-    </div>
-    <div class="field-group">
-      <label>催单力度</label>
-      <div class="urgency-btns">
-        <div class="urgency-btn" id="urg-1" onclick="selectUrgency(1)">第一次<br>联系<br><span style="font-size:10px;color:#999">礼貌询问</span></div>
-        <div class="urgency-btn" id="urg-2" onclick="selectUrgency(2)">第二次<br>跟进<br><span style="font-size:10px;color:#999">友好坚定</span></div>
-        <div class="urgency-btn" id="urg-3" onclick="selectUrgency(3)">超期<br>升级<br><span style="font-size:10px;color:#999">正式要求</span></div>
+
+    <!-- ── 案例列表 ── -->
+    <div id="as-view-list">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+        <div style="font-size:12px;color:var(--text3);">进行中的案例</div>
+        <select id="as-filter-owner" onchange="asRenderList()" style="font-size:12px;padding:4px 8px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text);">
+          <option value="">全部负责人</option>
+          <option>Jaclyn</option>
+          <option>Wiki</option>
+          <option>Yuting</option>
+        </select>
+      </div>
+      <div id="as-list-container"></div>
+      <div id="as-list-empty" style="display:none;text-align:center;padding:40px 20px;color:var(--text3);font-size:13px;">
+        暂无进行中的案例<br><span style="font-size:12px;">点「新建案例」开始跟踪</span>
       </div>
     </div>
-    <div class="field-group">
-      <label>消息语言</label>
-      <div class="person-pills">
-        <div class="person-pill" id="lang-zh" onclick="selectLang('zh')">中文</div>
-        <div class="person-pill" id="lang-en" onclick="selectLang('en')">English</div>
-        <div class="person-pill" id="lang-both" onclick="selectLang('both')">双语</div>
+
+    <!-- ── 案例详情（点卡片进入）── -->
+    <div id="as-view-detail" style="display:none;">
+      <button onclick="asShowTab('list')" style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--text2);background:none;border:none;cursor:pointer;margin-bottom:14px;padding:0;">
+        ← 返回列表
+      </button>
+      <div id="as-detail-content"></div>
+    </div>
+
+    <!-- ── 新建案例 ── -->
+    <div id="as-view-new" style="display:none;">
+      <div class="card">
+        <div class="field-group">
+          <label>物业名称 / 单元</label>
+          <input type="text" id="as-new-property" placeholder="如：Principal Garden #08-12">
+        </div>
+        <div class="field-group">
+          <label>客户姓名</label>
+          <input type="text" id="as-new-client" placeholder="如：张先生">
+        </div>
+        <div class="field-group">
+          <label>问题类型</label>
+          <select id="as-new-type">
+            <option value="">选择类型...</option>
+            <option>空调故障</option>
+            <option>水管漏水</option>
+            <option>电器问题</option>
+            <option>锁/门问题</option>
+            <option>虫害</option>
+            <option>押金纠纷</option>
+            <option>合同问题</option>
+            <option>屋主vs租客责任界定</option>
+            <option>其他</option>
+          </select>
+        </div>
+        <div class="field-group">
+          <label>我方角色</label>
+          <div class="person-pills">
+            <div class="person-pill" id="as-role-tenant" onclick="asSelectRole('tenant')">🧑 代表租客</div>
+            <div class="person-pill" id="as-role-landlord" onclick="asSelectRole('landlord')">🏠 代表房东</div>
+          </div>
+        </div>
+        <div class="field-group">
+          <label>负责人</label>
+          <div class="person-pills">
+            <div class="person-pill" id="as-owner-j" onclick="asSelectOwner('Jaclyn')">Jaclyn</div>
+            <div class="person-pill" id="as-owner-w" onclick="asSelectOwner('Wiki')">Wiki</div>
+            <div class="person-pill" id="as-owner-y" onclick="asSelectOwner('Yuting')">Yuting</div>
+          </div>
+        </div>
+        <div class="field-group">
+          <label>初始备注</label>
+          <textarea id="as-new-notes" rows="3" placeholder="简单描述问题情况，如：租客反映空调滴水，已通知对方中介，等待报价中..."></textarea>
+        </div>
+        <button class="btn-generate btn-j" onclick="asCreateCase()">
+          <span>创建案例</span>
+        </button>
       </div>
     </div>
-    <button class="btn-generate btn-y" id="btn-repair" onclick="generateRepair()">
-      <span id="repair-btn-text">生成催单消息</span>
-      <div class="spinner" id="repair-spinner"></div>
-    </button>
-    <div class="result-box" id="repair-result">
-      <div class="result-header">
-        <span class="result-label">生成的消息</span>
-        <button class="btn-copy" id="repair-copy-btn" onclick="copyResult('repair')">复制</button>
+
+    <!-- ── 生成消息（原催单功能）── -->
+    <div id="as-view-msg" style="display:none;">
+      <div class="tip" style="margin-bottom:12px;"><strong>使用方法：</strong>选择案例或直接填写，生成对应语言的跟进消息。</div>
+      <div class="card">
+        <div class="field-group">
+          <label>关联案例（可选）</label>
+          <select id="rep-case-select" onchange="asPreFillFromCase()">
+            <option value="">不关联案例，手动填写</option>
+          </select>
+        </div>
+        <div class="field-group">
+          <label>房源 / 单元</label>
+          <input type="text" id="rep-unit" placeholder="如：D'Leedon #07-04">
+        </div>
+        <div class="field-group">
+          <label>报修类型</label>
+          <select id="rep-type">
+            <option value="">选择类型...</option>
+            <option>空调故障</option>
+            <option>水管漏水</option>
+            <option>电器问题</option>
+            <option>锁/门问题</option>
+            <option>虫害</option>
+            <option>押金纠纷</option>
+            <option>合同问题</option>
+            <option>其他</option>
+          </select>
+        </div>
+        <div class="field-group">
+          <label>发给谁</label>
+          <div class="person-pills">
+            <div class="person-pill" id="msg-to-agent" onclick="asMsgSelectTo('agent')">对方中介<br><span style="font-size:10px;color:inherit;opacity:.7">WhatsApp英文</span></div>
+            <div class="person-pill" id="msg-to-client" onclick="asMsgSelectTo('client')">我方租客<br><span style="font-size:10px;color:inherit;opacity:.7">微信中文</span></div>
+            <div class="person-pill" id="msg-to-landlord" onclick="asMsgSelectTo('landlord')">我方房东<br><span style="font-size:10px;color:inherit;opacity:.7">微信中文</span></div>
+          </div>
+        </div>
+        <div class="field-group">
+          <label>跟进力度</label>
+          <div class="urgency-btns">
+            <div class="urgency-btn" id="urg-1" onclick="selectUrgency(1)">第一次<br>联系<br><span style="font-size:10px;color:#999">礼貌询问</span></div>
+            <div class="urgency-btn" id="urg-2" onclick="selectUrgency(2)">第二次<br>跟进<br><span style="font-size:10px;color:#999">友好坚定</span></div>
+            <div class="urgency-btn" id="urg-3" onclick="selectUrgency(3)">超期<br>升级<br><span style="font-size:10px;color:#999">正式要求</span></div>
+          </div>
+        </div>
+        <div class="field-group">
+          <label>补充说明（可选）</label>
+          <textarea id="rep-notes" rows="3" placeholder="如：已等待3天、租客多次催促..."></textarea>
+        </div>
+        <button class="btn-generate btn-y" id="btn-repair" onclick="generateRepair()">
+          <span id="repair-btn-text">生成消息</span>
+          <div class="spinner" id="repair-spinner"></div>
+        </button>
+        <div class="result-box" id="repair-result">
+          <div class="result-header">
+            <span class="result-label">生成的消息</span>
+            <button class="btn-copy" id="repair-copy-btn" onclick="copyResult('repair')">复制</button>
+          </div>
+          <div class="result-content" id="repair-result-content"></div>
+        </div>
+        <div class="error-box" id="repair-error"></div>
       </div>
-      <div class="result-content" id="repair-result-content"></div>
     </div>
-    <div class="error-box" id="repair-error"></div>
-  </div><!-- /card -->
+
   </div><!-- /page-inner -->
 </div>
 
@@ -911,7 +981,6 @@ const FUNCTION_URL = '/.netlify/functions/hhg-claude';
 
 // ===== PASSWORD =====
 const PW_HASH = 'Hhg2026@';
-const INV_PW = 'Invoice@HHG';
 function checkPassword() {
   const val = document.getElementById('pw-input').value;
   if (val === PW_HASH) {
@@ -1084,11 +1153,6 @@ let selectedLang = '';
 let history = JSON.parse(localStorage.getItem('hhg_history') || '[]');
 
 function switchTab(tab) {
-  // Invoice tab requires secondary password
-  if (tab === 'invoice' && sessionStorage.getItem('hhg_inv_auth') !== '1') {
-    showInvoiceAuth();
-    return;
-  }
   // listing is now inside search tab
   const ids = ['home', 'search', 'daily', 'repair', 'invoice', 'history'];
   document.querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('active', ids[i] === tab));
@@ -1096,33 +1160,6 @@ function switchTab(tab) {
   const pageEl = document.getElementById('page-' + tab);
   if (pageEl) pageEl.classList.add('active');
   if (tab === 'history') renderHistory();
-}
-
-function showInvoiceAuth() {
-  document.getElementById('inv-auth-screen').classList.remove('hidden');
-  document.getElementById('inv-auth-input').value = '';
-  document.getElementById('inv-auth-error').classList.remove('show');
-  setTimeout(() => document.getElementById('inv-auth-input').focus(), 100);
-}
-
-function checkInvoicePassword() {
-  const val = document.getElementById('inv-auth-input').value;
-  if (val === INV_PW) {
-    sessionStorage.setItem('hhg_inv_auth', '1');
-    document.getElementById('inv-auth-screen').classList.add('hidden');
-    switchTab('invoice');
-  } else {
-    document.getElementById('inv-auth-error').classList.add('show');
-    document.getElementById('inv-auth-input').value = '';
-    document.getElementById('inv-auth-input').focus();
-  }
-}
-
-function toggleInvPwVisibility() {
-  const inp = document.getElementById('inv-auth-input');
-  const btn = document.getElementById('inv-auth-eye');
-  if (inp.type === 'password') { inp.type = 'text'; btn.textContent = '🙈'; }
-  else { inp.type = 'password'; btn.textContent = '👁'; }
 }
 
 let currentFindStep = 1;
@@ -1292,41 +1329,258 @@ ${notes}`;
 function generateRepair() {
   const unit = document.getElementById('rep-unit').value.trim();
   const type = document.getElementById('rep-type').value;
-  const vendor = document.getElementById('rep-vendor').value.trim();
-  const days = document.getElementById('rep-days').value.trim();
   const notes = document.getElementById('rep-notes').value.trim();
 
-  if (!unit || !type || !vendor) { alert('请填写房源、报修类型和师傅/公司名称'); return; }
-  if (!selectedUrgency) { alert('请选择催单力度'); return; }
-  if (!selectedLang) { alert('请选择消息语言'); return; }
+  if (!unit || !type) { alert('请填写房源和问题类型'); return; }
+  if (!selectedUrgency) { alert('请选择跟进力度'); return; }
+  if (!asMsgTo) { alert('请选择发给谁'); return; }
 
   const urgencyDesc = {
-    1: `第一次联系，语气礼貌友好，询问是否可以安排上门时间`,
-    2: `第二次跟进，已等待${days || '2天'}，友好但需要明确表达需要一个确认时间，租客在等待`,
-    3: `超期升级，已等待${days || '5天以上'}，语气正式，说明若今日内无法给出确认时间将考虑更换承包商`
-  };
-  const langDesc = {
-    zh: '只用中文写消息',
-    en: 'Write the message in English only',
-    both: '先写中文版本，再附上英文翻译'
+    1: '第一次联系，语气礼貌友好',
+    2: '第二次跟进，需要明确表达期待回复',
+    3: '超期升级，语气正式，说明问题紧迫性'
   };
 
-  const system = `你是新加坡房地产中介公司"好好过 Haohaoguo Realty"的AI助手。
-帮助Admin生成专业的WhatsApp催单消息，发给第三方承包商/维修师傅。
-要求：专业但礼貌，代表公司身份，简洁不超过5句话，WhatsApp格式。
-语言要求：${langDesc[selectedLang]}
+  let system, user;
+  if (asMsgTo === 'agent') {
+    system = `You are an admin at HaoHaoGuo Realty, a Singapore property agency.
+Write a professional WhatsApp follow-up message to the opposing agent regarding a property issue.
+Requirements: Professional but friendly, concise (max 5 sentences), WhatsApp format, English only.
+Output the message directly, no preamble.`;
+    user = `Follow-up message to opposing agent:\nProperty: ${unit}\nIssue type: ${type}\nUrgency: ${urgencyDesc[selectedUrgency]}${notes ? '\nContext: ' + notes : ''}`;
+  } else {
+    const recipient = asMsgTo === 'client' ? '租客' : '房东';
+    system = `你是新加坡房地产中介公司"好好过 Haohaoguo Realty"的Admin。
+帮助生成发给${recipient}的微信跟进消息，告知售后进展。
+要求：口语化但专业，简洁（不超过5句），中文，微信格式。
 直接输出消息内容，不要加任何前缀说明。`;
-
-  const user = `催单消息：
-房源：${unit}
-维修类型：${type}
-第三方/师傅：${vendor}
-等待时间：${days || '未记录'}
-场景：${urgencyDesc[selectedUrgency]}${notes ? '\n补充：' + notes : ''}`;
-
-  runGenerate('repair', system, user, { unit, type, vendor });
+    user = `发给${recipient}的进展通知：\n房源：${unit}\n问题类型：${type}\n跟进力度：${urgencyDesc[selectedUrgency]}${notes ? '\n补充：' + notes : ''}`;
+  }
+  runGenerate('repair', system, user, { unit, type });
 }
 
+// ===== AFTER-SALES MANAGEMENT =====
+let asRole = '';
+let asOwner = '';
+let asMsgTo = '';
+
+function asShowTab(tab) {
+  ['list','new','msg','detail'].forEach(t => {
+    const v = document.getElementById('as-view-' + t);
+    if (v) v.style.display = 'none';
+  });
+  ['list','new','msg'].forEach(t => {
+    const b = document.getElementById('as-tab-' + t);
+    if (b) b.classList.toggle('active', t === tab);
+  });
+  if (tab === 'list') {
+    document.getElementById('as-view-list').style.display = '';
+    asRenderList();
+    asPopulateCaseSelect();
+  } else if (tab === 'new') {
+    document.getElementById('as-view-new').style.display = '';
+  } else if (tab === 'msg') {
+    document.getElementById('as-view-msg').style.display = '';
+    asPopulateCaseSelect();
+  }
+}
+
+function asSelectRole(r) {
+  asRole = r;
+  ['tenant','landlord'].forEach(x => {
+    document.getElementById('as-role-' + x).className = 'person-pill' + (x === r ? ' active-j' : '');
+  });
+}
+
+function asSelectOwner(o) {
+  asOwner = o;
+  const map = {j:'Jaclyn',w:'Wiki',y:'Yuting'};
+  ['j','w','y'].forEach(x => {
+    document.getElementById('as-owner-' + x).className = 'person-pill' + (map[x] === o ? ' active-j' : '');
+  });
+}
+
+function asMsgSelectTo(t) {
+  asMsgTo = t;
+  ['agent','client','landlord'].forEach(x => {
+    document.getElementById('msg-to-' + x).className = 'person-pill' + (x === t ? ' active-j' : '');
+  });
+}
+
+function asGetCases() {
+  try { return JSON.parse(localStorage.getItem('hhg_as_cases') || '[]'); } catch { return []; }
+}
+
+function asSaveCases(cases) {
+  localStorage.setItem('hhg_as_cases', JSON.stringify(cases));
+}
+
+function asCreateCase() {
+  const property = document.getElementById('as-new-property').value.trim();
+  const client = document.getElementById('as-new-client').value.trim();
+  const type = document.getElementById('as-new-type').value;
+  const notes = document.getElementById('as-new-notes').value.trim();
+  if (!property || !type || !asRole || !asOwner) {
+    alert('请填写物业、问题类型，并选择我方角色和负责人'); return;
+  }
+  const cases = asGetCases();
+  const newCase = {
+    id: Date.now().toString(),
+    property, client, type,
+    role: asRole, owner: asOwner,
+    status: 'active', notes,
+    timeline: [{ time: Date.now(), text: '案例创建' + (notes ? '：' + notes : '') }],
+    createdAt: Date.now(), updatedAt: Date.now(),
+  };
+  cases.unshift(newCase);
+  asSaveCases(cases);
+  document.getElementById('as-new-property').value = '';
+  document.getElementById('as-new-client').value = '';
+  document.getElementById('as-new-type').value = '';
+  document.getElementById('as-new-notes').value = '';
+  asRole = ''; asOwner = '';
+  ['tenant','landlord'].forEach(x => document.getElementById('as-role-' + x).className = 'person-pill');
+  ['j','w','y'].forEach(x => document.getElementById('as-owner-' + x).className = 'person-pill');
+  showToast('✓ 案例已创建');
+  asShowTab('list');
+}
+
+function asRenderList() {
+  const container = document.getElementById('as-list-container');
+  const empty = document.getElementById('as-list-empty');
+  if (!container) return;
+  const filterOwner = document.getElementById('as-filter-owner').value;
+  let cases = asGetCases().filter(c => c.status !== 'resolved');
+  if (filterOwner) cases = cases.filter(c => c.owner === filterOwner);
+  if (cases.length === 0) {
+    container.innerHTML = '';
+    empty.style.display = '';
+    return;
+  }
+  empty.style.display = 'none';
+  const now = Date.now();
+  const statusColors = { active:'#2D6A4F', waiting:'#B8860B', urgent:'#D42B2B', resolved:'#9A9A9A' };
+  const statusLabels = { active:'处理中', waiting:'等待对方', urgent:'⚠️ 紧急', resolved:'已解决' };
+  const typeIcons = { '空调故障':'❄️','水管漏水':'💧','电器问题':'⚡','锁/门问题':'🔒','虫害':'🐛','押金纠纷':'💰','合同问题':'📄','屋主vs租客责任界定':'⚖️','其他':'🔧' };
+  container.innerHTML = cases.map(c => {
+    const daysSince = Math.floor((now - c.updatedAt) / 86400000);
+    const daysBadge = daysSince >= 3 ? `<span style="background:#FDEAEA;color:#D42B2B;font-size:10px;padding:2px 6px;border-radius:10px;margin-left:6px;">${daysSince}天未更新</span>` : '';
+    const icon = typeIcons[c.type] || '🔧';
+    const roleLabel = c.role === 'tenant' ? '代表租客' : '代表房东';
+    const sc = statusColors[c.status] || '#9A9A9A';
+    const sl = statusLabels[c.status] || c.status;
+    return `<div onclick="asOpenDetail('${c.id}')" style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:10px;cursor:pointer;">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:8px;">
+        <div><div style="font-size:14px;font-weight:700;">${icon} ${c.property}</div>${c.client ? `<div style="font-size:12px;color:var(--text2);margin-top:2px;">${c.client}</div>` : ''}</div>
+        <span style="background:${sc}22;color:${sc};font-size:11px;font-weight:600;padding:3px 8px;border-radius:10px;white-space:nowrap;">${sl}</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+        <span style="font-size:11px;color:var(--text3);">${c.type}</span><span style="font-size:11px;color:var(--text3);">·</span>
+        <span style="font-size:11px;color:var(--text3);">${roleLabel}</span><span style="font-size:11px;color:var(--text3);">·</span>
+        <span style="font-size:11px;color:var(--text3);">${c.owner}</span>${daysBadge}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function asOpenDetail(id) {
+  const cases = asGetCases();
+  const c = cases.find(x => x.id === id);
+  if (!c) return;
+  ['list','new','msg'].forEach(t => {
+    const v = document.getElementById('as-view-' + t);
+    if (v) v.style.display = 'none';
+    const b = document.getElementById('as-tab-' + t);
+    if (b) b.classList.remove('active');
+  });
+  const statusOptions = [{v:'active',l:'处理中'},{v:'waiting',l:'等待对方'},{v:'urgent',l:'⚠️ 紧急'},{v:'resolved',l:'已解决'}];
+  const roleLabel = c.role === 'tenant' ? '🧑 代表租客' : '🏠 代表房东';
+  const timelineHtml = (c.timeline||[]).slice().reverse().map(t => {
+    const dt = new Date(t.time);
+    const ts = dt.toLocaleDateString('zh-CN',{month:'2-digit',day:'2-digit'}) + ' ' + dt.toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'});
+    return `<div style="padding:8px 0;border-bottom:1px solid var(--border);"><div style="font-size:11px;color:var(--text3);margin-bottom:2px;">${ts}</div><div style="font-size:13px;">${t.text}</div></div>`;
+  }).join('');
+  document.getElementById('as-detail-content').innerHTML = `
+    <div class="card" style="margin-bottom:12px;">
+      <div style="font-size:16px;font-weight:700;margin-bottom:4px;">${c.property}</div>
+      ${c.client ? `<div style="font-size:13px;color:var(--text2);margin-bottom:10px;">${c.client}</div>` : ''}
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;">
+        <div><div style="font-size:10px;color:var(--text3);margin-bottom:2px;">问题类型</div><div style="font-size:13px;font-weight:600;">${c.type}</div></div>
+        <div><div style="font-size:10px;color:var(--text3);margin-bottom:2px;">我方角色</div><div style="font-size:13px;font-weight:600;">${roleLabel}</div></div>
+        <div><div style="font-size:10px;color:var(--text3);margin-bottom:2px;">负责人</div><div style="font-size:13px;font-weight:600;">${c.owner}</div></div>
+        <div><div style="font-size:10px;color:var(--text3);margin-bottom:2px;">状态</div>
+          <select onchange="asUpdateStatus('${c.id}',this.value)" style="font-size:12px;padding:3px 6px;border-radius:6px;border:1px solid var(--border);background:var(--surface);color:var(--text);">
+            ${statusOptions.map(o=>`<option value="${o.v}"${c.status===o.v?' selected':''}>${o.l}</option>`).join('')}
+          </select>
+        </div>
+      </div>
+      <label style="font-size:10px;color:var(--text3);display:block;margin-bottom:4px;">添加跟进记录</label>
+      <div style="display:flex;gap:8px;">
+        <input type="text" id="detail-note-input-${c.id}" placeholder="记录最新进展..." style="flex:1;font-size:13px;padding:8px 12px;border:1px solid var(--border);border-radius:8px;background:var(--surface2);outline:none;" onkeydown="if(event.key==='Enter')asAddNote('${c.id}')">
+        <button onclick="asAddNote('${c.id}')" style="background:var(--accent-j);color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:600;cursor:pointer;">记录</button>
+      </div>
+    </div>
+    <div style="font-size:11px;font-weight:600;color:var(--text3);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;">跟进时间线</div>
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px;">
+      ${timelineHtml || '<div style="color:var(--text3);font-size:13px;text-align:center;padding:16px;">暂无记录</div>'}
+    </div>`;
+  document.getElementById('as-view-detail').style.display = '';
+}
+
+function asUpdateStatus(id, newStatus) {
+  const cases = asGetCases();
+  const idx = cases.findIndex(c => c.id === id);
+  if (idx < 0) return;
+  const statusLabels = { active:'处理中', waiting:'等待对方', urgent:'⚠️ 紧急', resolved:'已解决' };
+  cases[idx].status = newStatus;
+  cases[idx].updatedAt = Date.now();
+  cases[idx].timeline.push({ time: Date.now(), text: '状态更新为：' + (statusLabels[newStatus] || newStatus) });
+  asSaveCases(cases);
+  showToast('✓ 状态已更新');
+}
+
+function asAddNote(id) {
+  const input = document.getElementById('detail-note-input-' + id);
+  const text = input.value.trim();
+  if (!text) return;
+  const cases = asGetCases();
+  const idx = cases.findIndex(c => c.id === id);
+  if (idx < 0) return;
+  cases[idx].timeline.push({ time: Date.now(), text });
+  cases[idx].updatedAt = Date.now();
+  asSaveCases(cases);
+  input.value = '';
+  asOpenDetail(id);
+  showToast('✓ 已记录');
+}
+
+function asPopulateCaseSelect() {
+  const sel = document.getElementById('rep-case-select');
+  if (!sel) return;
+  const cases = asGetCases().filter(c => c.status !== 'resolved');
+  sel.innerHTML = '<option value="">不关联案例，手动填写</option>' +
+    cases.map(c => `<option value="${c.id}">${c.property}${c.client?' · '+c.client:''} — ${c.type}</option>`).join('');
+}
+
+function asPreFillFromCase() {
+  const id = document.getElementById('rep-case-select').value;
+  if (!id) return;
+  const c = asGetCases().find(x => x.id === id);
+  if (!c) return;
+  document.getElementById('rep-unit').value = c.property + (c.client ? ' (' + c.client + ')' : '');
+  document.getElementById('rep-type').value = c.type;
+}
+
+// Init after-sales on repair tab open
+(function() {
+  const orig = window.switchTab;
+  window.switchTab = function(tab) {
+    orig(tab);
+    if (tab === 'repair') { asRenderList(); asPopulateCaseSelect(); }
+  };
+})();
+
+// ===== SEARCH LOGIC =====
 // ===== SEARCH LOGIC =====
 let searchState = {
   type: 'rent',
