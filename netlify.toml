@@ -1,0 +1,13 @@
+[build]
+  functions = "netlify/functions"
+
+# 每周五 9:00 AM SGT (UTC+8) = 每周五 01:00 UTC
+# cron: 分 时 日 月 星期
+[[scheduled_functions]]
+  name = "lark-report"
+  schedule = "0 1 * * 5"
+
+# 每月1号 9:00 AM SGT = 每月1号 01:00 UTC
+[[scheduled_functions]]
+  name = "lark-report"
+  schedule = "0 1 1 * *"
