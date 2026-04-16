@@ -866,10 +866,13 @@
       </div>
     </div>
 
-    <!-- Generate button -->
-    <button class="btn-generate btn-j" onclick="generateInvoice()">
-      <span>📄 生成发票 PDF</span>
-    </button>
+    <!-- Generate + Clear buttons -->
+    <div style="display:flex;gap:10px;">
+      <button class="btn-generate btn-j" style="flex:1;" onclick="generateInvoice()">
+        <span>📄 生成发票 PDF</span>
+      </button>
+      <button onclick="clearInvoice()" style="padding:14px 18px;background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:13px;font-weight:600;color:var(--text2);cursor:pointer;font-family:'DM Sans',sans-serif;white-space:nowrap;">🗑 清除</button>
+    </div>
 
     <div class="error-box" id="inv-error"></div>
 
@@ -2372,13 +2375,14 @@ async function generateInvoice() {
     }catch(e){}
     T('www.HaoHaoGuo.com',LOGO_X,LOGO_Y-9,{size:7.5,color:RED});
 
-    // COMPANY HEADER
-    const HDR_LX=LM+LOGO_S+8,HDR_CX=(HDR_LX+RM)/2;
+    // COMPANY HEADER — right-aligned
     let hy=H-14;
-    T('HaoHaoGuo Realty Pte.Ltd.',HDR_CX,hy,{font:HB,size:13,color:DARK,align:'center'});
-    hy-=13;T('991C Alexandra Road #01-13B Singapore 119971',HDR_CX,hy,{size:7.5,color:GRAY,align:'center'});
-    hy-=11;T('Licence No.: L3010896E',HDR_LX,hy,{size:7.5,color:GRAY});T('ACRA No.: 201938308M',HDR_CX+4,hy,{size:7.5,color:GRAY});
-    hy-=11;T('Email: admin@haohaoguo.com',HDR_LX,hy,{size:7.5,color:GRAY});T('Contact No: +65-85907523',HDR_CX+4,hy,{size:7.5,color:GRAY});
+    T('HaoHaoGuo Realty Pte.Ltd.',RM,hy,{font:HB,size:13,color:DARK,align:'right'});
+    hy-=13;T('991C Alexandra Road #01-13B Singapore 119971',RM,hy,{size:7.5,color:GRAY,align:'right'});
+    hy-=11;T('Licence No.: L3010896E',RM,hy,{size:7.5,color:GRAY,align:'right'});
+    hy-=11;T('ACRA No.: 201938308M',RM,hy,{size:7.5,color:GRAY,align:'right'});
+    hy-=11;T('Email: admin@haohaoguo.com',RM,hy,{size:7.5,color:GRAY,align:'right'});
+    hy-=11;T('Contact No: +65-85907523',RM,hy,{size:7.5,color:GRAY,align:'right'});
 
     // RULE
     const RY=LOGO_Y-14;
@@ -2397,7 +2401,7 @@ async function generateInvoice() {
     if(attn)T(safe(attn),LM+22,ATY,{size:8,color:DARK});
 
     // INVOICE box
-    T('INVOICE',IX+IW/2,BT-15,{font:HB,size:18,color:DARK,align:'center'});
+    T('TAX INVOICE',IX+IW/2,BT-15,{font:HB,size:15,color:DARK,align:'center'});
     const DV1=BT-23;HL(IX+3,RM-3,DV1,LGR,0.4);
 
     // Invoice No — measure label, add gap before value (no overlap)
@@ -2480,8 +2484,7 @@ async function generateInvoice() {
     [['Bank:','United Overseas Bank Limited'],['Account Name:','HaoHaoGuo Realty Pte. Ltd.'],
      ['Account No.:','4513118281'],['Bank Code:','7375'],['Branch Code:','001'],['Swift Code:','UOVBSGSG']
     ].forEach(([lb,vl])=>{fy-=11;T(lb,LM,fy,{font:HB,size:8,color:GRAY});T(vl,LM+65,fy,{size:8,color:DARK});});
-    fy-=11;T('PayNow:',LM,fy,{font:HB,size:8,color:DARK});
-    fy-=11;T('UEN: 201938308M',LM,fy,{font:HB,size:8,color:DARK});
+    fy-=11;T('PayNow:  UEN: 201938308M',LM,fy,{font:HB,size:8,color:DARK});
     fy-=14;T('Thank you for your support!',W/2,fy,{font:HB,size:9,color:DARK,align:'center'});
 
     // Download
@@ -2501,6 +2504,36 @@ async function generateInvoice() {
     btn.disabled = false;
   }
 }
+function clearInvoice() {
+  // Reset all header fields
+  document.getElementById('inv-number').value = '';
+  document.getElementById('inv-date').value = '';
+  document.getElementById('inv-to').value = '';
+  document.getElementById('inv-to-addr').value = '';
+  document.getElementById('inv-attn').value = '';
+  document.getElementById('inv-agency-lic').value = '';
+  // Reset invoice type to personal
+  setInvType('personal');
+  // Reset line items
+  invLines = [];
+  invLineCounter = 0;
+  addInvLine();
+  // Clear errors
+  const err = document.getElementById('inv-error');
+  if (err) err.classList.remove('show');
+  // Re-init date and number
+  const now = new Date();
+  const y = now.getFullYear();
+  const m2 = String(now.getMonth()+1).padStart(2,'0');
+  const d2 = String(now.getDate()).padStart(2,'0');
+  document.getElementById('inv-number').value = `IN${y}${m2}${d2}`;
+  const months=['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const d=now.getDate();
+  const s=[1,21,31].includes(d)?'st':[2,22].includes(d)?'nd':[3,23].includes(d)?'rd':'th';
+  document.getElementById('inv-date').value = `${d}${s} ${months[now.getMonth()]} ${y}`;
+  showToast('已清除 ✓');
+}
+
 // ===== END INVOICE MODULE =====
 
 </script>
