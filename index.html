@@ -2,6 +2,7 @@
 <html lang="zh">
 <head>
 <meta charset="UTF-8">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>HHG Admin 小助手</title>
 <style>
@@ -836,13 +837,17 @@
 
     <!-- Totals preview -->
     <div class="card" style="margin-bottom:12px;background:var(--surface2);">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-        <span style="font-size:13px;color:var(--text2);">含GST小计</span>
-        <span id="inv-gst-subtotal" style="font-size:13px;color:var(--text2);">SGD 0.00</span>
+      <div id="inv-gst-row" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+        <span style="font-size:12px;color:var(--text3);">含GST项目小计</span>
+        <span id="inv-gst-subtotal" style="font-size:12px;color:var(--text3);">SGD 0.00</span>
       </div>
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+      <div id="inv-gst-tax-row" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
         <span style="font-size:12px;color:var(--text3);">GST 9%</span>
         <span id="inv-gst-amount" style="font-size:12px;color:var(--text3);">SGD 0.00</span>
+      </div>
+      <div id="inv-nogst-row" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+        <span style="font-size:12px;color:var(--text3);">不含GST项目小计</span>
+        <span id="inv-nogst-subtotal" style="font-size:12px;color:var(--text3);">SGD 0.00</span>
       </div>
       <div style="border-top:1px solid var(--border);padding-top:8px;display:flex;justify-content:space-between;align-items:center;">
         <span style="font-size:15px;font-weight:700;color:var(--text);">TOTAL</span>
@@ -2169,8 +2174,8 @@ function updateGstDefault(id, descType) {
 }
 
 function calcInvTotal() {
-  let gstSubtotal = 0; // amount subject to GST (before GST)
-  let noGstTotal = 0;  // amount not subject to GST
+  let gstSubtotal = 0;
+  let noGstTotal  = 0;
 
   invLines.forEach(line => {
     const amt = parseFloat(line.amount) || 0;
@@ -2178,16 +2183,31 @@ function calcInvTotal() {
     else noGstTotal += amt;
   });
 
-  const gstAmount = gstSubtotal * GST_RATE;
+  const gstAmount = Math.round(gstSubtotal * GST_RATE * 100) / 100;
   const total = gstSubtotal + gstAmount + noGstTotal;
 
-  const fmt = (n) => 'SGD ' + n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-  const el1 = document.getElementById('inv-gst-subtotal');
-  const el2 = document.getElementById('inv-gst-amount');
-  const el3 = document.getElementById('inv-total');
-  if (el1) el1.textContent = fmt(gstSubtotal);
-  if (el2) el2.textContent = fmt(gstAmount);
-  if (el3) el3.textContent = fmt(total);
+  const fmt = n => 'SGD ' + n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+
+  // GST rows — only show if there are GST items
+  const hasGst   = gstSubtotal > 0;
+  const hasNoGst = noGstTotal  > 0;
+
+  const gstRow    = document.getElementById('inv-gst-row');
+  const gstTaxRow = document.getElementById('inv-gst-tax-row');
+  const noGstRow  = document.getElementById('inv-nogst-row');
+
+  if (gstRow)    gstRow.style.display    = hasGst   ? '' : 'none';
+  if (gstTaxRow) gstTaxRow.style.display = hasGst   ? '' : 'none';
+  if (noGstRow)  noGstRow.style.display  = hasNoGst ? '' : 'none';
+
+  const e1 = document.getElementById('inv-gst-subtotal');
+  const e2 = document.getElementById('inv-gst-amount');
+  const e3 = document.getElementById('inv-nogst-subtotal');
+  const e4 = document.getElementById('inv-total');
+  if (e1) e1.textContent = fmt(gstSubtotal);
+  if (e2) e2.textContent = fmt(gstAmount);
+  if (e3) e3.textContent = fmt(noGstTotal);
+  if (e4) e4.textContent = fmt(total);
 }
 
 async function generateInvoice() {
@@ -2195,10 +2215,10 @@ async function generateInvoice() {
   errEl.classList.remove('show');
 
   const invNumber = document.getElementById('inv-number').value.trim();
-  const invDate = document.getElementById('inv-date').value.trim();
-  const to = document.getElementById('inv-to').value.trim();
-  const toAddr = document.getElementById('inv-to-addr').value.trim();
-  const attn = document.getElementById('inv-attn').value.trim();
+  const invDate   = document.getElementById('inv-date').value.trim();
+  const to        = document.getElementById('inv-to').value.trim();
+  const toAddr    = document.getElementById('inv-to-addr').value.trim();
+  const attn      = document.getElementById('inv-attn').value.trim();
   const agencyLic = document.getElementById('inv-agency-lic').value.trim();
 
   if (!invNumber || !invDate || !to) {
@@ -2206,7 +2226,6 @@ async function generateInvoice() {
     errEl.classList.add('show');
     return;
   }
-
   const lines = invLines.filter(l => l.description && l.amount);
   if (lines.length === 0) {
     errEl.textContent = '请至少填写一条费用明细';
@@ -2215,34 +2234,174 @@ async function generateInvoice() {
   }
 
   const btn = document.querySelector('#page-invoice .btn-generate');
-  const origText = btn.innerHTML;
   btn.innerHTML = '<span>生成中...</span>';
   btn.disabled = true;
 
   try {
-    const res = await fetch('/.netlify/functions/generate-invoice', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        invType, invNumber, invDate, to, toAddr, attn, agencyLic, lines
-      })
+    const { PDFDocument, rgb, StandardFonts } = PDFLib;
+
+    const RED   = rgb(0.831, 0.169, 0.169);
+    const DARK  = rgb(0.102, 0.102, 0.102);
+    const GRAY  = rgb(0.353, 0.353, 0.353);
+    const BGROW = rgb(0.969, 0.965, 0.957);
+    const LINE  = rgb(0.910, 0.898, 0.878);
+
+    const MM = 2.8346;
+    const MARGIN = 25 * MM;
+    const W = 595.28, H = 841.89;
+    const RIGHT = W - MARGIN, LEFT = MARGIN;
+
+    const pdfDoc = await PDFDocument.create();
+    const page   = pdfDoc.addPage([W, H]);
+    const boldF  = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+    const regF   = await pdfDoc.embedFont(StandardFonts.Helvetica);
+    const italF  = await pdfDoc.embedFont(StandardFonts.HelveticaOblique);
+
+    const fmtNum = n => Number(n).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+
+    const txt = (str, x, y, {font=regF, size=8, color=DARK, align='left'}={}) => {
+      if (!str) return;
+      str = String(str);
+      const w = font.widthOfTextAtSize(str, size);
+      let dx = x;
+      if (align==='right')  dx = x - w;
+      if (align==='center') dx = x - w/2;
+      page.drawText(str, {x:dx, y, font, size, color});
+    };
+
+    const hline = (x1,x2,y,color=LINE,thickness=0.5) =>
+      page.drawLine({start:{x:x1,y}, end:{x:x2,y}, thickness, color});
+
+    const fillRect = (x,y,w,h,color=BGROW) =>
+      page.drawRectangle({x,y,width:w,height:h,color});
+
+    let y = H - 20*MM;
+
+    // Company header
+    txt('HaoHaoGuo Realty Pte. Ltd.', RIGHT, y, {font:boldF, size:13, color:RED, align:'right'});
+    y -= 5*MM;
+    txt('991C Alexandra Road #01-13B Singapore 119971', RIGHT, y, {size:7.5,color:GRAY,align:'right'});
+    y -= 4*MM;
+    txt('Licence No.: L3010896E            ACRA No.: 201938308M', RIGHT, y, {size:7.5,color:GRAY,align:'right'});
+    y -= 4*MM;
+    txt('Email: admin@haohaoguo.com            Contact No: +65-85907523', RIGHT, y, {size:7.5,color:GRAY,align:'right'});
+    y -= 4*MM;
+    txt('www.HaoHaoGuo.com', RIGHT, y, {size:7.5,color:RED,align:'right'});
+    y -= 5*MM;
+    hline(LEFT, RIGHT, y);
+
+    // Invoice no + date (right)
+    const iy = y - 7*MM;
+    const lx = RIGHT - 40*MM, vx = RIGHT - 38*MM;
+    txt('Invoice No.:', lx, iy,        {size:8,color:GRAY,align:'right'});
+    txt(invNumber,      vx, iy,        {font:boldF,size:8,color:DARK});
+    txt('Date:',        lx, iy-5*MM,   {size:8,color:GRAY,align:'right'});
+    txt(invDate,        vx, iy-5*MM,   {size:8,color:DARK});
+    txt('INVOICE', RIGHT, iy-11*MM,    {font:boldF,size:20,color:RED,align:'right'});
+
+    // TO block
+    y -= 7*MM;
+    txt('TO:', LEFT, y, {font:boldF, size:8, color:GRAY});
+    txt(to, LEFT+14*MM, y, {font:boldF, size:10, color:DARK});
+
+    if (toAddr) {
+      const parts = toAddr.split(',').map(s=>s.trim()).filter(Boolean);
+      parts.forEach((p,i) => { y-=4.5*MM; txt(p+(i<parts.length-1?',':''), LEFT+14*MM, y, {size:8,color:DARK}); });
+    }
+    if (agencyLic) { y-=4.5*MM; txt('Licence No.:',LEFT,y,{size:8,color:GRAY}); txt(agencyLic,LEFT+20*MM,y,{size:8,color:DARK}); }
+    if (attn)      { y-=4.5*MM; txt('ATTN:',LEFT,y,{size:8,color:GRAY}); txt(attn,LEFT+14*MM,y,{size:8,color:DARK}); }
+
+    // Table header
+    y -= 11*MM;
+    fillRect(LEFT, y-1.5*MM, W-2*MARGIN, 7*MM);
+    txt('Description', LEFT+4*MM,    y+1*MM, {font:boldF,size:8,color:GRAY});
+    txt('Rate',   RIGHT-30*MM, y+1*MM, {font:boldF,size:8,color:GRAY,align:'right'});
+    txt('Unit',   RIGHT-17*MM, y+1*MM, {font:boldF,size:8,color:GRAY,align:'right'});
+    txt('Amount', RIGHT,       y+1*MM, {font:boldF,size:8,color:GRAY,align:'right'});
+    y -= 8*MM;
+
+    // Line items
+    lines.forEach((line, i) => {
+      const amt = parseFloat(line.amount)||0;
+      txt(String(i+1),      LEFT,        y, {size:9,color:DARK});
+      txt(line.description, LEFT+7*MM,   y, {font:boldF,size:9,color:DARK});
+      txt(fmtNum(amt), RIGHT-30*MM, y, {size:9,color:DARK,align:'right'});
+      txt('1',         RIGHT-17*MM, y, {size:9,color:DARK,align:'right'});
+      txt(fmtNum(amt), RIGHT,       y, {size:9,color:DARK,align:'right'});
+      y -= 5*MM;
+      if (line.detail) {
+        line.detail.split('\n').map(s=>s.trim()).filter(Boolean).forEach(dl => {
+          txt(dl, LEFT+7*MM, y, {size:7.5,color:GRAY}); y-=4*MM;
+        });
+      }
+      y -= 4*MM;
     });
 
-    if (!res.ok) throw new Error('服务器错误 ' + res.status);
+    // Totals
+    y -= 4*MM;
+    hline(RIGHT-62*MM, RIGHT, y+2*MM);
 
-    const blob = await res.blob();
-    const url = URL.createObjectURL(blob);
+    const gstBase = lines.filter(l=>l.hasGst).reduce((s,l)=>s+(parseFloat(l.amount)||0),0);
+    const noGstAmt= lines.filter(l=>!l.hasGst).reduce((s,l)=>s+(parseFloat(l.amount)||0),0);
+    const gstAmt  = Math.round(gstBase*0.09*100)/100;
+    const total   = gstBase + gstAmt + noGstAmt;
+
+    const trow = (label, val, {bold=false,color=DARK}={}) => {
+      const f = bold?boldF:regF; const sz = bold?9:8;
+      txt(label,        RIGHT-32*MM, y, {font:f,size:sz,color,align:'right'});
+      txt('SGD',        RIGHT-28*MM, y, {font:f,size:sz,color});
+      txt(fmtNum(val),  RIGHT,       y, {font:f,size:sz,color,align:'right'});
+      y -= 5.5*MM;
+    };
+
+    // Show both subtotals clearly
+    if (gstBase > 0 && noGstAmt > 0) {
+      trow('含GST项目小计', gstBase, {color:GRAY});
+      trow('不含GST项目',   noGstAmt,{color:GRAY});
+      trow('GST (9%)',      gstAmt,  {color:GRAY});
+    } else if (gstBase > 0) {
+      trow('小计',      gstBase, {color:GRAY});
+      trow('GST (9%)', gstAmt,  {color:GRAY});
+    } else {
+      trow('小计 (免GST)', noGstAmt, {color:GRAY});
+    }
+    trow('TOTAL', total, {bold:true, color:RED});
+
+    // Footer
+    y -= 7*MM;
+    txt('This is a Computer Generated Invoice, No signature is required.', LEFT, y, {font:italF,size:7.5,color:GRAY});
+    y -= 7*MM;
+    txt('Payment Methods', LEFT, y, {font:boldF,size:8,color:DARK});
+
+    [['Bank:','United Overseas Bank Limited'],
+     ['Account Name:','HaoHaoGuo Realty Pte. Ltd.'],
+     ['Account No.:','4513118281'],
+     ['Bank Code:','7375      Branch Code: 001'],
+     ['Swift Code:','UOVBSGSG'],
+     ['PayNow UEN:','201938308M'],
+    ].forEach(([label,val]) => {
+      y -= 5*MM;
+      txt(label, LEFT,        y, {font:boldF,size:8,color:GRAY});
+      txt(val,   LEFT+27*MM,  y, {size:8,color:DARK});
+    });
+
+    y -= 7*MM;
+    txt('Thank you for your support!', W/2, y, {font:boldF,size:9,color:RED,align:'center'});
+
+    // Download
+    const pdfBytes = await pdfDoc.save();
+    const blob = new Blob([pdfBytes], {type:'application/pdf'});
+    const url  = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    a.href = url;
-    a.download = invNumber + '.pdf';
-    a.click();
+    a.href = url; a.download = invNumber + '.pdf'; a.click();
     URL.revokeObjectURL(url);
     showToast('✓ 发票已下载：' + invNumber + '.pdf');
-  } catch (err) {
+
+  } catch(err) {
     errEl.textContent = '生成失败：' + err.message;
     errEl.classList.add('show');
   } finally {
-    btn.innerHTML = origText;
+    btn.innerHTML = '<span>📄 生成发票 PDF</span>';
     btn.disabled = false;
   }
 }
