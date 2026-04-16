@@ -39,6 +39,7 @@ const FIELDS = {
 
 function caseToFields(c) {
   return {
+    '标题':              c.property || c.id || '',  // Lark default Title column
     [FIELDS.id]:         c.id || '',
     [FIELDS.property]:   c.property || '',
     [FIELDS.client]:     c.client || '',
@@ -48,9 +49,9 @@ function caseToFields(c) {
     [FIELDS.status]:     { active:'处理中', waiting:'等待对方', urgent:'紧急', resolved:'已解决' }[c.status] || c.status,
     [FIELDS.notes]:      c.notes || '',
     [FIELDS.timeline]:   JSON.stringify(c.timeline || []),
-    [FIELDS.createdAt]:  c.createdAt ? Math.floor(c.createdAt / 1000) : Math.floor(Date.now() / 1000),
-    [FIELDS.updatedAt]:  c.updatedAt ? Math.floor(c.updatedAt / 1000) : Math.floor(Date.now() / 1000),
-    [FIELDS.resolvedAt]: c.resolvedAt ? Math.floor(c.resolvedAt / 1000) : null,
+    [FIELDS.createdAt]:  c.createdAt || Date.now(),
+    [FIELDS.updatedAt]:  c.updatedAt || Date.now(),
+    [FIELDS.resolvedAt]: c.resolvedAt || null,
   };
 }
 
@@ -71,9 +72,9 @@ function fieldsToCase(record) {
     status:     statusMap[f[FIELDS.status]] || 'active',
     notes:      f[FIELDS.notes] || '',
     timeline,
-    createdAt:  f[FIELDS.createdAt] ? f[FIELDS.createdAt] * 1000 : Date.now(),
-    updatedAt:  f[FIELDS.updatedAt] ? f[FIELDS.updatedAt] * 1000 : Date.now(),
-    resolvedAt: f[FIELDS.resolvedAt] ? f[FIELDS.resolvedAt] * 1000 : null,
+    createdAt:  f[FIELDS.createdAt] || Date.now(),
+    updatedAt:  f[FIELDS.updatedAt] || Date.now(),
+    resolvedAt: f[FIELDS.resolvedAt] || null,
   };
 }
 
