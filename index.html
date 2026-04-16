@@ -2445,7 +2445,11 @@ async function generateInvoice() {
     });
 
     const TB=Math.min(rowY,TT-HRH-85*MM);
-    HL(LM,RM,TB,LGR,0.6);BOX(LM,TB,RM-LM,TT-TB,WHT,LGR);
+    // Draw table border as lines only (no fill) so row items underneath are not covered
+    HL(LM,RM,TB,LGR,0.6);
+    HL(LM,RM,TT,LGR,0.5);
+    VL(LM,TT,TB,LGR,0.5);
+    VL(RM,TT,TB,LGR,0.5);
     VL(CRR+8,TT,TB,LGR,0.4);VL(CU+3,TT,TB,LGR,0.4);
 
     // TOTALS — dynamic widths so label/SGD/value never overlap
