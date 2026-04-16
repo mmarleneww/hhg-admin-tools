@@ -92,7 +92,7 @@ async function generateReportText(cases, stats, reportType) {
   ).join('\n');
 
   const prompt = `你是新加坡房地产中介公司"好好过 Haohaoguo Realty"的AI助手。
-根据以下售后案例数据，生成一份简洁的${period}售后管理报告，发给管理层。
+根据以下售后案例数据，生成一份双语（中文+英文）的${period}售后管理报告，发给管理层。
 
 数据统计：
 - 进行中案例总数：${stats.active.length + stats.waiting.length + stats.urgent.length}
@@ -110,13 +110,13 @@ async function generateReportText(cases, stats, reportType) {
 超过7天未解决的案例（最多显示5个）：
 ${overdueList || '无'}
 
-要求：
-- 中文，专业简洁
-- 用emoji让报告更易读
-- 如有紧急或超期案例，重点标注
-- 结尾给出1-2句总结建议
-- 不超过300字
-- 直接输出报告内容，不要加任何前缀`;
+格式要求：
+- 先输出完整的中文版本，再输出完整的英文版本
+- 中英文之间用 "---" 分隔
+- 每个版本都包含：数据概览、负责人分工、重点关注（紧急/超期案例）、总结建议
+- 用emoji让报告更易读，如有紧急或超期案例重点标注
+- 每个语言版本不超过200字
+- 直接输出报告内容，不要加任何其他前缀`;
 
   const res = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
