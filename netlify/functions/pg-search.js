@@ -110,51 +110,98 @@ exports.handler = async function (event) {
   // ── Single URL extraction mode ────────────────────────────────────────────
   if (_extractUrl) {
     try {
+      // Step 1: detect listing type from URL
+      const isForSale = _extractUrl.includes('/for-sale') || _extractUrl.includes('property-for-sale');
+      const listingType = isForSale ? 'sale' : 'rent';
+
+      // Step 2: Extract slug from URL (last path segment)
+      const urlPath = _extractUrl.replace(/\?.*$/, '').replace(/\/$/, '');
+      const slug = urlPath.split('/').pop();
+
+      // Step 3: Try JSON API using __NEXT_DATA__ from the actual page HTML
+      // (most reliable — same data source as search results)
       const resp = await scraperFetch(_extractUrl);
       if (!resp.ok) return json({ success: false, error: `Listing page returned ${resp.status}` });
       const html = await resp.text();
+
+      // Extract embedded Next.js data blob
+      const nextDataMatch = html.match(/<script id="__NEXT_DATA__"[^>]*>([\s\S]*?)<\/script>/);
+      if (nextDataMatch) {
+        try {
+          const nextData = JSON.parse(nextDataMatch[1]);
+          const pageData = nextData?.props?.pageProps?.pageData?.data;
+          const r = pageData?.listingData
+                 || nextData?.props?.pageProps?.listing
+                 || null;
+          if (r) {
+            let listing = formatListing(r, listingType);
+            listing.link = _extractUrl;
+            // Enrich phone from the HTML we already have
+            const phoneMatch = html.match(/"\+65(\d{8})"/);
+            if (phoneMatch) listing.agent.phone = '+65' + phoneMatch[1];
+            if (!listing.furnishing) {
+              const fm = html.match(/(Fully [Ff]urnished|Partial(?:ly)? [Ff]urnished|Unfurnished)/i);
+              if (fm) listing.furnishing = fm[1];
+            }
+            return json({ success: true, listing });
+          }
+        } catch (parseErr) {
+          // fall through to regex fallback
+        }
+      }
+
+      // Step 4: Regex fallback (HTML scraping) — improved patterns
       const titleMatch = html.match(/<title>([^<]+)<\/title>/i);
       const title = titleMatch?.[1] || '';
       const agentFromTitle = title.match(/by ([^,]+),\s*\d+/i)?.[1]?.trim() || '';
       const addressFromTitle = title.split(',')[0]?.trim() || '';
+
+      // Try localizedTitle first (actual field name in PG JSON)
+      const projectMatch = html.match(/"localizedTitle"\s*:\s*"([^"]+)"/i)
+                        || html.match(/"projectName"\s*:\s*"([^"]+)"/i)
+                        || html.match(/"project"\s*:\s*"([^"]+)"/i);
+      const projectName = projectMatch?.[1] || addressFromTitle;
+
       const phoneMatch = html.match(/"\+65(\d{8})"/);
       const phone = phoneMatch ? '+65' + phoneMatch[1] : '';
       const ceaMatch = html.match(/R\d{7}[A-Z]/);
       const cea = ceaMatch?.[0] || '';
       const agencyMatch = html.match(/(ERA\s+REALTY|PROPNEX[^"<]{0,20}|ORANGETEE[^"<]{0,20}|HUTTONS[^"<]{0,20}|KNIGHT\s+FRANK|SAVILLS|SLP[^"<]{0,20}|NAVIS[^"<]{0,20})/i);
       const agency = agencyMatch?.[1]?.trim() || '';
-      const priceMatch = html.match(/S\$\s*([\d,]+)\s*\/?\s*mo/i) || html.match(/S\$\s*([\d,]+)/);
-      const priceRaw = priceMatch ? parseInt(priceMatch[1].replace(/,/g,'')) : 0;
-      const bedsMatch = html.match(/(\d+)\s*Bed/i);
-      const bathsMatch = html.match(/(\d+)\s*Bath/i);
-      const areaMatch = html.match(/([\d,]+)\s*sqft/i);
-      const areaSqft = areaMatch ? parseInt(areaMatch[1].replace(/,/g,'')) : null;
+      const priceMatch = html.match(/"value"\s*:\s*(\d+)/) || html.match(/S\$\s*([\d,]+)\s*\/?\s*mo/i) || html.match(/S\$\s*([\d,]+)/);
+      const priceRaw = priceMatch ? parseInt((priceMatch[1]||'').replace(/,/g,'')) : 0;
+      const bedsMatch = html.match(/"bedrooms"\s*:\s*(\d+)/i) || html.match(/(\d+)\s*Bed/i);
+      const bathsMatch = html.match(/"bathrooms"\s*:\s*(\d+)/i) || html.match(/(\d+)\s*Bath/i);
+      const areaMatch = html.match(/"floorArea"\s*:\s*"?(\d+)"?/i) || html.match(/([\d,]+)\s*sqft/i);
+      const areaSqft = areaMatch ? parseInt((areaMatch[1]||'').replace(/,/g,'')) : null;
       const furnishMatch = html.match(/(Fully [Ff]urnished|Partial(?:ly)? [Ff]urnished|Unfurnished)/i);
       const availMatch = html.match(/Available\s+from\s+([\d\w\s]+?)(?:\n|<)/i) || html.match(/(Ready to move in)/i);
-      const mrtMatch = html.match(/(\d+)\s*m\s*\((\d+)\s*mins?\)\s*from\s*([^\n<]{5,50}(?:MRT|LRT))/i);
+      const mrtMatch = html.match(/"nearbyText"\s*:\s*"([^"]+)"/i);
       const tenureMatch = html.match(/(Freehold|Leasehold\s*\d*)/i);
       const leaseMatch = html.match(/(\d+)\s+years?\s+lease/i);
-      const listedMatch = html.match(/Listed\s+on\s+(\d{1,2}\s+\w+\s+\d{4})/i);
+      const listedMatch = html.match(/"postedOn"[^}]{0,60}"text"\s*:\s*"([^"]+)"/i)
+                       || html.match(/Listed\s+on\s+(\d{1,2}\s+\w+\s+\d{4})/i);
       const listedDate = listedMatch?.[1] || '';
-      const projectMatch = html.match(/"project(?:Name)?"\s*:\s*"([^"]+)"/i);
-      const projectName = projectMatch?.[1] || '';
+
       const listing = {
         link: _extractUrl, projectName,
-        address: projectName || addressFromTitle, streetAddress: addressFromTitle,
+        address: projectName, streetAddress: addressFromTitle,
         priceRaw, priceDisplay: priceRaw ? `$${Number(priceRaw).toLocaleString()}` : '',
         beds: bedsMatch ? parseInt(bedsMatch[1]) : null,
         baths: bathsMatch ? parseInt(bathsMatch[1]) : null,
         areaSqft, areaDisplay: areaSqft ? `${areaSqft.toLocaleString()} sqft` : '',
         furnishing: furnishMatch?.[1] || '', availability: availMatch?.[1] || '',
-        mrt: mrtMatch ? `${mrtMatch[1]}m (${mrtMatch[2]}mins) from ${mrtMatch[3].trim()}` : '',
+        mrt: mrtMatch?.[1] || '',
         tenure: tenureMatch?.[1] || '', leaseTerm: leaseMatch?.[0] || '', listedDate,
         agent: { name: agentFromTitle, phone, cea, agency, blocked: false },
       };
       return json({ success: true, listing });
+
     } catch (err) {
       return json({ success: false, error: err.message });
     }
   }
+
 
   // ── Build search query parameters ────────────────────────────────────────
   const qp = new URLSearchParams();
