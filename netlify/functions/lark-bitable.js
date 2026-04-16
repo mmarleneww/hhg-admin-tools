@@ -253,6 +253,18 @@ exports.handler = async function(event) {
       });
     }
 
+    // ── DELETE FIELD: remove a field by ID ───────────────────────────────────
+    if (action === 'delete_field') {
+      const fieldId = body.field_id;
+      if (!fieldId) return json({ error: 'Missing field_id' }, 400);
+      const res = await fetch(`${LARK_API}/bitable/v1/apps/${BASE_TOKEN}/tables/${TABLE_ID}/fields/${fieldId}`, {
+        method: 'DELETE', headers,
+      });
+      const data = await res.json();
+      if (data.code !== 0) throw new Error(`Delete field failed: code=${data.code} msg=${data.msg}`);
+      return json({ success: true, field_id: fieldId });
+    }
+
     // ── LIST FIELDS: show actual field names in the table ────────────────────
     if (action === 'list_fields') {
       const res = await fetch(`${LARK_API}/bitable/v1/apps/${BASE_TOKEN}/tables/${TABLE_ID}/fields`, { headers });
