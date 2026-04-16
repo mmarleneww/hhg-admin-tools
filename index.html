@@ -342,6 +342,7 @@
     <div class="tab" onclick="switchTab('search')">找房</div>
     <div class="tab" onclick="switchTab('daily')">日报</div>
     <div class="tab" onclick="switchTab('repair')">售后</div>
+    <div class="tab" onclick="switchTab('invoice')">发票</div>
     <div class="tab" onclick="switchTab('history')">记录</div>
   </div>
   </div><!-- /header-inner -->
@@ -772,6 +773,93 @@
 
 <!-- listing page merged into 找房 -->
 
+
+<!-- INVOICE -->
+<div class="page" id="page-invoice">
+  <div class="page-inner">
+
+    <!-- Invoice type selector -->
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;">
+      <button class="inv-type-btn active" id="invtype-personal" onclick="setInvType('personal')" style="flex:1;min-width:120px;padding:10px 8px;border-radius:10px;border:1.5px solid var(--accent-j);background:var(--accent-j-light);color:var(--accent-j);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">👤 个人客户</button>
+      <button class="inv-type-btn" id="invtype-agency" onclick="setInvType('agency')" style="flex:1;min-width:120px;padding:10px 8px;border-radius:10px;border:1.5px solid var(--border);background:var(--surface);color:var(--text2);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">🏢 中介公司</button>
+      <button class="inv-type-btn" id="invtype-institution" onclick="setInvType('institution')" style="flex:1;min-width:120px;padding:10px 8px;border-radius:10px;border:1.5px solid var(--border);background:var(--surface);color:var(--text2);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">⚖️ 律师/机构</button>
+      <button class="inv-type-btn" id="invtype-other" onclick="setInvType('other')" style="flex:1;min-width:120px;padding:10px 8px;border-radius:10px;border:1.5px solid var(--border);background:var(--surface);color:var(--text2);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">📄 其他</button>
+    </div>
+
+    <!-- Invoice form -->
+    <div class="card" style="margin-bottom:12px;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+        <div class="field-group" style="margin-bottom:0;">
+          <label>发票编号</label>
+          <input type="text" id="inv-number" placeholder="如：IN20260416" style="font-family:'DM Mono',monospace;">
+        </div>
+        <div class="field-group" style="margin-bottom:0;">
+          <label>日期</label>
+          <input type="text" id="inv-date" placeholder="如：16th April 2026">
+        </div>
+      </div>
+
+      <!-- TO field -->
+      <div class="field-group" style="margin-bottom:10px;">
+        <label>TO <span id="inv-to-hint" style="font-size:10px;color:var(--text3);">客户姓名</span></label>
+        <input type="text" id="inv-to" placeholder="客户姓名">
+      </div>
+
+      <!-- TO address (for agency/institution) -->
+      <div id="inv-to-addr-wrap" class="field-group" style="margin-bottom:10px;display:none;">
+        <label>公司地址</label>
+        <input type="text" id="inv-to-addr" placeholder="如：480 Lorong 6 Toa Payoh #10-01, HDB Hub East Wing, Singapore 310480">
+      </div>
+
+      <!-- ATTN (for agency/institution) -->
+      <div id="inv-attn-wrap" class="field-group" style="margin-bottom:10px;display:none;">
+        <label>ATTN <span style="font-size:10px;color:var(--text3);">中介姓名 + CEA号</span></label>
+        <input type="text" id="inv-attn" placeholder="如：Zhu Jiayin R045457I">
+      </div>
+
+      <!-- Agency licence (for agency) -->
+      <div id="inv-agency-lic-wrap" class="field-group" style="margin-bottom:10px;display:none;">
+        <label>对方 Licence No.</label>
+        <input type="text" id="inv-agency-lic" placeholder="如：L3008899K">
+      </div>
+    </div>
+
+    <!-- Line items -->
+    <div class="card" style="margin-bottom:12px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+        <label style="margin:0;font-size:13px;font-weight:600;color:var(--text);">费用明细</label>
+        <button onclick="addInvLine()" style="font-size:12px;color:var(--accent-j);background:var(--accent-j-light);border:none;border-radius:8px;padding:5px 12px;cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:500;">＋ 添加一行</button>
+      </div>
+
+      <div id="inv-lines-container"></div>
+    </div>
+
+    <!-- Totals preview -->
+    <div class="card" style="margin-bottom:12px;background:var(--surface2);">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+        <span style="font-size:13px;color:var(--text2);">含GST小计</span>
+        <span id="inv-gst-subtotal" style="font-size:13px;color:var(--text2);">SGD 0.00</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+        <span style="font-size:12px;color:var(--text3);">GST 9%</span>
+        <span id="inv-gst-amount" style="font-size:12px;color:var(--text3);">SGD 0.00</span>
+      </div>
+      <div style="border-top:1px solid var(--border);padding-top:8px;display:flex;justify-content:space-between;align-items:center;">
+        <span style="font-size:15px;font-weight:700;color:var(--text);">TOTAL</span>
+        <span id="inv-total" style="font-size:18px;font-weight:700;color:var(--accent-j);">SGD 0.00</span>
+      </div>
+    </div>
+
+    <!-- Generate button -->
+    <button class="btn-generate btn-j" onclick="generateInvoice()">
+      <span>📄 生成发票 PDF</span>
+    </button>
+
+    <div class="error-box" id="inv-error"></div>
+
+  </div>
+</div>
+
 <!-- HISTORY -->
 <div class="page" id="page-history">
   <div class="page-inner">
@@ -947,7 +1035,7 @@ let history = JSON.parse(localStorage.getItem('hhg_history') || '[]');
 
 function switchTab(tab) {
   // listing is now inside search tab
-  const ids = ['home', 'search', 'daily', 'repair', 'history'];
+  const ids = ['home', 'search', 'daily', 'repair', 'invoice', 'history'];
   document.querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('active', ids[i] === tab));
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   const pageEl = document.getElementById('page-' + tab);
@@ -1935,6 +2023,231 @@ function copyHistoryItem(id) {
   const item = history.find(h => h.id === id);
   if (item) navigator.clipboard.writeText(item.content);
 }
+
+
+// ===== INVOICE MODULE =====
+let invType = 'personal';
+let invLines = [];
+let invLineCounter = 0;
+const GST_RATE = 0.09;
+
+// Auto-fill invoice number and date on load
+(function initInvoice() {
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = String(now.getMonth()+1).padStart(2,'0');
+  const d2 = String(now.getDate()).padStart(2,'0');
+  const numEl = document.getElementById('inv-number');
+  if (numEl && !numEl.value) numEl.value = `IN${y}${m}${d2}`;
+  const dateEl = document.getElementById('inv-date');
+  if (dateEl && !dateEl.value) {
+    const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+    const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    const d = now.getDate();
+    const s = [1,21,31].includes(d)?'st':[2,22].includes(d)?'nd':[3,23].includes(d)?'rd':'th';
+    dateEl.value = `${d}${s} ${months[now.getMonth()]} ${y}`;
+  }
+  // Add first line item
+  if (invLines.length === 0) addInvLine();
+})();
+
+function setInvType(type) {
+  invType = type;
+  // Update button styles
+  ['personal','agency','institution','other'].forEach(t => {
+    const btn = document.getElementById('invtype-' + t);
+    if (!btn) return;
+    const active = t === type;
+    btn.style.borderColor = active ? 'var(--accent-j)' : 'var(--border)';
+    btn.style.background = active ? 'var(--accent-j-light)' : 'var(--surface)';
+    btn.style.color = active ? 'var(--accent-j)' : 'var(--text2)';
+  });
+  // Show/hide fields based on type
+  const isAgency = type === 'agency';
+  const isInstitution = type === 'institution';
+  const needsAddr = isAgency || isInstitution;
+  const needsAttn = isAgency || isInstitution;
+  const needsLic = isAgency;
+
+  document.getElementById('inv-to-addr-wrap').style.display = needsAddr ? '' : 'none';
+  document.getElementById('inv-attn-wrap').style.display = needsAttn ? '' : 'none';
+  document.getElementById('inv-agency-lic-wrap').style.display = needsLic ? '' : 'none';
+
+  // Update TO hint
+  const hints = {
+    personal: '客户姓名',
+    agency: '中介公司名称（如 PROPNEX REALTY PTE. LTD.）',
+    institution: '机构名称（如律师事务所名称）',
+    other: '收款方名称'
+  };
+  const toInput = document.getElementById('inv-to');
+  const hintEl = document.getElementById('inv-to-hint');
+  if (toInput) toInput.placeholder = hints[type] || '';
+  if (hintEl) hintEl.textContent = hints[type] || '';
+}
+
+function addInvLine(defaults) {
+  invLineCounter++;
+  const id = invLineCounter;
+  invLines.push({
+    id,
+    description: defaults?.description || '',
+    detail: defaults?.detail || '',
+    amount: defaults?.amount || '',
+    hasGst: defaults?.hasGst !== undefined ? defaults.hasGst : true,
+  });
+  renderInvLines();
+}
+
+function removeInvLine(id) {
+  invLines = invLines.filter(l => l.id !== id);
+  renderInvLines();
+}
+
+function renderInvLines() {
+  const container = document.getElementById('inv-lines-container');
+  if (!container) return;
+
+  container.innerHTML = invLines.map((line, idx) => `
+    <div style="border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:8px;background:var(--surface);">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <span style="font-size:12px;font-weight:600;color:var(--text3);">第 ${idx+1} 项</span>
+        ${invLines.length > 1 ? `<button onclick="removeInvLine(${line.id})" style="font-size:11px;color:var(--accent-j);background:none;border:none;cursor:pointer;">✕ 删除</button>` : ''}
+      </div>
+
+      <div class="field-group" style="margin-bottom:8px;">
+        <label>费用类型</label>
+        <select onchange="updateInvLine(${line.id},'description',this.value);updateGstDefault(${line.id},this.value)" style="width:100%;">
+          <option value="" ${!line.description?'selected':''}>选择类型...</option>
+          <option value="AGENT COMMISSION" ${line.description==='AGENT COMMISSION'?'selected':''}>Agent Commission（佣金）</option>
+          <option value="STAMP DUTY" ${line.description==='STAMP DUTY'?'selected':''}>Stamp Duty（印花税）</option>
+          <option value="ADMINISTRATIVE FEE" ${line.description==='ADMINISTRATIVE FEE'?'selected':''}>Administrative Fee（行政费）</option>
+          <option value="UTILITY DEPOSIT" ${line.description==='UTILITY DEPOSIT'?'selected':''}>Utility Deposit（水电押金）</option>
+          <option value="RENOVATION FEE" ${line.description==='RENOVATION FEE'?'selected':''}>Renovation Fee（装修费）</option>
+          <option value="OTHER" ${line.description==='OTHER'?'selected':''}>Other（其他）</option>
+        </select>
+      </div>
+
+      <div class="field-group" style="margin-bottom:8px;">
+        <label>说明/地址 <span style="font-size:10px;color:var(--text3);">（可选，如地址/Stamp Cert Ref等）</span></label>
+        <textarea rows="2" style="width:100%;font-size:12px;" placeholder="如：Address: 13 Leedon Heights #35-45 Singapore 266224" onchange="updateInvLine(${line.id},'detail',this.value)">${line.detail || ''}</textarea>
+      </div>
+
+      <div style="display:flex;gap:10px;align-items:flex-end;">
+        <div class="field-group" style="margin-bottom:0;flex:1;">
+          <label>金额 SGD</label>
+          <input type="number" step="0.01" placeholder="0.00" value="${line.amount||''}"
+            oninput="updateInvLine(${line.id},'amount',this.value);calcInvTotal()"
+            style="font-family:'DM Mono',monospace;">
+        </div>
+        <div style="padding-bottom:2px;">
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;font-weight:500;color:var(--text2);margin-bottom:8px;">
+            <input type="checkbox" ${line.hasGst?'checked':''} onchange="updateInvLine(${line.id},'hasGst',this.checked);calcInvTotal()" style="width:16px;height:16px;accent-color:var(--accent-j);">
+            含 GST 9%
+          </label>
+        </div>
+      </div>
+    </div>
+  `).join('');
+
+  calcInvTotal();
+}
+
+function updateInvLine(id, field, value) {
+  const line = invLines.find(l => l.id === id);
+  if (line) line[field] = value;
+}
+
+function updateGstDefault(id, descType) {
+  // Stamp Duty, Utility Deposit → no GST by default
+  const noGstTypes = ['STAMP DUTY', 'UTILITY DEPOSIT'];
+  const line = invLines.find(l => l.id === id);
+  if (line) {
+    line.hasGst = !noGstTypes.includes(descType);
+    renderInvLines();
+  }
+}
+
+function calcInvTotal() {
+  let gstSubtotal = 0; // amount subject to GST (before GST)
+  let noGstTotal = 0;  // amount not subject to GST
+
+  invLines.forEach(line => {
+    const amt = parseFloat(line.amount) || 0;
+    if (line.hasGst) gstSubtotal += amt;
+    else noGstTotal += amt;
+  });
+
+  const gstAmount = gstSubtotal * GST_RATE;
+  const total = gstSubtotal + gstAmount + noGstTotal;
+
+  const fmt = (n) => 'SGD ' + n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  const el1 = document.getElementById('inv-gst-subtotal');
+  const el2 = document.getElementById('inv-gst-amount');
+  const el3 = document.getElementById('inv-total');
+  if (el1) el1.textContent = fmt(gstSubtotal);
+  if (el2) el2.textContent = fmt(gstAmount);
+  if (el3) el3.textContent = fmt(total);
+}
+
+async function generateInvoice() {
+  const errEl = document.getElementById('inv-error');
+  errEl.classList.remove('show');
+
+  const invNumber = document.getElementById('inv-number').value.trim();
+  const invDate = document.getElementById('inv-date').value.trim();
+  const to = document.getElementById('inv-to').value.trim();
+  const toAddr = document.getElementById('inv-to-addr').value.trim();
+  const attn = document.getElementById('inv-attn').value.trim();
+  const agencyLic = document.getElementById('inv-agency-lic').value.trim();
+
+  if (!invNumber || !invDate || !to) {
+    errEl.textContent = '请填写发票编号、日期和收款方';
+    errEl.classList.add('show');
+    return;
+  }
+
+  const lines = invLines.filter(l => l.description && l.amount);
+  if (lines.length === 0) {
+    errEl.textContent = '请至少填写一条费用明细';
+    errEl.classList.add('show');
+    return;
+  }
+
+  const btn = document.querySelector('#page-invoice .btn-generate');
+  const origText = btn.innerHTML;
+  btn.innerHTML = '<span>生成中...</span>';
+  btn.disabled = true;
+
+  try {
+    const res = await fetch('/.netlify/functions/generate-invoice', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        invType, invNumber, invDate, to, toAddr, attn, agencyLic, lines
+      })
+    });
+
+    if (!res.ok) throw new Error('服务器错误 ' + res.status);
+
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = invNumber + '.pdf';
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast('✓ 发票已下载：' + invNumber + '.pdf');
+  } catch (err) {
+    errEl.textContent = '生成失败：' + err.message;
+    errEl.classList.add('show');
+  } finally {
+    btn.innerHTML = origText;
+    btn.disabled = false;
+  }
+}
+// ===== END INVOICE MODULE =====
+
 </script>
 </body>
 </html>
