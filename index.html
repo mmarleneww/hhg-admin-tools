@@ -6,30 +6,41 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>HHG Admin 小助手</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;700&family=JetBrains+Mono:wght@400;500&display=swap');
 
   :root {
-    --bg: #F7F6F4;
+    --bg: #F5F5F7;
     --surface: #FFFFFF;
-    --surface2: #F4F3F1;
-    --border: #E8E5E0;
-    --text: #1A1A1A;
-    --text2: #5A5A5A;
-    --text3: #9A9A9A;
-    --accent-j: #D42B2B;
-    --accent-j-light: #FDEAEA;
-    --accent-y: #B8860B;
-    --accent-y-light: #FEF7E0;
-    --accent-g: #2D6A4F;
-    --accent-g-light: #E8F4EE;
-    --accent-gold: #D42B2B;
-    --accent-gold-light: #FDEAEA;
-    --red: #D42B2B;
-    --red-light: #FDEAEA;
-    --shadow: 0 1px 8px rgba(0,0,0,0.06);
-    --radius: 14px;
-    --radius-sm: 10px;
+    --surface2: #F8F8FA;
+    --surface3: #EFEFEF;
+    --border: #E4E4E8;
+    --border-light: #EBEBEF;
+    --text: #0D0D0D;
+    --text2: #4A4A52;
+    --text3: #9898A6;
+    --text4: #C4C4CC;
+    --accent-j: #C8102E;
+    --accent-j-hover: #A80D26;
+    --accent-j-light: #FFF0F2;
+    --accent-j-mid: #FFDDE1;
+    --accent-y: #8B6914;
+    --accent-y-light: #FDF6E3;
+    --accent-g: #1B5E3A;
+    --accent-g-light: #EBF5F0;
+    --accent-gold: #C8102E;
+    --accent-gold-light: #FFF0F2;
+    --red: #C8102E;
+    --red-light: #FFF0F2;
+    --shadow: 0 1px 3px rgba(0,0,0,0.05), 0 4px 12px rgba(0,0,0,0.05);
+    --shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
+    --shadow-lg: 0 4px 24px rgba(0,0,0,0.08);
+    --radius: 12px;
+    --radius-sm: 8px;
+    --radius-lg: 16px;
+    --radius-xl: 20px;
     --max-w: 680px;
+    --font-body: 'Inter', 'Noto Sans SC', -apple-system, sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
   }
 
   /* ===== PASSWORD SCREEN ===== */
@@ -39,38 +50,39 @@
     display: flex; align-items: center; justify-content: center;
     flex-direction: column;
   }
-  #pw-screen.hidden { display: none !important; }
+  #pw-screen.hidden { display: none; }
   .pw-logo {
-    margin-bottom: 32px;
+    margin-bottom: 28px;
   }
   .pw-logo svg { width: 80px; height: 80px; }
-  .pw-title { font-size: 18px; font-weight: 600; color: var(--text); margin-bottom: 4px; text-align: center; }
+  .pw-title { font-size: 18px; font-weight: 700; color: var(--text); margin-bottom: 4px; text-align: center; letter-spacing: -0.3px; }
   .pw-sub { font-size: 13px; color: var(--text3); margin-bottom: 28px; text-align: center; }
   .pw-input-wrap { position: relative; width: 280px; }
   .pw-input-wrap input {
-    width: 100%; padding: 14px 48px 14px 16px;
-    border: 1.5px solid var(--border);
-    border-radius: 12px; font-family: 'DM Sans', sans-serif;
+    width: 100%; padding: 13px 48px 13px 16px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm); font-family: var(--font-body);
     font-size: 15px; outline: none; color: var(--text);
     background: var(--surface2);
-    transition: border-color .15s;
+    transition: border-color .15s, box-shadow .15s;
     letter-spacing: 2px;
   }
-  .pw-input-wrap input:focus { border-color: var(--accent-j); background: #fff; }
+  .pw-input-wrap input:focus { border-color: var(--accent-j); background: #fff; box-shadow: 0 0 0 3px rgba(200,16,46,0.07); }
   .pw-input-wrap button {
     position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
-    background: none; border: none; cursor: pointer; font-size: 20px;
+    background: none; border: none; cursor: pointer; font-size: 18px;
     color: var(--text3); padding: 4px;
   }
   .pw-submit {
-    width: 280px; margin-top: 12px;
+    width: 280px; margin-top: 10px;
     background: var(--accent-j); color: #fff;
-    border: none; border-radius: 12px;
-    padding: 14px; font-family: 'DM Sans', sans-serif;
-    font-size: 15px; font-weight: 600; cursor: pointer;
-    transition: opacity .15s;
+    border: none; border-radius: var(--radius-sm);
+    padding: 13px; font-family: var(--font-body);
+    font-size: 14.5px; font-weight: 600; cursor: pointer;
+    transition: background .15s;
   }
-  .pw-submit:active { opacity: .85; }
+  .pw-submit:hover { background: var(--accent-j-hover); }
+  .pw-submit:active { opacity: .9; }
   .pw-error {
     margin-top: 10px; font-size: 13px; color: var(--red);
     display: none; text-align: center;
@@ -80,16 +92,19 @@
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 
   body {
-    font-family: 'DM Sans', sans-serif;
+    font-family: var(--font-body);
     background: var(--bg);
     color: var(--text);
     min-height: 100vh;
     padding: 0 0 80px;
+    -webkit-font-smoothing: antialiased;
   }
 
   .header {
-    background: var(--surface);
-    border-bottom: 1px solid var(--border);
+    background: rgba(255,255,255,0.92);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border-light);
     padding: 0;
     position: sticky;
     top: 0;
@@ -98,37 +113,40 @@
   .header-inner {
     max-width: var(--max-w);
     margin: 0 auto;
-    padding: 16px 20px 0;
+    padding: 14px 20px 0;
   }
   .header-top {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 14px;
+    margin-bottom: 12px;
   }
   .logo {
-    display: flex; align-items: center; gap: 10px;
+    display: flex; align-items: center; gap: 9px;
   }
-  .logo-img { width: 32px; height: 32px; border-radius: 8px; }
-  .logo-text { font-size: 15px; font-weight: 700; color: var(--text); letter-spacing: -0.3px; }
-  .logo-sub { font-size: 10px; color: var(--text3); font-weight: 400; letter-spacing: 0.5px; }
+  .logo-img { width: 30px; height: 30px; border-radius: 7px; }
+  .logo-text { font-size: 15px; font-weight: 700; color: var(--text); letter-spacing: -0.4px; }
+  .logo-sub { font-size: 9.5px; color: var(--text3); font-weight: 500; letter-spacing: 0.8px; text-transform: uppercase; }
   .version {
     font-size: 10px; color: var(--text3);
-    font-family: 'DM Mono', monospace;
+    font-family: var(--font-mono);
     background: var(--surface2);
     padding: 3px 8px; border-radius: 20px;
-    border: 1px solid var(--border);
+    border: 1px solid var(--border-light);
+    letter-spacing: 0.3px;
   }
 
   .tabs { display: flex; gap: 0; overflow-x: auto; scrollbar-width: none; }
   .tabs::-webkit-scrollbar { display: none; }
   .tab {
-    flex: 1; text-align: center; padding: 10px 8px;
-    font-size: 13px; font-weight: 500; color: var(--text3);
+    flex: 1; text-align: center; padding: 9px 8px 10px;
+    font-size: 12.5px; font-weight: 500; color: var(--text3);
     border-bottom: 2px solid transparent; cursor: pointer;
-    transition: all .15s; white-space: nowrap; min-width: 48px;
+    transition: all .18s; white-space: nowrap; min-width: 44px;
+    letter-spacing: 0.2px;
   }
-  .tab.active { color: var(--accent-j); border-bottom-color: var(--accent-j); }
+  .tab:hover { color: var(--text2); }
+  .tab.active { color: var(--accent-j); border-bottom-color: var(--accent-j); font-weight: 600; }
 
   .page { display: none; }
   .page.active { display: block; }
@@ -140,69 +158,75 @@
 
   .card {
     background: var(--surface);
-    border: 1px solid var(--border);
+    border: 1px solid var(--border-light);
     border-radius: var(--radius);
     padding: 16px;
     margin-bottom: 12px;
-    box-shadow: var(--shadow);
+    box-shadow: var(--shadow-sm);
+    transition: box-shadow .2s;
   }
+  .card:hover { box-shadow: var(--shadow); }
 
-  label { display: block; font-size: 12px; font-weight: 500; color: var(--text2); margin-bottom: 6px; }
+  label { display: block; font-size: 11.5px; font-weight: 600; color: var(--text2); margin-bottom: 6px; letter-spacing: 0.2px; text-transform: uppercase; }
 
   textarea, input[type=text], select {
     width: 100%;
-    font-family: 'DM Sans', sans-serif;
+    font-family: var(--font-body);
     font-size: 14px; color: var(--text);
     background: var(--surface2);
     border: 1px solid var(--border);
     border-radius: var(--radius-sm);
-    padding: 12px 14px; outline: none;
-    transition: border-color .15s;
+    padding: 11px 14px; outline: none;
+    transition: border-color .15s, background .15s;
     -webkit-appearance: none; resize: none;
   }
   textarea:focus, input[type=text]:focus, select:focus {
     border-color: var(--accent-j); background: var(--surface);
+    box-shadow: 0 0 0 3px rgba(200,16,46,0.07);
   }
   textarea { line-height: 1.6; }
 
-  .person-pills { display: flex; gap: 8px; flex-wrap: wrap; }
+  .person-pills { display: flex; gap: 7px; flex-wrap: wrap; }
   .person-pill {
-    padding: 7px 16px; border-radius: 50px;
-    font-size: 13px; font-weight: 500;
-    border: 1.5px solid var(--border);
+    padding: 6px 14px; border-radius: 50px;
+    font-size: 12.5px; font-weight: 500;
+    border: 1px solid var(--border);
     cursor: pointer; transition: all .15s;
     background: var(--surface); color: var(--text2);
   }
-  .person-pill.active-j { background: var(--accent-j-light); border-color: var(--accent-j); color: var(--accent-j); }
+  .person-pill:hover { border-color: var(--text3); color: var(--text); }
+  .person-pill.active-j { background: var(--accent-j-light); border-color: var(--accent-j-mid); color: var(--accent-j); }
   .person-pill.active-w { background: var(--accent-g-light); border-color: var(--accent-g); color: var(--accent-g); }
   .person-pill.active-y { background: var(--accent-y-light); border-color: var(--accent-y); color: var(--accent-y); }
-  .person-pill.active-g { background: var(--accent-j-light); border-color: var(--accent-j); color: var(--accent-j); }
+  .person-pill.active-g { background: var(--accent-j-light); border-color: var(--accent-j-mid); color: var(--accent-j); }
 
   .urgency-btns { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
   .urgency-btn {
     padding: 10px 6px; border-radius: var(--radius-sm);
     font-size: 12px; font-weight: 500;
-    border: 1.5px solid var(--border); cursor: pointer;
+    border: 1px solid var(--border); cursor: pointer;
     transition: all .15s; background: var(--surface);
     color: var(--text2); text-align: center; line-height: 1.3;
   }
   .urgency-btn.active { border-color: var(--red); background: var(--red-light); color: var(--red); }
 
   .btn-generate {
-    width: 100%; padding: 16px;
+    width: 100%; padding: 14px 20px;
     border-radius: var(--radius);
-    font-family: 'DM Sans', sans-serif;
-    font-size: 15px; font-weight: 600;
+    font-family: var(--font-body);
+    font-size: 14.5px; font-weight: 600;
     border: none; cursor: pointer;
     transition: all .15s; margin-top: 4px;
     display: flex; align-items: center;
     justify-content: center; gap: 8px;
+    letter-spacing: -0.1px;
   }
   .btn-j { background: var(--accent-j); color: #fff; }
-  .btn-j:active { opacity: .85; transform: scale(.99); }
+  .btn-j:hover { background: var(--accent-j-hover); }
+  .btn-j:active { opacity: .9; transform: scale(.99); }
   .btn-y { background: var(--accent-y); color: #fff; }
   .btn-y:active { opacity: .85; transform: scale(.99); }
-  .btn-generate:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+  .btn-generate:disabled { opacity: .45; cursor: not-allowed; transform: none; }
 
   .spinner {
     width: 16px; height: 16px;
@@ -218,21 +242,21 @@
   .result-box {
     display: none; margin-top: 16px;
     background: var(--surface2);
-    border: 1px solid var(--border);
+    border: 1px solid var(--border-light);
     border-radius: var(--radius); overflow: hidden;
   }
   .result-box.show { display: block; }
   .result-header {
     display: flex; align-items: center;
     justify-content: space-between;
-    padding: 12px 14px;
-    border-bottom: 1px solid var(--border);
+    padding: 11px 14px;
+    border-bottom: 1px solid var(--border-light);
     background: var(--surface);
   }
-  .result-label { font-size: 11px; font-weight: 600; color: var(--text3); letter-spacing: .5px; text-transform: uppercase; }
+  .result-label { font-size: 10.5px; font-weight: 700; color: var(--text3); letter-spacing: .8px; text-transform: uppercase; }
   .btn-copy {
-    font-family: 'DM Sans', sans-serif; font-size: 12px;
-    font-weight: 500; color: var(--accent-j);
+    font-family: var(--font-body); font-size: 11.5px;
+    font-weight: 600; color: var(--accent-j);
     background: var(--accent-j-light); border: none;
     padding: 5px 12px; border-radius: 20px; cursor: pointer; transition: all .15s;
   }
@@ -242,7 +266,7 @@
     padding: 14px; font-size: 13px;
     line-height: 1.7; color: var(--text);
     white-space: pre-wrap; word-break: break-word;
-    font-family: 'DM Mono', monospace;
+    font-family: var(--font-mono);
   }
 
   .error-box {
@@ -276,32 +300,50 @@
   .ht-listing { background: var(--accent-g-light); color: var(--accent-g); }
 
   /* Mode toggle */
-  .mode-toggle { display: flex; gap: 0; margin-bottom: 14px; border: 1.5px solid var(--border); border-radius: var(--radius-sm); overflow: hidden; }
-  .mode-btn { flex: 1; padding: 9px 8px; font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 500; color: var(--text2); background: var(--surface); border: none; cursor: pointer; transition: all .15s; }
-  .mode-btn.active { background: var(--accent-j); color: #fff; }
+  .mode-toggle { display: flex; gap: 0; margin-bottom: 14px; border: 1px solid var(--border); border-radius: var(--radius-sm); overflow: hidden; }
+  .mode-btn { flex: 1; padding: 9px 8px; font-family: var(--font-body); font-size: 12.5px; font-weight: 500; color: var(--text2); background: var(--surface); border: none; cursor: pointer; transition: all .15s; }
+  .mode-btn:hover { background: var(--surface2); color: var(--text); }
+  .mode-btn.active { background: var(--accent-j); color: #fff; font-weight: 600; }
 
   /* Listing rows */
-  .listing-row { background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px; margin-bottom: 8px; position: relative; }
+  .listing-row { background: var(--surface2); border: 1px solid var(--border-light); border-radius: var(--radius-sm); padding: 12px; margin-bottom: 8px; position: relative; transition: border-color .15s; }
+  .listing-row:hover { border-color: var(--border); }
   .listing-row-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
-  .listing-num { font-size: 11px; font-weight: 700; color: var(--text3); }
-  .btn-remove { font-size: 11px; color: var(--red); background: none; border: none; cursor: pointer; padding: 2px 6px; }
-  .btn-add-listing { width: 100%; padding: 10px; border-radius: var(--radius-sm); font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500; color: var(--accent-j); background: var(--accent-j-light); border: 1.5px dashed var(--accent-j); cursor: pointer; margin-bottom: 14px; transition: all .15s; }
+  .listing-num { font-size: 10.5px; font-weight: 700; color: var(--text4); letter-spacing: 0.5px; text-transform: uppercase; }
+  .btn-remove { font-size: 11px; color: var(--red); background: none; border: none; cursor: pointer; padding: 2px 6px; opacity: 0.7; }
+  .btn-remove:hover { opacity: 1; }
+  .btn-add-listing { width: 100%; padding: 10px; border-radius: var(--radius-sm); font-family: var(--font-body); font-size: 13px; font-weight: 500; color: var(--accent-j); background: var(--accent-j-light); border: 1.5px dashed var(--accent-j-mid); cursor: pointer; margin-bottom: 14px; transition: all .15s; }
+  .btn-add-listing:hover { background: var(--accent-j-mid); }
   .btn-add-listing:active { opacity: .7; }
   .btn-g { background: var(--accent-j); color: #fff; }
   .btn-g:active { opacity: .85; transform: scale(.99); }
-  .person-pill.active-g { background: var(--accent-j-light); border-color: var(--accent-j); color: var(--accent-j); }
+  .person-pill.active-g { background: var(--accent-j-light); border-color: var(--accent-j-mid); color: var(--accent-j); }
 
   /* Viewing time input */
-  .time-input { width: 100%; font-family: 'DM Sans', sans-serif; font-size: 13px; color: var(--text); background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 7px 10px; outline: none; margin-top: 6px; }
+  .time-input { width: 100%; font-family: var(--font-body); font-size: 13px; color: var(--text); background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 7px 10px; outline: none; margin-top: 6px; }
   .time-input:focus { border-color: var(--accent-j); }
-  .history-time { font-size: 11px; color: var(--text3); font-family: 'DM Mono', monospace; }
-  .history-preview { font-size: 12px; color: var(--text2); line-height: 1.5; }
+  .history-time { font-size: 11px; color: var(--text3); font-family: var(--font-mono); letter-spacing: 0.2px; }
+  .history-preview { font-size: 12.5px; color: var(--text2); line-height: 1.5; }
   .btn-copy-sm {
     font-size: 11px; font-weight: 500; color: var(--text3);
-    background: var(--surface2); border: 1px solid var(--border);
+    background: var(--surface2); border: 1px solid var(--border-light);
     border-radius: 20px; padding: 4px 10px; cursor: pointer;
-    margin-top: 8px; display: inline-block;
+    margin-top: 8px; display: inline-block; transition: all .15s;
   }
+  .btn-copy-sm:hover { background: var(--surface3); color: var(--text2); }
+
+  .history-empty { text-align: center; padding: 48px 20px; color: var(--text3); font-size: 13px; }
+  .history-item {
+    background: var(--surface); border: 1px solid var(--border-light);
+    border-radius: var(--radius-sm); padding: 14px; margin-bottom: 10px;
+    transition: border-color .15s;
+  }
+  .history-item:hover { border-color: var(--border); }
+  .history-meta { display: flex; justify-content: space-between; margin-bottom: 8px; }
+  .history-type { font-size: 10.5px; font-weight: 700; padding: 3px 9px; border-radius: 20px; letter-spacing: 0.3px; }
+  .ht-daily { background: var(--accent-j-light); color: var(--accent-j); }
+  .ht-repair { background: var(--accent-y-light); color: var(--accent-y); }
+  .ht-listing { background: var(--accent-g-light); color: var(--accent-g); }
 
   @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
   .cursor {
@@ -327,7 +369,7 @@
 </div>
 
 <!-- IDENTITY SCREEN -->
-<div id="identity-screen" class="hidden" style="position:fixed;inset:0;background:var(--bg);z-index:999;display:none;flex-direction:column;align-items:center;justify-content:center;padding:24px;">
+<div id="identity-screen" class="hidden" style="position:fixed;inset:0;background:var(--bg);z-index:999;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;">
   <div style="font-size:24px;font-weight:800;color:var(--text);margin-bottom:6px;">你是谁？</div>
   <div style="font-size:14px;color:var(--text3);margin-bottom:28px;">选择你的身份，7天内不再询问</div>
   <div style="width:100%;max-width:320px;display:flex;flex-direction:column;gap:10px;" id="identity-btns">
@@ -380,70 +422,74 @@
   <div class="page-inner" style="padding-bottom:60px;">
 
     <!-- 找房跟进 -->
-    <div style="font-size:10px;font-weight:600;color:var(--text3);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;display:flex;align-items:center;gap:6px;">找房 & 跟进 <span style="flex:1;height:1px;background:var(--border);display:block;"></span></div>
+    <div style="font-size:10.5px;font-weight:700;color:var(--text3);letter-spacing:1.2px;text-transform:uppercase;margin-bottom:10px;display:flex;align-items:center;gap:8px;">找房 & 跟进 <span style="flex:1;height:1px;background:var(--border-light);display:block;"></span></div>
 
-    <div style="background:var(--surface);border-radius:var(--radius-sm);border:1px solid var(--border);margin-bottom:14px;overflow:hidden;">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5px;background:var(--border);">
-        <div style="background:var(--surface);padding:14px 13px;cursor:pointer;" onclick="switchTab('search');setTimeout(()=>setFindStep(1),100)">
-          <div style="font-size:18px;margin-bottom:4px;">🔍</div>
-          <div style="font-size:13px;font-weight:600;">① 找房</div>
-          <div style="font-size:10px;color:var(--text3);margin-top:2px;line-height:1.4;">按条件搜房，勾选满意的</div>
+    <div style="background:var(--surface);border-radius:var(--radius);border:1px solid var(--border-light);margin-bottom:16px;overflow:hidden;box-shadow:var(--shadow-sm);">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--border-light);">
+        <div style="background:var(--surface);padding:16px 15px;cursor:pointer;transition:background .15s;" onclick="switchTab('search');setTimeout(()=>setFindStep(1),100)" onmouseenter="this.style.background='var(--surface2)'" onmouseleave="this.style.background='var(--surface)'">
+          <div style="font-size:20px;margin-bottom:6px;">🔍</div>
+          <div style="font-size:13px;font-weight:600;color:var(--text);letter-spacing:-0.2px;">① 找房</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:3px;line-height:1.4;">按条件搜房，勾选满意的</div>
         </div>
-        <div style="background:var(--surface);padding:14px 13px;cursor:pointer;" onclick="switchTab('search');setTimeout(()=>{switchTab('search');setFindStep(1);toggleExtractor();},300)">
-          <div style="font-size:18px;margin-bottom:4px;">🔗</div>
-          <div style="font-size:13px;font-weight:600;">单链接提取</div>
-          <div style="font-size:10px;color:var(--text3);margin-top:2px;line-height:1.4;">粘贴PG链接，一键提取字段</div>
+        <div style="background:var(--surface);padding:16px 15px;cursor:pointer;transition:background .15s;" onclick="switchTab('search');setTimeout(()=>{switchTab('search');setFindStep(1);toggleExtractor();},300)" onmouseenter="this.style.background='var(--surface2)'" onmouseleave="this.style.background='var(--surface)'">
+          <div style="font-size:20px;margin-bottom:6px;">🔗</div>
+          <div style="font-size:13px;font-weight:600;color:var(--text);letter-spacing:-0.2px;">单链接提取</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:3px;line-height:1.4;">粘贴PG链接，一键提取字段</div>
         </div>
-        <div style="background:var(--surface);padding:14px 13px;cursor:pointer;grid-column:1/-1;" onclick="switchToStep2()">
-          <div style="font-size:13px;font-weight:600;">② 整理房源 → 发客户消息</div>
-          <div style="font-size:10px;color:var(--text3);margin-top:2px;">shortlist → 加亮点 → 生成微信消息</div>
+        <div style="background:var(--surface);padding:14px 15px;cursor:pointer;grid-column:1/-1;border-top:1px solid var(--border-light);transition:background .15s;display:flex;align-items:center;gap:10px;" onclick="switchToStep2()" onmouseenter="this.style.background='var(--surface2)'" onmouseleave="this.style.background='var(--surface)'">
+          <span style="font-size:16px;">📤</span>
+          <div>
+            <div style="font-size:13px;font-weight:600;color:var(--text);letter-spacing:-0.2px;">② 整理房源 → 发客户消息</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:2px;">shortlist → 加亮点 → 生成微信消息</div>
+          </div>
+          <span style="margin-left:auto;color:var(--text4);font-size:13px;">›</span>
         </div>
       </div>
     </div>
 
     <!-- 日常运营 -->
-    <div style="font-size:10px;font-weight:600;color:var(--text3);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;display:flex;align-items:center;gap:6px;">日常运营 <span style="flex:1;height:1px;background:var(--border);display:block;"></span></div>
+    <div style="font-size:10.5px;font-weight:700;color:var(--text3);letter-spacing:1.2px;text-transform:uppercase;margin-bottom:10px;display:flex;align-items:center;gap:8px;">日常运营 <span style="flex:1;height:1px;background:var(--border-light);display:block;"></span></div>
 
-    <div style="background:var(--surface);border-radius:var(--radius-sm);border:1px solid var(--border);margin-bottom:14px;overflow:hidden;">
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.5px;background:var(--border);">
-        <div style="background:var(--surface);padding:14px 13px;cursor:pointer;" onclick="switchTab('daily')">
-          <div style="font-size:18px;margin-bottom:4px;">📝</div>
-          <div style="font-size:12px;font-weight:600;">日报整理</div>
-          <div style="font-size:10px;color:var(--text3);margin-top:2px;line-height:1.4;">随手记 → 标准日报</div>
+    <div style="background:var(--surface);border-radius:var(--radius);border:1px solid var(--border-light);margin-bottom:16px;overflow:hidden;box-shadow:var(--shadow-sm);">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1px;background:var(--border-light);">
+        <div style="background:var(--surface);padding:16px 13px;cursor:pointer;transition:background .15s;" onclick="switchTab('daily')" onmouseenter="this.style.background='var(--surface2)'" onmouseleave="this.style.background='var(--surface)'">
+          <div style="font-size:20px;margin-bottom:6px;">📝</div>
+          <div style="font-size:12.5px;font-weight:600;color:var(--text);">日报整理</div>
+          <div style="font-size:10.5px;color:var(--text3);margin-top:3px;line-height:1.4;">随手记 → 标准日报</div>
         </div>
-        <div style="background:var(--surface);padding:14px 13px;cursor:pointer;" onclick="switchTab('repair')">
-          <div style="font-size:18px;margin-bottom:4px;">🔧</div>
-          <div style="font-size:12px;font-weight:600;">售后服务</div>
-          <div style="font-size:10px;color:var(--text3);margin-top:2px;line-height:1.4;">报修跟进，中英双语</div>
+        <div style="background:var(--surface);padding:16px 13px;cursor:pointer;transition:background .15s;" onclick="switchTab('repair')" onmouseenter="this.style.background='var(--surface2)'" onmouseleave="this.style.background='var(--surface)'">
+          <div style="font-size:20px;margin-bottom:6px;">🔧</div>
+          <div style="font-size:12.5px;font-weight:600;color:var(--text);">售后服务</div>
+          <div style="font-size:10.5px;color:var(--text3);margin-top:3px;line-height:1.4;">报修跟进，中英双语</div>
         </div>
-        <div style="background:var(--surface);padding:14px 13px;cursor:pointer;" onclick="switchTab('history')">
-          <div style="font-size:18px;margin-bottom:4px;">🗂</div>
-          <div style="font-size:12px;font-weight:600;">历史记录</div>
-          <div style="font-size:10px;color:var(--text3);margin-top:2px;line-height:1.4;">所有生成的消息</div>
+        <div style="background:var(--surface);padding:16px 13px;cursor:pointer;transition:background .15s;" onclick="switchTab('history')" onmouseenter="this.style.background='var(--surface2)'" onmouseleave="this.style.background='var(--surface)'">
+          <div style="font-size:20px;margin-bottom:6px;">🗂</div>
+          <div style="font-size:12.5px;font-weight:600;color:var(--text);">历史记录</div>
+          <div style="font-size:10.5px;color:var(--text3);margin-top:3px;line-height:1.4;">所有生成的消息</div>
         </div>
       </div>
     </div>
 
     <!-- 即将上线 -->
-    <div style="font-size:10px;font-weight:600;color:var(--text3);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;display:flex;align-items:center;gap:6px;">即将上线 <span style="flex:1;height:1px;background:var(--border);display:block;"></span></div>
+    <div style="font-size:10.5px;font-weight:700;color:var(--text3);letter-spacing:1.2px;text-transform:uppercase;margin-bottom:10px;display:flex;align-items:center;gap:8px;">即将上线 <span style="flex:1;height:1px;background:var(--border-light);display:block;"></span></div>
 
-    <div style="background:var(--surface);border-radius:var(--radius-sm);border:1px solid var(--border);margin-bottom:14px;overflow:hidden;">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5px;background:var(--border);">
-        <div style="background:var(--surface);padding:12px 13px;opacity:0.5;">
-          <div style="font-size:12px;font-weight:500;">💬 看房反馈跟进</div>
-          <div style="font-size:10px;color:var(--text3);margin-top:2px;">输入反馈，生成跟进消息</div>
+    <div style="background:var(--surface);border-radius:var(--radius);border:1px solid var(--border-light);margin-bottom:14px;overflow:hidden;box-shadow:var(--shadow-sm);">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--border-light);">
+        <div style="background:var(--surface);padding:12px 14px;opacity:0.45;">
+          <div style="font-size:12.5px;font-weight:500;color:var(--text);">💬 看房反馈跟进</div>
+          <div style="font-size:10.5px;color:var(--text3);margin-top:2px;">输入反馈，生成跟进消息</div>
         </div>
-        <div style="background:var(--surface);padding:12px 13px;opacity:0.5;">
-          <div style="font-size:12px;font-weight:500;">📄 合同信息提取</div>
-          <div style="font-size:10px;color:var(--text3);margin-top:2px;">上传PDF，提取关键条款</div>
+        <div style="background:var(--surface);padding:12px 14px;opacity:0.45;">
+          <div style="font-size:12.5px;font-weight:500;color:var(--text);">📄 合同信息提取</div>
+          <div style="font-size:10.5px;color:var(--text3);margin-top:2px;">上传PDF，提取关键条款</div>
         </div>
-        <div style="background:var(--surface);padding:12px 13px;opacity:0.5;">
-          <div style="font-size:12px;font-weight:500;">🧾 发票生成</div>
-          <div style="font-size:10px;color:var(--text3);margin-top:2px;">填写项目/金额，生成发票</div>
+        <div style="background:var(--surface);padding:12px 14px;opacity:0.45;">
+          <div style="font-size:12.5px;font-weight:500;color:var(--text);">🧾 发票生成</div>
+          <div style="font-size:10.5px;color:var(--text3);margin-top:2px;">填写项目/金额，生成发票</div>
         </div>
-        <div style="background:var(--surface);padding:12px 13px;opacity:0.5;">
-          <div style="font-size:12px;font-weight:500;">🎯 客户需求匹配</div>
-          <div style="font-size:10px;color:var(--text3);margin-top:2px;">AI推荐合适房源</div>
+        <div style="background:var(--surface);padding:12px 14px;opacity:0.45;">
+          <div style="font-size:12.5px;font-weight:500;color:var(--text);">🎯 客户需求匹配</div>
+          <div style="font-size:10.5px;color:var(--text3);margin-top:2px;">AI推荐合适房源</div>
         </div>
       </div>
     </div>
@@ -813,27 +859,27 @@
   <div class="page-inner" style="padding-bottom:60px;">
 
     <!-- 顶部栏：标题 + 新建按钮 -->
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;">
       <div>
-        <div style="font-size:16px;font-weight:800;color:var(--text);">客户 Pipeline</div>
-        <div style="font-size:12px;color:var(--text3);" id="crm-summary-text">加载中...</div>
+        <div style="font-size:17px;font-weight:700;color:var(--text);letter-spacing:-0.4px;">客户 Pipeline</div>
+        <div style="font-size:12px;color:var(--text3);margin-top:2px;" id="crm-summary-text">加载中...</div>
       </div>
-      <button onclick="crmShowNewClient()" style="background:var(--accent-j);color:#fff;border:none;border-radius:10px;padding:8px 16px;font-size:13px;font-weight:700;cursor:pointer;">+ 新客户</button>
+      <button onclick="crmShowNewClient()" style="background:var(--accent-j);color:#fff;border:none;border-radius:var(--radius-sm);padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer;letter-spacing:-0.1px;transition:background .15s;" onmouseenter="this.style.background='var(--accent-j-hover)'" onmouseleave="this.style.background='var(--accent-j)'">+ 新客户</button>
     </div>
 
     <!-- 筛选栏 -->
-    <div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;margin-bottom:12px;-webkit-overflow-scrolling:touch;">
-      <button id="crm-f-all" onclick="crmSetFilter('all')" style="white-space:nowrap;padding:6px 14px;border-radius:20px;font-size:12px;font-weight:600;border:1.5px solid var(--accent-j);background:var(--accent-j);color:#fff;cursor:pointer;">全部</button>
-      <button id="crm-f-新客户" onclick="crmSetFilter('新客户')" style="white-space:nowrap;padding:6px 14px;border-radius:20px;font-size:12px;font-weight:600;border:1.5px solid var(--border);background:var(--surface);color:var(--text2);cursor:pointer;">新客户</button>
-      <button id="crm-f-发房源" onclick="crmSetFilter('发房源')" style="white-space:nowrap;padding:6px 14px;border-radius:20px;font-size:12px;font-weight:600;border:1.5px solid var(--border);background:var(--surface);color:var(--text2);cursor:pointer;">发房源</button>
-      <button id="crm-f-看房中" onclick="crmSetFilter('看房中')" style="white-space:nowrap;padding:6px 14px;border-radius:20px;font-size:12px;font-weight:600;border:1.5px solid var(--border);background:var(--surface);color:var(--text2);cursor:pointer;">看房中</button>
-      <button id="crm-f-谈Offer" onclick="crmSetFilter('谈Offer')" style="white-space:nowrap;padding:6px 14px;border-radius:20px;font-size:12px;font-weight:600;border:1.5px solid var(--border);background:var(--surface);color:var(--text2);cursor:pointer;">谈Offer</button>
-      <button id="crm-f-成交" onclick="crmSetFilter('成交')" style="white-space:nowrap;padding:6px 14px;border-radius:20px;font-size:12px;font-weight:600;border:1.5px solid var(--border);background:var(--surface);color:var(--text2);cursor:pointer;">成交</button>
+    <div style="display:flex;gap:5px;overflow-x:auto;padding-bottom:4px;margin-bottom:12px;-webkit-overflow-scrolling:touch;scrollbar-width:none;">
+      <button id="crm-f-all" onclick="crmSetFilter('all')" style="white-space:nowrap;padding:5px 13px;border-radius:20px;font-size:12px;font-weight:600;border:1.5px solid var(--accent-j);background:var(--accent-j);color:#fff;cursor:pointer;transition:all .15s;">全部</button>
+      <button id="crm-f-新客户" onclick="crmSetFilter('新客户')" style="white-space:nowrap;padding:5px 13px;border-radius:20px;font-size:12px;font-weight:500;border:1px solid var(--border);background:var(--surface);color:var(--text2);cursor:pointer;transition:all .15s;">新客户</button>
+      <button id="crm-f-发房源" onclick="crmSetFilter('发房源')" style="white-space:nowrap;padding:5px 13px;border-radius:20px;font-size:12px;font-weight:500;border:1px solid var(--border);background:var(--surface);color:var(--text2);cursor:pointer;transition:all .15s;">发房源</button>
+      <button id="crm-f-看房中" onclick="crmSetFilter('看房中')" style="white-space:nowrap;padding:5px 13px;border-radius:20px;font-size:12px;font-weight:500;border:1px solid var(--border);background:var(--surface);color:var(--text2);cursor:pointer;transition:all .15s;">看房中</button>
+      <button id="crm-f-谈Offer" onclick="crmSetFilter('谈Offer')" style="white-space:nowrap;padding:5px 13px;border-radius:20px;font-size:12px;font-weight:500;border:1px solid var(--border);background:var(--surface);color:var(--text2);cursor:pointer;transition:all .15s;">谈Offer</button>
+      <button id="crm-f-成交" onclick="crmSetFilter('成交')" style="white-space:nowrap;padding:5px 13px;border-radius:20px;font-size:12px;font-weight:500;border:1px solid var(--border);background:var(--surface);color:var(--text2);cursor:pointer;transition:all .15s;">成交</button>
     </div>
 
     <!-- 优先级筛选 -->
-    <div style="display:flex;gap:8px;margin-bottom:12px;align-items:center;">
-      <span style="font-size:12px;color:var(--text3);">优先级：</span>
+    <div style="display:flex;gap:8px;margin-bottom:14px;align-items:center;background:var(--surface2);padding:8px 12px;border-radius:var(--radius-sm);border:1px solid var(--border-light);">
+      <span style="font-size:11.5px;color:var(--text3);font-weight:500;">优先级：</span>
       <label style="font-size:12px;display:flex;align-items:center;gap:4px;cursor:pointer;">
         <input type="checkbox" id="crm-priority-high" onchange="crmRenderPipeline()" checked style="accent-color:var(--accent-j);"> 🔴 高
       </label>
@@ -843,7 +889,7 @@
       <label style="font-size:12px;display:flex;align-items:center;gap:4px;cursor:pointer;">
         <input type="checkbox" id="crm-priority-low" onchange="crmRenderPipeline()" checked style="accent-color:var(--accent-j);"> 🟢 普通
       </label>
-      <select id="crm-filter-admin" onchange="crmRenderPipeline()" style="margin-left:auto;font-size:12px;padding:4px 8px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text);">
+      <select id="crm-filter-admin" onchange="crmRenderPipeline()" style="margin-left:auto;font-size:12px;padding:4px 8px;border-radius:6px;border:1px solid var(--border);background:var(--surface);color:var(--text);">
         <option value="">全部Admin</option>
         <option>Jaclyn</option><option>Wiki</option><option>Yuting</option><option>Zico</option>
       </select>
@@ -856,11 +902,11 @@
     </div>
 
     <!-- 新建客户表单（滑入） -->
-    <div id="crm-new-panel" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:900;overflow-y:auto;">
-      <div style="margin:20px auto;max-width:480px;background:var(--surface);border-radius:16px;padding:20px;">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-          <div style="font-size:16px;font-weight:800;">新建客户</div>
-          <button onclick="document.getElementById('crm-new-panel').style.display='none'" style="border:none;background:none;font-size:20px;cursor:pointer;color:var(--text2);">✕</button>
+    <div id="crm-new-panel" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:900;overflow-y:auto;backdrop-filter:blur(4px);">
+      <div style="margin:16px auto 40px;max-width:480px;background:var(--surface);border-radius:var(--radius-lg);padding:22px;box-shadow:var(--shadow-lg);">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
+          <div style="font-size:16px;font-weight:700;color:var(--text);letter-spacing:-0.3px;">新建客户</div>
+          <button onclick="document.getElementById('crm-new-panel').style.display='none'" style="border:none;background:var(--surface2);font-size:16px;cursor:pointer;color:var(--text2);width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;">✕</button>
         </div>
         <div class="field-group">
           <label>客户姓名 *</label>
@@ -930,7 +976,7 @@
     <!-- 客户详情面板 -->
     <div id="crm-detail-panel" style="display:none;position:fixed;inset:0;background:var(--bg);z-index:900;overflow-y:auto;">
       <div style="max-width:480px;margin:0 auto;padding:16px 16px 80px;">
-        <button onclick="crmCloseDetail()" style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--text2);background:none;border:none;cursor:pointer;margin-bottom:14px;padding:0;">← 返回</button>
+        <button onclick="crmCloseDetail()" style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--text2);background:none;border:none;cursor:pointer;margin-bottom:16px;padding:6px 0;font-weight:500;">← 返回</button>
         <div id="crm-detail-content"></div>
       </div>
     </div>
@@ -1060,7 +1106,7 @@ function checkPassword() {
     const savedTime = parseInt(localStorage.getItem('hhg_identity_time') || '0');
     const sevenDays = 7 * 24 * 60 * 60 * 1000;
     if (savedId && (Date.now() - savedTime < sevenDays)) {
-      try { showIdentityCurrent(savedId); } catch(e) { window.currentUser = savedId; updateUserBadge(savedId); }
+      showIdentityCurrent(savedId);
     } else {
       document.getElementById('identity-screen').classList.remove('hidden');
     }
@@ -1458,7 +1504,7 @@ function generateRepair() {
 var currentUser = '';
 
 function showIdentityCurrent(name) {
-  window.currentUser = name;
+  currentUser = name;
   const el = document.getElementById('identity-current');
   if (el) el.textContent = '当前身份：' + name;
   // Update header if exists
@@ -1694,24 +1740,24 @@ async function crmRenderPipeline() {
   }
   empty.style.display = 'none';
 
-  const statusColors = { '新客户':'#5C85D6','发房源':'#B8860B','看房中':'#2D6A4F','谈Offer':'#8B44AC','成交':'#555' };
+  const statusColors = { '新客户':'#5C85D6','发房源':'#B8860B','看房中':'#2D6A4F','谈Offer':'#8B44AC','成交':'#888' };
   const priorityIcons = { high:'🔴', mid:'🟡', low:'🟢' };
   const dealIcons = { '租房':'🏠','买房':'🔑','商业租赁':'🏢','商业买卖':'💼' };
 
   container.innerHTML = clients.map(c => {
-    const sc = statusColors[c.status] || '#555';
+    const sc = statusColors[c.status] || '#888';
     const pi = priorityIcons[c.priority] || '';
     const di = dealIcons[c.deal] || '';
     const daysSince = Math.floor((Date.now() - c.updatedAt) / 86400000);
-    const staleBadge = daysSince >= 5 ? `<span style="background:#FDEAEA;color:#D42B2B;font-size:10px;padding:2px 6px;border-radius:10px;">${daysSince}天未更新</span>` : '';
+    const staleBadge = daysSince >= 5 ? `<span style="background:var(--accent-j-light);color:var(--accent-j);font-size:10px;font-weight:600;padding:2px 7px;border-radius:10px;">${daysSince}天未更新</span>` : '';
 
-    return `<div onclick="crmOpenDetail('${c.id}')" style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:10px;cursor:pointer;border-left:3px solid ${sc};">
+    return `<div onclick="crmOpenDetail('${c.id}')" style="background:var(--surface);border:1px solid var(--border-light);border-radius:var(--radius);padding:14px 16px;margin-bottom:8px;cursor:pointer;border-left:3px solid ${sc};transition:box-shadow .15s,border-color .15s;" onmouseenter="this.style.boxShadow='var(--shadow)';this.style.borderColor='var(--border)'" onmouseleave="this.style.boxShadow='none';this.style.borderLeftColor='${sc}';this.style.borderTopColor='var(--border-light)';this.style.borderRightColor='var(--border-light)';this.style.borderBottomColor='var(--border-light)'">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:8px;">
         <div>
-          <div style="font-size:14px;font-weight:700;">${pi} ${c.name}</div>
-          <div style="font-size:12px;color:var(--text3);margin-top:2px;">${di} ${c.deal || ''} ${c.type ? '· ' + c.type : ''}</div>
+          <div style="font-size:14px;font-weight:600;color:var(--text);letter-spacing:-0.2px;">${pi} ${c.name}</div>
+          <div style="font-size:11.5px;color:var(--text3);margin-top:3px;">${di} ${c.deal || ''} ${c.type ? '· ' + c.type : ''}</div>
         </div>
-        <span style="background:${sc}22;color:${sc};font-size:11px;font-weight:600;padding:3px 8px;border-radius:10px;white-space:nowrap;">${c.status}</span>
+        <span style="background:${sc}18;color:${sc};font-size:10.5px;font-weight:600;padding:3px 9px;border-radius:20px;white-space:nowrap;letter-spacing:0.2px;">${c.status}</span>
       </div>
       <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;">
         ${c.admin ? `<span style="font-size:11px;color:var(--text3);">Admin: ${c.admin}</span>` : ''}
@@ -1811,31 +1857,31 @@ async function crmOpenDetail(id) {
 
   document.getElementById('crm-detail-content').innerHTML = `
     <div class="card" style="margin-bottom:12px;">
-      <div style="font-size:18px;font-weight:800;margin-bottom:4px;">${c.name}</div>
+      <div style="font-size:17px;font-weight:700;color:var(--text);letter-spacing:-0.4px;margin-bottom:4px;">${c.name}</div>
       ${c.contact ? `<div style="font-size:13px;color:var(--text2);margin-bottom:12px;">📱 ${c.contact}</div>` : ''}
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;">
-        <div><div style="font-size:10px;color:var(--text3);margin-bottom:2px;">类型</div><div style="font-size:13px;font-weight:600;">${c.type}</div></div>
-        <div><div style="font-size:10px;color:var(--text3);margin-bottom:2px;">优先级</div><div style="font-size:13px;font-weight:600;">${priorityLabels[c.priority]||c.priority}</div></div>
-        <div><div style="font-size:10px;color:var(--text3);margin-bottom:2px;">交易类型</div><div style="font-size:13px;font-weight:600;">${c.deal||'—'}</div></div>
-        <div><div style="font-size:10px;color:var(--text3);margin-bottom:2px;">来源</div><div style="font-size:13px;font-weight:600;">${c.source||'—'}</div></div>
-        <div><div style="font-size:10px;color:var(--text3);margin-bottom:2px;">Admin</div><div style="font-size:13px;font-weight:600;">${c.admin||'—'}</div></div>
-        <div><div style="font-size:10px;color:var(--text3);margin-bottom:2px;">Agent</div><div style="font-size:13px;font-weight:600;">${c.agent||'—'}</div></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
+        <div style="background:var(--surface2);padding:10px;border-radius:var(--radius-sm);"><div style="font-size:10.5px;font-weight:600;color:var(--text3);margin-bottom:3px;letter-spacing:0.3px;">类型</div><div style="font-size:13px;font-weight:600;color:var(--text);">${c.type || '—'}</div></div>
+        <div style="background:var(--surface2);padding:10px;border-radius:var(--radius-sm);"><div style="font-size:10.5px;font-weight:600;color:var(--text3);margin-bottom:3px;letter-spacing:0.3px;">优先级</div><div style="font-size:13px;font-weight:600;color:var(--text);">${priorityLabels[c.priority]||c.priority}</div></div>
+        <div style="background:var(--surface2);padding:10px;border-radius:var(--radius-sm);"><div style="font-size:10.5px;font-weight:600;color:var(--text3);margin-bottom:3px;letter-spacing:0.3px;">交易类型</div><div style="font-size:13px;font-weight:600;color:var(--text);">${c.deal||'—'}</div></div>
+        <div style="background:var(--surface2);padding:10px;border-radius:var(--radius-sm);"><div style="font-size:10.5px;font-weight:600;color:var(--text3);margin-bottom:3px;letter-spacing:0.3px;">来源</div><div style="font-size:13px;font-weight:600;color:var(--text);">${c.source||'—'}</div></div>
+        <div style="background:var(--surface2);padding:10px;border-radius:var(--radius-sm);"><div style="font-size:10.5px;font-weight:600;color:var(--text3);margin-bottom:3px;letter-spacing:0.3px;">Admin</div><div style="font-size:13px;font-weight:600;color:var(--text);">${c.admin||'—'}</div></div>
+        <div style="background:var(--surface2);padding:10px;border-radius:var(--radius-sm);"><div style="font-size:10.5px;font-weight:600;color:var(--text3);margin-bottom:3px;letter-spacing:0.3px;">Agent</div><div style="font-size:13px;font-weight:600;color:var(--text);">${c.agent||'—'}</div></div>
       </div>
-      ${c.needs ? `<div style="margin-bottom:14px;"><div style="font-size:10px;color:var(--text3);margin-bottom:4px;">需求</div><div style="font-size:13px;background:var(--surface2);padding:10px;border-radius:8px;">${c.needs}</div></div>` : ''}
+      ${c.needs ? `<div style="margin-bottom:14px;"><div style="font-size:10.5px;font-weight:600;color:var(--text3);margin-bottom:6px;letter-spacing:0.3px;">需求备注</div><div style="font-size:13px;background:var(--surface2);padding:10px 12px;border-radius:var(--radius-sm);color:var(--text);line-height:1.6;">${c.needs}</div></div>` : ''}
       <div style="margin-bottom:14px;">
-        <div style="font-size:10px;color:var(--text3);margin-bottom:4px;">当前状态</div>
-        <select onchange="crmUpdateStatus('${c.id}',this.value)" style="width:100%;font-size:13px;padding:8px 10px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text);">
+        <div style="font-size:10.5px;font-weight:600;color:var(--text3);margin-bottom:6px;letter-spacing:0.3px;">当前状态</div>
+        <select onchange="crmUpdateStatus('${c.id}',this.value)" style="width:100%;font-size:13px;padding:9px 10px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface);color:var(--text);">
           ${statusOptions.map(s=>`<option${c.status===s?' selected':''}>${s}</option>`).join('')}
         </select>
       </div>
-      <div style="font-size:10px;color:var(--text3);margin-bottom:4px;">添加跟进记录</div>
+      <div style="font-size:10.5px;font-weight:600;color:var(--text3);margin-bottom:6px;letter-spacing:0.3px;">添加跟进记录</div>
       <div style="display:flex;gap:8px;">
-        <input type="text" id="crm-note-${c.id}" placeholder="记录最新进展..." style="flex:1;font-size:13px;padding:8px 12px;border:1px solid var(--border);border-radius:8px;background:var(--surface2);outline:none;color:var(--text);" onkeydown="if(event.key==='Enter')crmAddNote('${c.id}')">
-        <button onclick="crmAddNote('${c.id}')" style="background:var(--accent-j);color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:600;cursor:pointer;">记录</button>
+        <input type="text" id="crm-note-${c.id}" placeholder="记录最新进展..." style="flex:1;font-size:13px;padding:9px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface2);outline:none;color:var(--text);" onkeydown="if(event.key==='Enter')crmAddNote('${c.id}')">
+        <button onclick="crmAddNote('${c.id}')" style="background:var(--accent-j);color:#fff;border:none;border-radius:var(--radius-sm);padding:9px 16px;font-size:13px;font-weight:600;cursor:pointer;">记录</button>
       </div>
     </div>
-    <div style="font-size:11px;font-weight:600;color:var(--text3);letter-spacing:1px;margin-bottom:8px;">跟进时间线</div>
-    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px;">
+    <div style="font-size:10.5px;font-weight:700;color:var(--text3);letter-spacing:1px;margin-bottom:8px;text-transform:uppercase;">跟进时间线</div>
+    <div style="background:var(--surface);border:1px solid var(--border-light);border-radius:var(--radius);padding:12px;">
       ${tlHtml || '<div style="color:var(--text3);font-size:13px;text-align:center;padding:16px;">暂无记录</div>'}
     </div>`;
 
