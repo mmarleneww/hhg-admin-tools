@@ -39,7 +39,7 @@
     display: flex; align-items: center; justify-content: center;
     flex-direction: column;
   }
-  #pw-screen.hidden { display: none; }
+  #pw-screen.hidden { display: none !important; }
   .pw-logo {
     margin-bottom: 32px;
   }
@@ -1060,7 +1060,7 @@ function checkPassword() {
     const savedTime = parseInt(localStorage.getItem('hhg_identity_time') || '0');
     const sevenDays = 7 * 24 * 60 * 60 * 1000;
     if (savedId && (Date.now() - savedTime < sevenDays)) {
-      showIdentityCurrent(savedId);
+      try { showIdentityCurrent(savedId); } catch(e) { window.currentUser = savedId; updateUserBadge(savedId); }
     } else {
       document.getElementById('identity-screen').classList.remove('hidden');
     }
@@ -1458,7 +1458,7 @@ function generateRepair() {
 var currentUser = '';
 
 function showIdentityCurrent(name) {
-  currentUser = name;
+  window.currentUser = name;
   const el = document.getElementById('identity-current');
   if (el) el.textContent = '当前身份：' + name;
   // Update header if exists
