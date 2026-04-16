@@ -964,6 +964,18 @@ function resetFindTab() {
     // Reset filters
     togglePropType('ALL');
     searchState.bedrooms = [];
+    // Clear multi-URL extractor
+    const mui = document.getElementById('multi-url-input');
+    if (mui) mui.value = '';
+    const mer = document.getElementById('multi-extract-results');
+    if (mer) mer.style.display = 'none';
+    const mrl = document.getElementById('multi-result-list');
+    if (mrl) mrl.innerHTML = '';
+    const mec = document.getElementById('multi-extract-count');
+    if (mec) mec.textContent = '';
+    const mee = document.getElementById('multi-extract-error');
+    if (mee) mee.classList.remove('show');
+    multiExtracted = [];
     [0,1,2,3,4,5].forEach(i => {
       const el = document.getElementById('bd-' + i);
       if (el) el.className = 'person-pill';
@@ -2003,10 +2015,19 @@ ${listingsText}`;
     systemPrompt = `你是新加坡房地产中介"好好过 Haohaoguo Realty"的AI助手。
 任务：生成看房安排消息发给客户（微信中文）。
 
-输出格式：
-[开头语（如有）]
+输出格式（严格按此顺序）：
+
+有开头语时：
+[客户称呼]，[开头语]
+[备注（如有）]
+
+【1】...
+
+无开头语时：
 [客户称呼]，这是[日期]目前的看房安排, 加了[N]套 :
 [备注（如有）]
+
+【1】...
 
 【1】🏠 [小区名]
 💰 $[月租] | [X]房[X]卫 | [面积]sqft
