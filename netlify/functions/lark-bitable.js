@@ -188,6 +188,16 @@ exports.handler = async function(event) {
       return json({ success: true, results });
     }
 
+    // ── DEBUG: check env vars are set (safe - shows length not value) ────────
+    if (action === 'debug') {
+      return json({
+        LARK_APP_ID:     APP_ID     ? `set (${APP_ID.length} chars, starts: ${APP_ID.substring(0,8)}...)` : 'MISSING',
+        LARK_APP_SECRET: APP_SECRET ? `set (${APP_SECRET.length} chars, starts: ${APP_SECRET.substring(0,4)}...)` : 'MISSING',
+        LARK_BASE_TOKEN: BASE_TOKEN ? `set (${BASE_TOKEN.length} chars)` : 'MISSING',
+        LARK_TABLE_ID:   TABLE_ID   ? `set (${TABLE_ID.length} chars)` : 'MISSING',
+      });
+    }
+
     return json({ error: `Unknown action: ${action}` }, 400);
 
   } catch (err) {
