@@ -1108,7 +1108,7 @@ function checkPassword() {
     if (savedId && (Date.now() - savedTime < sevenDays)) {
       showIdentityCurrent(savedId);
     } else {
-      document.getElementById('identity-screen').classList.remove('hidden');
+      document.getElementById('identity-screen').style.display='flex';
     }
   } else {
     document.getElementById('pw-error').classList.add('show');
@@ -1129,7 +1129,7 @@ if (sessionStorage.getItem('hhg_auth') === '1') {
   const savedTime = parseInt(localStorage.getItem('hhg_identity_time') || '0');
   const sevenDays = 7 * 24 * 60 * 60 * 1000;
   if (!savedId || (Date.now() - savedTime >= sevenDays)) {
-    document.getElementById('identity-screen').classList.remove('hidden');
+    document.getElementById('identity-screen').style.display='flex';
   } else {
     showIdentityCurrent(savedId);
   }
@@ -1515,7 +1515,7 @@ function selectIdentity(name) {
   localStorage.setItem('hhg_identity', name);
   localStorage.setItem('hhg_identity_time', Date.now().toString());
   currentUser = name;
-  document.getElementById('identity-screen').classList.add('hidden');
+  document.getElementById('identity-screen').style.display = 'none';
   showIdentityCurrent(name);
   showToast('✓ 欢迎，' + name + '！');
 }
@@ -1531,7 +1531,7 @@ function updateUserBadge(name) {
       if (confirm('切换身份？')) {
         localStorage.removeItem('hhg_identity');
         localStorage.removeItem('hhg_identity_time');
-        document.getElementById('identity-screen').classList.remove('hidden');
+        document.getElementById('identity-screen').style.display='flex';
       }
     };
     const headerTop = document.querySelector('.header-top');
