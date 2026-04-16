@@ -87,7 +87,7 @@ async function scraperFetch(url, wantJson = false) {
 
 async function getBuildId() {
   const now = Date.now();
-  if (cachedBuildId && now - cacheTime < 3600000) return cachedBuildId;
+  if (cachedBuildId && now - cacheTime < 43200000) return cachedBuildId;
   try {
     const resp = await scraperFetch(`${PG_BASE}/property-for-rent`);
     if (!resp.ok) return null;
@@ -110,21 +110,16 @@ exports.handler = async function (event) {
   // ── Single URL extraction mode ────────────────────────────────────────────
   if (_extractUrl) {
     try {
-      // Step 1: detect listing type from URL
+      // Detect listing type from URL
       const isForSale = _extractUrl.includes('/for-sale') || _extractUrl.includes('property-for-sale');
       const listingType = isForSale ? 'sale' : 'rent';
 
-      // Step 2: Extract slug from URL (last path segment)
-      const urlPath = _extractUrl.replace(/\?.*$/, '').replace(/\/$/, '');
-      const slug = urlPath.split('/').pop();
-
-      // Step 3: Try JSON API using __NEXT_DATA__ from the actual page HTML
-      // (most reliable — same data source as search results)
+      // Fetch the listing page HTML
       const resp = await scraperFetch(_extractUrl);
       if (!resp.ok) return json({ success: false, error: `Listing page returned ${resp.status}` });
       const html = await resp.text();
 
-      // Extract embedded Next.js data blob
+      // Priority 1: Extract __NEXT_DATA__ JSON embedded in page (same quality as search results)
       const nextDataMatch = html.match(/<script id="__NEXT_DATA__"[^>]*>([\s\S]*?)<\/script>/);
       if (nextDataMatch) {
         try {
@@ -136,7 +131,7 @@ exports.handler = async function (event) {
           if (r) {
             let listing = formatListing(r, listingType);
             listing.link = _extractUrl;
-            // Enrich phone from the HTML we already have
+            // Enrich phone from HTML we already have (single fetch, no extra cost)
             const phoneMatch = html.match(/"\+65(\d{8})"/);
             if (phoneMatch) listing.agent.phone = '+65' + phoneMatch[1];
             if (!listing.furnishing) {
@@ -150,13 +145,12 @@ exports.handler = async function (event) {
         }
       }
 
-      // Step 4: Regex fallback (HTML scraping) — improved patterns
+      // Priority 2: Regex fallback with improved patterns
       const titleMatch = html.match(/<title>([^<]+)<\/title>/i);
       const title = titleMatch?.[1] || '';
       const agentFromTitle = title.match(/by ([^,]+),\s*\d+/i)?.[1]?.trim() || '';
       const addressFromTitle = title.split(',')[0]?.trim() || '';
 
-      // Try localizedTitle first (actual field name in PG JSON)
       const projectMatch = html.match(/"localizedTitle"\s*:\s*"([^"]+)"/i)
                         || html.match(/"projectName"\s*:\s*"([^"]+)"/i)
                         || html.match(/"project"\s*:\s*"([^"]+)"/i);
@@ -201,7 +195,6 @@ exports.handler = async function (event) {
       return json({ success: false, error: err.message });
     }
   }
-
 
   // ── Build search query parameters ────────────────────────────────────────
   const qp = new URLSearchParams();
@@ -262,8 +255,8 @@ exports.handler = async function (event) {
       return true;
     });
     const listings = filtered.map(r => formatListing(r, listingType));
-    const enriched = await Promise.all(listings.map(l => enrichPhone(l)));
-    return json({ success: true, total, page, totalPages, listings: enriched, searchUrl, blocked: false, mrtSearch: !!mrtCodes });
+    
+    return json({ success: true, total, page, totalPages, listings, searchUrl, blocked: false, mrtSearch: !!mrtCodes });
   } catch (err) {
     return json({ success: false, error: err.message || "Server error", searchUrl });
   }
