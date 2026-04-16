@@ -16,7 +16,7 @@ async function getTenantToken() {
     body: JSON.stringify({ app_id: APP_ID, app_secret: APP_SECRET }),
   });
   const data = await res.json();
-  if (data.code !== 0) throw new Error(`Lark auth failed: ${data.msg}`);
+  if (data.code !== 0) throw new Error(`Lark auth failed: code=${data.code} msg=${data.msg} app_id_len=${APP_ID?.length} secret_len=${APP_SECRET?.length}`);
   return data.tenant_access_token;
 }
 
