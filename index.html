@@ -1408,14 +1408,33 @@ function asMsgSelectTo(t) {
     document.getElementById('msg-to-' + x).className = 'person-pill' + (x === t ? ' active-j' : ''));
 }
 
-function asGetCases() {
-  try { return JSON.parse(localStorage.getItem('hhg_as_cases') || '[]'); } catch { return []; }
-}
-function asSaveCases(cases) {
-  localStorage.setItem('hhg_as_cases', JSON.stringify(cases));
+// ── Lark Bitable data layer ───────────────────────────────────────────────────
+const LARK_FN = '/.netlify/functions/lark-bitable';
+let asCache = null;  // in-memory cache to avoid repeated fetches
+
+async function asLark(body) {
+  const res = await fetch(LARK_FN, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  return res.json();
 }
 
-function asCreateCase() {
+async function asGetCases() {
+  if (asCache) return asCache;
+  const data = await asLark({ action: 'list' });
+  if (data.success) {
+    asCache = data.cases;
+    return asCache;
+  }
+  console.error('Lark list failed:', data.error);
+  return [];
+}
+
+function asInvalidateCache() { asCache = null; }
+
+async function asCreateCase() {
   const property = document.getElementById('as-new-property').value.trim();
   const client   = document.getElementById('as-new-client').value.trim();
   const type     = document.getElementById('as-new-type').value;
@@ -1423,17 +1442,24 @@ function asCreateCase() {
   if (!property || !type || !asRole || !asOwner) {
     alert('请填写物业、问题类型，并选择我方角色和负责人'); return;
   }
-  const cases = asGetCases();
-  cases.unshift({
+  const btn = document.querySelector('#as-view-new .btn-generate');
+  if (btn) { btn.disabled = true; btn.querySelector('span').textContent = '创建中...'; }
+
+  const newCase = {
     id: Date.now().toString(),
     property, client, type,
     role: asRole, owner: asOwner,
     status: 'active', notes,
     timeline: [{ time: Date.now(), text: '案例创建' + (notes ? '：' + notes : '') }],
     createdAt: Date.now(), updatedAt: Date.now(),
-  });
-  asSaveCases(cases);
-  // Reset
+  };
+  const data = await asLark({ action: 'create', case: newCase });
+  if (btn) { btn.disabled = false; btn.querySelector('span').textContent = '创建案例'; }
+
+  if (!data.success) { alert('创建失败：' + data.error); return; }
+  asInvalidateCache();
+
+  // Reset form
   ['as-new-property','as-new-client','as-new-notes'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('as-new-type').value = '';
   asRole = ''; asOwner = '';
@@ -1486,15 +1512,16 @@ function asCardHTML(c, isResolved) {
   </div>`;
 }
 
-function asRenderList() {
+async function asRenderList() {
   const container = document.getElementById('as-list-container');
   const empty     = document.getElementById('as-list-empty');
   if (!container) return;
+  container.innerHTML = '<div style="text-align:center;padding:30px;color:var(--text3);font-size:13px;">加载中...</div>';
   const filterOwner  = document.getElementById('as-filter-owner').value;
   const filterStatus = document.getElementById('as-filter-status').value;
   const sort         = document.getElementById('as-sort').value;
 
-  let cases = asGetCases().filter(c => c.status !== 'resolved');
+  let cases = (await asGetCases()).filter(c => c.status !== 'resolved');
   if (filterOwner)  cases = cases.filter(c => c.owner === filterOwner);
   if (filterStatus) cases = cases.filter(c => c.status === filterStatus);
 
@@ -1509,11 +1536,12 @@ function asRenderList() {
   container.innerHTML = cases.map(c => asCardHTML(c, false)).join('');
 }
 
-function asRenderResolved() {
+async function asRenderResolved() {
   const container = document.getElementById('as-resolved-container');
   const empty     = document.getElementById('as-resolved-empty');
   if (!container) return;
-  const cases = asGetCases().filter(c => c.status === 'resolved');
+  container.innerHTML = '<div style="text-align:center;padding:30px;color:var(--text3);font-size:13px;">加载中...</div>';
+  const cases = (await asGetCases()).filter(c => c.status === 'resolved');
   if (cases.length === 0) {
     container.innerHTML = ''; empty.style.display = ''; return;
   }
@@ -1521,8 +1549,9 @@ function asRenderResolved() {
   container.innerHTML = cases.map(c => asCardHTML(c, true)).join('');
 }
 
-function asOpenDetail(id, fromTab) {
-  const c = asGetCases().find(x => x.id === id);
+async function asOpenDetail(id, fromTab) {
+  const allCases = await asGetCases();
+  const c = allCases.find(x => x.id === id);
   if (!c) return;
   ['list','resolved','new','msg'].forEach(t => {
     const v = document.getElementById('as-view-' + t);
@@ -1579,63 +1608,82 @@ function asOpenDetail(id, fromTab) {
   document.getElementById('as-view-detail').style.display = '';
 }
 
-function asUpdateStatus(id, newStatus) {
-  const cases = asGetCases();
-  const idx = cases.findIndex(c => c.id === id);
-  if (idx < 0) return;
+async function asUpdateStatus(id, newStatus) {
+  const allCases = await asGetCases();
+  const c = allCases.find(x => x.id === id);
+  if (!c) return;
   const labels = { active:'处理中', waiting:'等待对方', urgent:'⚠️ 紧急', resolved:'已解决' };
-  cases[idx].status = newStatus;
-  cases[idx].updatedAt = Date.now();
-  if (newStatus === 'resolved') cases[idx].resolvedAt = Date.now();
-  cases[idx].timeline.push({ time: Date.now(), text: '状态更新为：' + (labels[newStatus] || newStatus) });
-  asSaveCases(cases);
-  showToast('✓ 状态已更新');
+  c.status = newStatus;
+  c.updatedAt = Date.now();
+  if (newStatus === 'resolved') c.resolvedAt = Date.now();
+  c.timeline.push({ time: Date.now(), text: '状态更新为：' + (labels[newStatus] || newStatus) });
+  const data = await asLark({ action: 'update', lark_id: c._lark_id, case: c });
+  if (data.success) {
+    asInvalidateCache();
+    showToast('✓ 状态已更新');
+  } else {
+    alert('更新失败：' + data.error);
+  }
 }
 
-function asAddNote(id, fromTab) {
+async function asAddNote(id, fromTab) {
   const input = document.getElementById('detail-note-' + id);
   if (!input) return;
   const text = input.value.trim();
   if (!text) return;
-  const cases = asGetCases();
-  const idx = cases.findIndex(c => c.id === id);
-  if (idx < 0) return;
-  cases[idx].timeline.push({ time: Date.now(), text });
-  cases[idx].updatedAt = Date.now();
-  asSaveCases(cases);
-  input.value = '';
-  asOpenDetail(id, fromTab);
-  showToast('✓ 已记录');
+  const allCases = await asGetCases();
+  const c = allCases.find(x => x.id === id);
+  if (!c) return;
+  c.timeline.push({ time: Date.now(), text });
+  c.updatedAt = Date.now();
+  const data = await asLark({ action: 'update', lark_id: c._lark_id, case: c });
+  if (data.success) {
+    asInvalidateCache();
+    input.value = '';
+    await asOpenDetail(id, fromTab);
+    showToast('✓ 已记录');
+  } else {
+    alert('记录失败：' + data.error);
+  }
 }
 
-function asDeleteCase(id) {
+async function asDeleteCase(id) {
   if (!confirm('确定要删除这个案例吗？此操作不可撤销。')) return;
-  const cases = asGetCases().filter(c => c.id !== id);
-  asSaveCases(cases);
-  showToast('✓ 案例已删除');
-  asRenderList();
-  asRenderResolved();
+  const allCases = await asGetCases();
+  const c = allCases.find(x => x.id === id);
+  if (!c) return;
+  const data = await asLark({ action: 'delete', lark_id: c._lark_id });
+  if (data.success) {
+    asInvalidateCache();
+    showToast('✓ 案例已删除');
+    asRenderList();
+    asRenderResolved();
+  } else {
+    alert('删除失败：' + data.error);
+  }
 }
 
-function asPopulateCaseSelect() {
+async function asPopulateCaseSelect() {
   const sel = document.getElementById('rep-case-select');
   if (!sel) return;
-  const cases = asGetCases().filter(c => c.status !== 'resolved');
+  const cases = (await asGetCases()).filter(c => c.status !== 'resolved');
   sel.innerHTML = '<option value="">不关联案例，手动填写</option>' +
     cases.map(c => `<option value="${c.id}">${c.property}${c.client?' · '+c.client:''} — ${c.type}</option>`).join('');
 }
 
-function asPreFillFromCase() {
+async function asPreFillFromCase() {
   const id = document.getElementById('rep-case-select').value;
   if (!id) return;
-  const c = asGetCases().find(x => x.id === id);
+  const cases = await asGetCases();
+  const c = cases.find(x => x.id === id);
   if (!c) return;
   document.getElementById('rep-unit').value = c.property + (c.client ? ' (' + c.client + ')' : '');
   document.getElementById('rep-type').value = c.type;
 }
 
-function asExportCSV() {
-  const cases = asGetCases();
+
+async function asExportCSV() {
+  const cases = await asGetCases();
   if (cases.length === 0) { alert('暂无案例数据'); return; }
   const headers = ['ID','物业','客户','问题类型','我方角色','负责人','状态','已发生天数','创建日期','最近更新','解决日期','备注'];
   const rows = cases.map(c => {
