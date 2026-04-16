@@ -803,7 +803,7 @@
       <!-- TO field -->
       <div class="field-group" style="margin-bottom:10px;">
         <label>TO <span id="inv-to-hint" style="font-size:10px;color:var(--text3);">客户姓名</span></label>
-        <input type="text" id="inv-to" placeholder="客户姓名">
+        <input type="text" id="inv-to" placeholder="客户姓名（请用英文/拼音填写，PDF不支持中文字符）">
       </div>
 
       <!-- TO address (for agency/institution) -->
@@ -2264,6 +2264,28 @@ async function generateInvoice() {
 
     const fmtNum = n => Number(n).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 
+    // pdf-lib StandardFonts only support WinAnsi (Latin-1: U+0020-U+00FF)
+    // Sanitize user input: transliterate common chars, strip the rest
+    const safe = (str) => {
+      if (!str) return '';
+      return String(str).split('').map(c => {
+        const cp = c.charCodeAt(0);
+        if (cp >= 0x20 && cp <= 0x7E) return c;        // ASCII printable — OK
+        if (cp >= 0xA0 && cp <= 0xFF) return c;        // Latin-1 supplement — OK
+        // Common transliterations
+        const map = {
+          '\u2019':"'", '\u2018':"'", '\u201C':'"', '\u201D':'"',
+          '\u2013':'-', '\u2014':'-', '\u2026':'...', '\u00B7':'.',
+          '\uFF08':'(', '\uFF09':')', '\uFF0C':',', '\uFF1A':':',
+          '\uFF1B':';', '\uFF01':'!', '\uFF1F':'?',
+        };
+        if (map[c]) return map[c];
+        // CJK and other non-Latin: replace with space (preserve word boundaries)
+        if (cp > 0xFF) return ' ';
+        return '';
+      }).join('').replace(/  +/g, ' ').trim();
+    };
+
     // Helper: draw text
     const T = (str, x, y, {font=regF, size=8, color=DARK, align='left'}={}) => {
       if (!str) return;
@@ -2327,17 +2349,17 @@ async function generateInvoice() {
     // TO label
     let ty = toBoxTop - 5.5*MM;
     T('TO:', ML + 3*MM, ty, {font:boldF, size:9, color:DARK});
-    T(to, ML + 14*MM, ty, {font:boldF, size:9, color:DARK});
+    T(safe(to), ML + 14*MM, ty, {font:boldF, size:9, color:DARK});
 
     // TO address
     if (toAddr) {
       const parts = toAddr.split(',').map(s=>s.trim()).filter(Boolean);
-      parts.forEach(p => { ty -= 4.5*MM; T(p, ML + 14*MM, ty, {size:8, color:DARK}); });
+      parts.forEach(p => { ty -= 4.5*MM; T(safe(p), ML + 14*MM, ty, {size:8, color:DARK}); });
     }
-    if (agencyLic) { ty -= 4.5*MM; T('Licence No.: ' + agencyLic, ML + 3*MM, ty, {size:7.5, color:GRAY}); }
+    if (agencyLic) { ty -= 4.5*MM; T('Licence No.: ' + safe(agencyLic), ML + 3*MM, ty, {size:7.5, color:GRAY}); }
     ty = toBoxTop - 19*MM;
     T('ATTN:', ML + 3*MM, ty, {font:boldF, size:9, color:DARK});
-    if (attn) T(attn, ML + 14*MM, ty, {size:8.5, color:DARK});
+    if (attn) T(safe(attn), ML + 14*MM, ty, {size:8.5, color:DARK});
 
     // INVOICE box content
     const ix = invBoxX + 3*MM;
@@ -2354,13 +2376,13 @@ async function generateInvoice() {
     const labelX = invBoxX + 18*MM;
     const valX   = invBoxX + 19*MM;
     T('Invoice No.:', ix, iy, {size:8, color:GRAY});
-    T(invNumber, valX + 5*MM, iy, {font:boldF, size:8, color:DARK});
+    T(safe(invNumber), valX + 5*MM, iy, {font:boldF, size:8, color:DARK});
 
     // Date row (with internal divider)
     HL(invBoxX+1, invBoxX+invBoxW-1, iy - 3*MM, {color:LINE});
     iy -= 8*MM;
     T('Date:', ix, iy, {size:8, color:GRAY});
-    T(invDate, valX + 5*MM, iy, {size:8, color:DARK});
+    T(safe(invDate), valX + 5*MM, iy, {size:8, color:DARK});
 
     // ── Line items table ──────────────────────────────────────
     let tableY = toBoxBot - 3*MM;
@@ -2391,7 +2413,7 @@ async function generateInvoice() {
       const amt = parseFloat(line.amount)||0;
       itemY -= 7*MM;
       T(String(i+1), ML + 2*MM, itemY, {font:boldF, size:9, color:DARK});
-      T(line.description, ML + 9*MM, itemY, {font:boldF, size:9, color:DARK});
+      T(safe(line.description), ML + 9*MM, itemY, {font:boldF, size:9, color:DARK});
       T(fmtNum(amt), colRate, itemY, {size:9, color:DARK, align:'right'});
       T('1',        colUnit, itemY, {size:9, color:DARK, align:'right'});
       T(fmtNum(amt), colAmt,  itemY, {size:9, color:DARK, align:'right'});
@@ -2405,7 +2427,7 @@ async function generateInvoice() {
                          !trimmed.toLowerCase().startsWith('document') &&
                          !trimmed.toLowerCase().startsWith('stamp');
           const detailText = isAddr ? 'Address: ' + trimmed : trimmed;
-          T(detailText, ML + 9*MM, itemY, {size:7.5, color:GRAY});
+          T(safe(detailText), ML + 9*MM, itemY, {size:7.5, color:GRAY});
         }
       }
       itemY -= 5*MM;
