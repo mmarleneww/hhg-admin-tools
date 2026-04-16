@@ -39,7 +39,6 @@ const FIELDS = {
 
 function caseToFields(c) {
   return {
-    '标题':              c.property || c.id || '',  // Lark default Title column
     [FIELDS.id]:         c.id || '',
     [FIELDS.property]:   c.property || '',
     [FIELDS.client]:     c.client || '',
@@ -252,6 +251,15 @@ exports.handler = async function(event) {
         name: app?.name,
         msg: '新 Base 创建成功！请把 app_token 更新到 Netlify 环境变量 LARK_BASE_TOKEN'
       });
+    }
+
+    // ── LIST FIELDS: show actual field names in the table ────────────────────
+    if (action === 'list_fields') {
+      const res = await fetch(`${LARK_API}/bitable/v1/apps/${BASE_TOKEN}/tables/${TABLE_ID}/fields`, { headers });
+      const data = await res.json();
+      if (data.code !== 0) throw new Error(`List fields failed: code=${data.code} msg=${data.msg}`);
+      const fields = (data.data?.items || []).map(f => ({ id: f.field_id, name: f.field_name, type: f.type }));
+      return json({ success: true, fields });
     }
 
     // ── DEBUG: check env vars are set (safe - shows length not value) ────────
