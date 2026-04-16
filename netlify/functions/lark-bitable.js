@@ -188,6 +188,52 @@ exports.handler = async function(event) {
       return json({ success: true, results });
     }
 
+    // ── INIT: auto-detect table ID and create all fields ─────────────────────
+    if (action === 'init') {
+      // Step 1: List tables in the base
+      const tablesRes = await fetch(`${LARK_API}/bitable/v1/apps/${BASE_TOKEN}/tables`, { headers });
+      const tablesData = await tablesRes.json();
+      if (tablesData.code !== 0) throw new Error(`List tables failed: code=${tablesData.code} msg=${tablesData.msg}`);
+      const tables = tablesData.data?.items || [];
+      if (tables.length === 0) throw new Error('No tables found in base');
+      const tableId = tables[0].table_id;
+      const tableName = tables[0].name;
+
+      // Step 2: Create all fields
+      const fieldsToCreate = [
+        { field_name: 'Case ID',   type: 1 },
+        { field_name: '物业',      type: 1 },
+        { field_name: '客户',      type: 1 },
+        { field_name: '问题类型',  type: 1 },
+        { field_name: '我方角色',  type: 1 },
+        { field_name: '负责人',    type: 1 },
+        { field_name: '状态',      type: 1 },
+        { field_name: '备注',      type: 1 },
+        { field_name: '跟进记录',  type: 1 },
+        { field_name: '创建时间',  type: 5 },
+        { field_name: '最近更新',  type: 5 },
+        { field_name: '解决时间',  type: 5 },
+      ];
+      const results = [];
+      for (const f of fieldsToCreate) {
+        const r = await fetch(`${LARK_API}/bitable/v1/apps/${BASE_TOKEN}/tables/${tableId}/fields`, {
+          method: 'POST', headers, body: JSON.stringify(f),
+        });
+        const d = await r.json();
+        results.push({ field: f.field_name, code: d.code, msg: d.msg });
+      }
+      const allOk = results.every(r => r.code === 0);
+      return json({
+        success: allOk,
+        table_id: tableId,
+        table_name: tableName,
+        msg: allOk
+          ? `✅ 完成！请把 LARK_TABLE_ID 更新为: ${tableId}`
+          : `⚠️ 部分字段创建失败，但 table_id 是: ${tableId}`,
+        results,
+      });
+    }
+
     // ── CREATE BASE: create a new standalone Bitable ──────────────────────────
     if (action === 'create_base') {
       const res = await fetch(`${LARK_API}/bitable/v1/apps`, {
