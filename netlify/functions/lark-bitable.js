@@ -56,11 +56,13 @@ function asCaseToFields(c) {
   };
 }
 
-function asFieldsToCase(record) {
+function asFieldsToCase(record, primaryFieldName) {
   const f = record.fields;
   const statusMap = { '处理中':'active', '等待反馈':'waiting', '紧急':'urgent', '已解决':'resolved' };
   let timeline = [];
   try { timeline = JSON.parse(typeof f[AS_FIELDS.timeline] === 'string' ? f[AS_FIELDS.timeline] : JSON.stringify(f[AS_FIELDS.timeline] || '[]')); } catch {}
+  // primary 字段（title）读取时容错：生产表叫 'Text'，新建测试表叫 '多行文本'
+  // 不强依赖 primary 字段，因为 asFieldsToCase 主要靠 id 字段识别记录
   return {
     id: f[AS_FIELDS.id] || record.record_id,
     _lark_id: record.record_id,
@@ -113,14 +115,43 @@ function crmClientToFields(c) {
   };
 }
 
-function crmFieldsToClient(record) {
+// ── Primary field name resolver ──────────────────────────────────────────────
+// 动态查某个表的主键字段名（第一个字段）。缓存结果避免重复调用 Lark API。
+// 背景：不同时期创建的表，主键字段名可能不同（"Text" / "客户姓名" / "多行文本"），
+// 这函数让代码自动适配任何主键名。
+const _primaryFieldCache = {};
+async function getPrimaryFieldName(tableId, headers) {
+  if (_primaryFieldCache[tableId]) return _primaryFieldCache[tableId];
+  const res = await fetch(`${LARK_API}/bitable/v1/apps/${BASE_TOKEN}/tables/${tableId}/fields`, { headers });
+  const data = await res.json();
+  if (data.code !== 0) throw new Error(`Get fields failed: ${data.msg}`);
+  const primary = data.data?.items?.[0];
+  if (!primary) throw new Error('No fields found in table');
+  _primaryFieldCache[tableId] = primary.field_name;
+  return primary.field_name;
+}
+
+// 把一个 fields 对象中的"期望主键名"替换为实际主键名
+function remapPrimaryKey(fields, expectedPrimary, actualPrimary) {
+  if (expectedPrimary === actualPrimary) return fields;
+  const remapped = { ...fields };
+  if (expectedPrimary in remapped) {
+    remapped[actualPrimary] = remapped[expectedPrimary];
+    delete remapped[expectedPrimary];
+  }
+  return remapped;
+}
+
+function crmFieldsToClient(record, primaryFieldName) {
   const f = record.fields;
   let timeline = [];
   try { timeline = JSON.parse(typeof f[CRM_FIELDS.timeline] === 'string' ? f[CRM_FIELDS.timeline] : '[]'); } catch {}
+  // 主键字段名可能是 '客户姓名'（旧代码期望）或 '多行文本'（API 默认）或动态传入的实际名
+  const nameValue = (primaryFieldName && f[primaryFieldName]) || f[CRM_FIELDS.primary] || f['多行文本'] || f['Text'] || '';
   return {
     id: record.record_id,
     _lark_id: record.record_id,
-    name: f[CRM_FIELDS.primary] || '',
+    name: nameValue,
     contact: f[CRM_FIELDS.contact] || '',
     type: f[CRM_FIELDS.type] || 'Residential',
     priority: f[CRM_FIELDS.priority] || 'mid',
@@ -179,7 +210,9 @@ exports.handler = async function(event) {
 
     if (action === 'create') {
       const fields = asCaseToFields(body.case);
-      const res = await fetch(asBase, { method: 'POST', headers, body: JSON.stringify({ fields }) });
+      const actualPrimary = await getPrimaryFieldName(TABLE_ID, headers);
+      const remapped = remapPrimaryKey(fields, AS_FIELDS.primary, actualPrimary);
+      const res = await fetch(asBase, { method: 'POST', headers, body: JSON.stringify({ fields: remapped }) });
       const data = await res.json();
       if (data.code !== 0) throw new Error(`Create failed: ${data.msg}`);
       return json({ success: true, case: asFieldsToCase(data.data.record) });
@@ -190,7 +223,9 @@ exports.handler = async function(event) {
       if (!larkId) return json({ error: 'Missing lark_id' }, 400);
       const fields = asCaseToFields(body.case);
       if (fields[AS_FIELDS.resolvedAt] === null) delete fields[AS_FIELDS.resolvedAt];
-      const res = await fetch(`${asBase}/${larkId}`, { method: 'PUT', headers, body: JSON.stringify({ fields }) });
+      const actualPrimary = await getPrimaryFieldName(TABLE_ID, headers);
+      const remapped = remapPrimaryKey(fields, AS_FIELDS.primary, actualPrimary);
+      const res = await fetch(`${asBase}/${larkId}`, { method: 'PUT', headers, body: JSON.stringify({ fields: remapped }) });
       const data = await res.json();
       if (data.code !== 0) throw new Error(`Update failed: ${data.msg}`);
       return json({ success: true });
@@ -228,7 +263,9 @@ exports.handler = async function(event) {
       if (!CRM_TABLE) return json({ error: 'LARK_CRM_TABLE_ID not configured' }, 500);
       const crmBase = `${LARK_API}/bitable/v1/apps/${BASE_TOKEN}/tables/${CRM_TABLE}/records`;
       const fields = crmClientToFields(body.client);
-      const res = await fetch(crmBase, { method: 'POST', headers, body: JSON.stringify({ fields }) });
+      const actualPrimary = await getPrimaryFieldName(CRM_TABLE, headers);
+      const remapped = remapPrimaryKey(fields, CRM_FIELDS.primary, actualPrimary);
+      const res = await fetch(crmBase, { method: 'POST', headers, body: JSON.stringify({ fields: remapped }) });
       const data = await res.json();
       if (data.code !== 0) throw new Error(`CRM create failed: ${data.msg}`);
       return json({ success: true, client: crmFieldsToClient(data.data.record) });
@@ -240,7 +277,9 @@ exports.handler = async function(event) {
       if (!larkId) return json({ error: 'Missing lark_id' }, 400);
       const crmBase = `${LARK_API}/bitable/v1/apps/${BASE_TOKEN}/tables/${CRM_TABLE}/records`;
       const fields = crmClientToFields(body.client);
-      const res = await fetch(`${crmBase}/${larkId}`, { method: 'PUT', headers, body: JSON.stringify({ fields }) });
+      const actualPrimary = await getPrimaryFieldName(CRM_TABLE, headers);
+      const remapped = remapPrimaryKey(fields, CRM_FIELDS.primary, actualPrimary);
+      const res = await fetch(`${crmBase}/${larkId}`, { method: 'PUT', headers, body: JSON.stringify({ fields: remapped }) });
       const data = await res.json();
       if (data.code !== 0) throw new Error(`CRM update failed: ${data.msg}`);
       return json({ success: true });
