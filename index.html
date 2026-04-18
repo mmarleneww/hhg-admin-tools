@@ -315,10 +315,10 @@
     display: flex; align-items: center; justify-content: space-between;
     gap: 12px; padding: 12px 13px;
     border-bottom: 1px solid var(--border);
-    flex-wrap: wrap;
   }
   .crm-filter-row {
-    display: flex; gap: 8px; flex-wrap: wrap; align-items: center;
+    display: flex; gap: 8px; align-items: center;
+    flex: 1 1 auto; min-width: 0;
   }
   .crm-filter-select {
     padding: 7px 28px 7px 12px;
@@ -326,8 +326,9 @@
     background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath fill='%23999' d='M0 0l5 6 5-6z'/%3E%3C/svg%3E") no-repeat right 10px center;
     font-size: 13px; color: var(--text2); cursor: pointer;
     appearance: none; -webkit-appearance: none; -moz-appearance: none;
-    min-width: 120px;
+    flex: 1 1 0; min-width: 0;
     transition: border-color .15s;
+    text-overflow: ellipsis; white-space: nowrap; overflow: hidden;
   }
   .crm-filter-select:hover { border-color: var(--accent-j); }
   .crm-filter-select:focus { outline: none; border-color: var(--accent-j); }
@@ -611,9 +612,9 @@
       width: 1px; height: auto; align-self: stretch;
       margin: 4px 2px;
     }
-    .crm-filter-select { min-width: 100px; font-size: 12px; flex: 1; }
-    .crm-toolbar { padding: 10px 13px; gap: 8px; }
-    .crm-filter-row { flex: 1; gap: 6px; }
+    .crm-filter-select { font-size: 12px; padding: 6px 22px 6px 8px; }
+    .crm-toolbar { padding: 10px 10px; gap: 6px; }
+    .crm-filter-row { gap: 6px; }
     .crm-modal-content { max-height: 92vh; }
   }
 </style>
