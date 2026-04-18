@@ -312,33 +312,32 @@
 
   /* ═══════════════ CRM CLIENT PIPELINE (Phase 2) ═══════════════ */
   .crm-toolbar {
-    display: flex; align-items: center; justify-content: flex-end;
-    gap: 12px; padding: 12px 13px 8px;
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 12px; padding: 12px 13px;
+    border-bottom: 1px solid var(--border);
+    flex-wrap: wrap;
   }
+  .crm-filter-row {
+    display: flex; gap: 8px; flex-wrap: wrap; align-items: center;
+  }
+  .crm-filter-select {
+    padding: 7px 28px 7px 12px;
+    border: 1px solid var(--border); border-radius: 7px;
+    background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath fill='%23999' d='M0 0l5 6 5-6z'/%3E%3C/svg%3E") no-repeat right 10px center;
+    font-size: 13px; color: var(--text2); cursor: pointer;
+    appearance: none; -webkit-appearance: none; -moz-appearance: none;
+    min-width: 120px;
+    transition: border-color .15s;
+  }
+  .crm-filter-select:hover { border-color: var(--accent-j); }
+  .crm-filter-select:focus { outline: none; border-color: var(--accent-j); }
   .crm-add-btn {
     display: inline-flex; align-items: center; gap: 5px;
     padding: 8px 14px; border: 0; border-radius: 8px;
     background: var(--accent-j); color: #fff;
     font-size: 13px; font-weight: 600; cursor: pointer;
+    white-space: nowrap;
   }
-  .crm-filter-bar {
-    padding: 4px 13px 12px; display: flex; flex-direction: column; gap: 8px;
-    border-bottom: 1px solid var(--border);
-  }
-  .crm-filter-group { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-  .crm-filter-label {
-    font-size: 10px; color: var(--text3); font-weight: 600;
-    letter-spacing: .5px; text-transform: uppercase;
-    min-width: 52px;
-  }
-  .crm-filter-chips { display: flex; gap: 6px; flex-wrap: wrap; }
-  .crm-chip {
-    padding: 4px 10px; border-radius: 14px;
-    background: var(--surface2); border: 1px solid var(--border);
-    font-size: 12px; color: var(--text2); cursor: pointer;
-    user-select: none; transition: all .15s;
-  }
-  .crm-chip.active { background: var(--accent-j); color: #fff; border-color: var(--accent-j); font-weight: 600; }
 
   /* By-status view: 左右布局 */
   .crm-bystatus-layout {
@@ -375,7 +374,7 @@
     height: 1px; background: var(--border); margin: 6px 4px;
   }
   .crm-status-tab.is-inactive { color: var(--text3); }
-  .crm-status-tab.is-inactive.active { background: #999; }
+  .crm-status-tab.is-inactive.active { background: #5a5a5a; }
 
   .crm-status-content {
     flex: 1; min-width: 0;
@@ -612,7 +611,9 @@
       width: 1px; height: auto; align-self: stretch;
       margin: 4px 2px;
     }
-    .crm-filter-bar { padding: 4px 13px 10px; }
+    .crm-filter-select { min-width: 100px; font-size: 12px; flex: 1; }
+    .crm-toolbar { padding: 10px 13px; gap: 8px; }
+    .crm-filter-row { flex: 1; gap: 6px; }
     .crm-modal-content { max-height: 92vh; }
   }
 </style>
@@ -1281,43 +1282,32 @@
 <!-- ═══════════════════════════════════════════════════════════════════════ -->
 <div class="page" id="page-crm">
   <div class="page-inner">
-    <!-- CRM top toolbar -->
+    <!-- CRM top toolbar: 3 个下拉 filter + 新客户按钮(一行布局) -->
     <div class="crm-toolbar">
+      <div class="crm-filter-row">
+        <select class="crm-filter-select" id="crm-filter-tier" onchange="crmSetFilter('tier', this.value)">
+          <option value="all">全部等级</option>
+          <option value="vip">⭐ VIP</option>
+          <option value="normal">普通</option>
+        </select>
+        <select class="crm-filter-select" id="crm-filter-admin" onchange="crmSetFilter('admin', this.value)">
+          <option value="all">全部 Admin</option>
+          <option value="Jaclyn">Jaclyn</option>
+          <option value="Wiki">Wiki</option>
+          <option value="Yuting">Yuting</option>
+          <option value="Zico">Zico</option>
+        </select>
+        <select class="crm-filter-select" id="crm-filter-agent" onchange="crmSetFilter('agent', this.value)">
+          <option value="all">全部 Agent</option>
+          <option value="Andy">Andy</option>
+          <option value="Issac">Issac</option>
+          <option value="Boon Guan">Boon Guan</option>
+          <option value="Connie">Connie</option>
+        </select>
+      </div>
       <button class="crm-add-btn" onclick="crmShowForm('new')">
         <span style="font-size:16px;line-height:1;">+</span> 新客户
       </button>
-    </div>
-
-    <!-- CRM filter bar -->
-    <div class="crm-filter-bar">
-      <div class="crm-filter-group">
-        <span class="crm-filter-label">等级</span>
-        <div class="crm-filter-chips" id="crm-filter-tier">
-          <div class="crm-chip active" data-val="all" onclick="crmSetFilter('tier','all')">全部</div>
-          <div class="crm-chip" data-val="vip" onclick="crmSetFilter('tier','vip')">⭐ VIP</div>
-          <div class="crm-chip" data-val="normal" onclick="crmSetFilter('tier','normal')">普通</div>
-        </div>
-      </div>
-      <div class="crm-filter-group">
-        <span class="crm-filter-label">Admin</span>
-        <div class="crm-filter-chips" id="crm-filter-admin">
-          <div class="crm-chip active" data-val="all" onclick="crmSetFilter('admin','all')">全部</div>
-          <div class="crm-chip" data-val="Jaclyn" onclick="crmSetFilter('admin','Jaclyn')">Jaclyn</div>
-          <div class="crm-chip" data-val="Wiki" onclick="crmSetFilter('admin','Wiki')">Wiki</div>
-          <div class="crm-chip" data-val="Yuting" onclick="crmSetFilter('admin','Yuting')">Yuting</div>
-          <div class="crm-chip" data-val="Zico" onclick="crmSetFilter('admin','Zico')">Zico</div>
-        </div>
-      </div>
-      <div class="crm-filter-group">
-        <span class="crm-filter-label">Agent</span>
-        <div class="crm-filter-chips" id="crm-filter-agent">
-          <div class="crm-chip active" data-val="all" onclick="crmSetFilter('agent','all')">全部</div>
-          <div class="crm-chip" data-val="Andy" onclick="crmSetFilter('agent','Andy')">Andy</div>
-          <div class="crm-chip" data-val="Issac" onclick="crmSetFilter('agent','Issac')">Issac</div>
-          <div class="crm-chip" data-val="Boon Guan" onclick="crmSetFilter('agent','Boon Guan')">Boon Guan</div>
-          <div class="crm-chip" data-val="Connie" onclick="crmSetFilter('agent','Connie')">Connie</div>
-        </div>
-      </div>
     </div>
 
     <!-- Loading state -->
@@ -1400,7 +1390,7 @@
           </div>
           <div style="display:flex;gap:10px;padding-top:10px;border-top:1px solid var(--border);margin-top:10px;">
             <button onclick="crmInactiveCancel()" style="flex:1;padding:10px;background:var(--surface2);border:1px solid var(--border);border-radius:7px;font-size:13px;cursor:pointer;color:var(--text2);">取消</button>
-            <button onclick="crmInactiveConfirm()" style="flex:1;padding:10px;background:#999;border:0;color:#fff;border-radius:7px;font-size:13px;cursor:pointer;font-weight:600;">确认标记</button>
+            <button onclick="crmInactiveConfirm()" style="flex:1;padding:10px;background:#5a5a5a;border:0;color:#fff;border-radius:7px;font-size:13px;cursor:pointer;font-weight:600;">确认标记</button>
           </div>
         </div>
       </div>
@@ -3806,13 +3796,6 @@ function crmSelectStatusTab(status) {
 
 function crmSetFilter(field, value) {
   crmFilters[field] = value;
-  // Update chip UI
-  const group = document.getElementById('crm-filter-' + field);
-  if (group) {
-    group.querySelectorAll('.crm-chip').forEach(chip => {
-      chip.classList.toggle('active', chip.dataset.val === value);
-    });
-  }
   crmRender();
 }
 
