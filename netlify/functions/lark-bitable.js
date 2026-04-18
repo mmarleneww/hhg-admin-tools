@@ -89,7 +89,7 @@ const CRM_FIELDS = {
 };
 
 function crmClientToFields(c) {
-  return {
+  const fields = {
     [CRM_FIELDS.primary]:   c.name || '',
     [CRM_FIELDS.contact]:   c.contact || '',
     [CRM_FIELDS.type]:      c.type || 'Residential',
@@ -104,8 +104,12 @@ function crmClientToFields(c) {
     [CRM_FIELDS.timeline]:  JSON.stringify(c.timeline || []),
     [CRM_FIELDS.createdAt]: c.createdAt || Date.now(),
     [CRM_FIELDS.updatedAt]: c.updatedAt || Date.now(),
-    [CRM_FIELDS.closedAt]:  c.closedAt || 0,
   };
+  // closedAt:>0 时写入;=0/null 时不发该字段(Lark datetime 传 null 会报错;清空逻辑留给批 3)
+  if (c.closedAt && c.closedAt > 0) {
+    fields[CRM_FIELDS.closedAt] = c.closedAt;
+  }
+  return fields;
 }
 
 function crmFieldsToClient(record) {
@@ -129,7 +133,7 @@ function crmFieldsToClient(record) {
     timeline,
     createdAt: f[CRM_FIELDS.createdAt] || Date.now(),
     updatedAt: f[CRM_FIELDS.updatedAt] || Date.now(),
-    closedAt:  Number(f[CRM_FIELDS.closedAt]) || 0,
+    closedAt:  f[CRM_FIELDS.closedAt]  || 0,
   };
 }
 
@@ -138,6 +142,94 @@ function json(obj, status = 200) {
     statusCode: status,
     headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
     body: JSON.stringify(obj),
+  };
+}
+
+// ── REC (推荐房源) field mapping ──────────────────────────────────────────────
+// Bitable 表「客户-房源推荐」,通过 LARK_REC_TABLE_ID 配置
+const REC_TABLE = process.env.LARK_REC_TABLE_ID;
+
+const REC_FIELDS = {
+  primary:    '多行文本',     // 主键: rec_时间戳
+  clientId:   '客户ID',       // CRM record_id
+  clientName: '客户姓名',     // 冗余显示用
+  link:       '房源链接',
+  source:     '房源来源',     // PG / 中介cobroke / 自有房源 / 其他
+  address:    '地址',
+  price:      '价格',
+  priceType:  '价格类型',     // 月租 / 总价
+  rooms:      '房型',         // "2房2卫"
+  area:       '面积',         // sqft
+  furnishing: '家具',
+  availability: '入住日期',
+  mrt:        'MRT',
+  agentName:  '中介姓名',
+  agentPhone: '中介电话',
+  agentCo:    '中介公司',
+  cea:        'CEA',
+  status:     '状态',         // 备选/已发送/待约看/已约看/看过/Offer中/成交/拒绝
+  noShow:     '曾爽约',       // "是" / 空
+  viewLog:    '看房记录',     // JSON 数组
+  createdAt:  '推荐时间',
+  updatedAt:  '最近更新',
+};
+
+function recRecToFields(r) {
+  const fields = {
+    [REC_FIELDS.primary]:      r.id || `rec_${Date.now()}`,
+    [REC_FIELDS.clientId]:     r.clientId || '',
+    [REC_FIELDS.clientName]:   r.clientName || '',
+    [REC_FIELDS.link]:         r.link || '',
+    [REC_FIELDS.source]:       r.source || 'PG',
+    [REC_FIELDS.address]:      r.address || '',
+    [REC_FIELDS.price]:        Number(r.price) || 0,
+    [REC_FIELDS.priceType]:    r.priceType || '月租',
+    [REC_FIELDS.rooms]:        r.rooms || '',
+    [REC_FIELDS.area]:         Number(r.area) || 0,
+    [REC_FIELDS.furnishing]:   r.furnishing || '',
+    [REC_FIELDS.availability]: r.availability || '',
+    [REC_FIELDS.mrt]:          r.mrt || '',
+    [REC_FIELDS.agentName]:    r.agentName || '',
+    [REC_FIELDS.agentPhone]:   r.agentPhone || '',
+    [REC_FIELDS.agentCo]:      r.agentCo || '',
+    [REC_FIELDS.cea]:          r.cea || '',
+    [REC_FIELDS.status]:       r.status || '已发送',
+    [REC_FIELDS.noShow]:       r.noShow || '',
+    [REC_FIELDS.viewLog]:      JSON.stringify(r.viewLog || []),
+    [REC_FIELDS.createdAt]:    r.createdAt || Date.now(),
+    [REC_FIELDS.updatedAt]:    r.updatedAt || Date.now(),
+  };
+  return fields;
+}
+
+function recFieldsToRec(record) {
+  const f = record.fields;
+  let viewLog = [];
+  try { viewLog = JSON.parse(typeof f[REC_FIELDS.viewLog] === 'string' ? f[REC_FIELDS.viewLog] : '[]'); } catch {}
+  return {
+    id:           f[REC_FIELDS.primary]    || record.record_id,
+    _lark_id:     record.record_id,
+    clientId:     f[REC_FIELDS.clientId]   || '',
+    clientName:   f[REC_FIELDS.clientName] || '',
+    link:         (typeof f[REC_FIELDS.link] === 'object' && f[REC_FIELDS.link]?.link) ? f[REC_FIELDS.link].link : (f[REC_FIELDS.link] || ''),
+    source:       f[REC_FIELDS.source]     || 'PG',
+    address:      f[REC_FIELDS.address]    || '',
+    price:        Number(f[REC_FIELDS.price]) || 0,
+    priceType:    f[REC_FIELDS.priceType]  || '月租',
+    rooms:        f[REC_FIELDS.rooms]      || '',
+    area:         Number(f[REC_FIELDS.area]) || 0,
+    furnishing:   f[REC_FIELDS.furnishing] || '',
+    availability: f[REC_FIELDS.availability] || '',
+    mrt:          f[REC_FIELDS.mrt]        || '',
+    agentName:    f[REC_FIELDS.agentName]  || '',
+    agentPhone:   f[REC_FIELDS.agentPhone] || '',
+    agentCo:      f[REC_FIELDS.agentCo]    || '',
+    cea:          f[REC_FIELDS.cea]        || '',
+    status:       f[REC_FIELDS.status]     || '已发送',
+    noShow:       f[REC_FIELDS.noShow]     || '',
+    viewLog,
+    createdAt:    f[REC_FIELDS.createdAt]  || Date.now(),
+    updatedAt:    f[REC_FIELDS.updatedAt]  || Date.now(),
   };
 }
 
@@ -452,6 +544,188 @@ exports.handler = async function(event) {
       return json({ success: true, deleted: recordIds.length });
     }
 
+    // ═══════════════════════════════════════════════════════════════════════
+    // REC ACTIONS (推荐房源)
+    // ═══════════════════════════════════════════════════════════════════════
+
+    if (action === 'rec_list') {
+      if (!REC_TABLE) return json({ error: 'LARK_REC_TABLE_ID not configured' }, 500);
+      const recBase = `${LARK_API}/bitable/v1/apps/${BASE_TOKEN}/tables/${REC_TABLE}/records`;
+      const clientId = body.client_id;  // 可选,如果传了就只返回该客户的房源
+      const allRecords = [];
+      let pageToken = '';
+      do {
+        const url = `${recBase}?page_size=100${pageToken ? '&page_token=' + pageToken : ''}`;
+        const res = await fetch(url, { headers });
+        const data = await res.json();
+        if (data.code !== 0) throw new Error(`REC list failed: ${data.msg}`);
+        allRecords.push(...(data.data?.items || []));
+        pageToken = data.data?.has_more ? data.data.page_token : '';
+      } while (pageToken);
+      let recs = allRecords.map(recFieldsToRec);
+      if (clientId) recs = recs.filter(r => r.clientId === clientId);
+      return json({ success: true, recs });
+    }
+
+    if (action === 'rec_create') {
+      if (!REC_TABLE) return json({ error: 'LARK_REC_TABLE_ID not configured' }, 500);
+      const recBase = `${LARK_API}/bitable/v1/apps/${BASE_TOKEN}/tables/${REC_TABLE}/records`;
+      const fields = recRecToFields(body.rec);
+      const res = await fetch(recBase, { method: 'POST', headers, body: JSON.stringify({ fields }) });
+      const data = await res.json();
+      if (data.code !== 0) throw new Error(`REC create failed: ${data.msg}`);
+      return json({ success: true, rec: recFieldsToRec(data.data.record) });
+    }
+
+    if (action === 'rec_update') {
+      if (!REC_TABLE) return json({ error: 'LARK_REC_TABLE_ID not configured' }, 500);
+      const larkId = body.lark_id;
+      if (!larkId) return json({ error: 'Missing lark_id' }, 400);
+      const recBase = `${LARK_API}/bitable/v1/apps/${BASE_TOKEN}/tables/${REC_TABLE}/records`;
+      const fields = recRecToFields(body.rec);
+      const res = await fetch(`${recBase}/${larkId}`, { method: 'PUT', headers, body: JSON.stringify({ fields }) });
+      const data = await res.json();
+      if (data.code !== 0) throw new Error(`REC update failed: ${data.msg}`);
+      return json({ success: true });
+    }
+
+    if (action === 'rec_delete') {
+      if (!REC_TABLE) return json({ error: 'LARK_REC_TABLE_ID not configured' }, 500);
+      const larkId = body.lark_id;
+      if (!larkId) return json({ error: 'Missing lark_id' }, 400);
+      const recBase = `${LARK_API}/bitable/v1/apps/${BASE_TOKEN}/tables/${REC_TABLE}/records`;
+      const res = await fetch(`${recBase}/${larkId}`, { method: 'DELETE', headers });
+      const data = await res.json();
+      if (data.code !== 0) throw new Error(`REC delete failed: ${data.msg}`);
+      return json({ success: true });
+    }
+
+    if (action === 'rec_list_fields') {
+      if (!REC_TABLE) return json({ error: 'LARK_REC_TABLE_ID not configured' }, 500);
+      const res = await fetch(`${LARK_API}/bitable/v1/apps/${BASE_TOKEN}/tables/${REC_TABLE}/fields`, { headers });
+      const data = await res.json();
+      if (data.code !== 0) throw new Error(`REC list fields failed: code=${data.code} msg=${data.msg}`);
+      const fields = (data.data?.items || []).map(f => ({ id: f.field_id, name: f.field_name, type: f.type }));
+      return json({ success: true, table_id: REC_TABLE, fields });
+    }
+
+    if (action === 'rec_add_field') {
+      if (!REC_TABLE) return json({ error: 'LARK_REC_TABLE_ID not configured' }, 500);
+      const fieldName = body.field_name;
+      const fieldType = Number(body.field_type) || 1;  // 1=text, 2=number, 5=datetime, 15=url
+      if (!fieldName) return json({ error: 'Missing field_name' }, 400);
+      const res = await fetch(`${LARK_API}/bitable/v1/apps/${BASE_TOKEN}/tables/${REC_TABLE}/fields`, {
+        method: 'POST', headers,
+        body: JSON.stringify({ field_name: fieldName, type: fieldType }),
+      });
+      const data = await res.json();
+      if (data.code !== 0) return json({ success: false, code: data.code, msg: data.msg });
+      return json({ success: true, field: data.data?.field });
+    }
+
+    if (action === 'rec_delete_field') {
+      if (!REC_TABLE) return json({ error: 'LARK_REC_TABLE_ID not configured' }, 500);
+      const fieldId = body.field_id;
+      if (!fieldId) return json({ error: 'Missing field_id' }, 400);
+      const res = await fetch(`${LARK_API}/bitable/v1/apps/${BASE_TOKEN}/tables/${REC_TABLE}/fields/${fieldId}`, {
+        method: 'DELETE', headers,
+      });
+      const data = await res.json();
+      if (data.code !== 0) return json({ success: false, code: data.code, msg: data.msg });
+      return json({ success: true, field_id: fieldId });
+    }
+
+    // ── 创建「客户-房源推荐」表(一次性建表 + 字段) ──────────────────────────
+    if (action === 'create_rec_table') {
+      const tableName = body.table_name || '客户-房源推荐_测试';
+      const res = await fetch(`${LARK_API}/bitable/v1/apps/${BASE_TOKEN}/tables`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ table: { name: tableName } }),
+      });
+      const data = await res.json();
+      if (data.code !== 0) throw new Error(`Create rec table failed: code=${data.code} msg=${data.msg}`);
+      const tableId = data.data?.table_id;
+
+      // type: 1=text, 2=number, 5=datetime, 15=url
+      const fieldsToCreate = [
+        { field_name: '客户ID',     type: 1 },
+        { field_name: '客户姓名',   type: 1 },
+        { field_name: '房源链接',   type: 15 },
+        { field_name: '房源来源',   type: 1 },
+        { field_name: '地址',       type: 1 },
+        { field_name: '价格',       type: 2 },
+        { field_name: '价格类型',   type: 1 },
+        { field_name: '房型',       type: 1 },
+        { field_name: '面积',       type: 2 },
+        { field_name: '家具',       type: 1 },
+        { field_name: '入住日期',   type: 1 },
+        { field_name: 'MRT',        type: 1 },
+        { field_name: '中介姓名',   type: 1 },
+        { field_name: '中介电话',   type: 1 },
+        { field_name: '中介公司',   type: 1 },
+        { field_name: 'CEA',        type: 1 },
+        { field_name: '状态',       type: 1 },
+        { field_name: '曾爽约',     type: 1 },
+        { field_name: '看房记录',   type: 1 },
+        { field_name: '推荐时间',   type: 5 },
+        { field_name: '最近更新',   type: 5 },
+      ];
+      const results = [];
+      for (const f of fieldsToCreate) {
+        const r = await fetch(`${LARK_API}/bitable/v1/apps/${BASE_TOKEN}/tables/${tableId}/fields`, {
+          method: 'POST', headers, body: JSON.stringify(f),
+        });
+        const d = await r.json();
+        results.push({ field: f.field_name, code: d.code, ok: d.code === 0, msg: d.msg });
+      }
+      return json({
+        success: true,
+        table_id: tableId,
+        table_name: tableName,
+        msg: `✅ 「客户-房源推荐」表创建成功!请把 table_id 设为 Netlify 环境变量 LARK_REC_TABLE_ID: ${tableId}`,
+        fields: results,
+      });
+    }
+
+    // ── CRM 状态迁移:把"发房源"统一改成"已发房源等回复" ───────────────────
+    if (action === 'crm_migrate_status') {
+      if (!CRM_TABLE) return json({ error: 'LARK_CRM_TABLE_ID not configured' }, 500);
+      const crmBase = `${LARK_API}/bitable/v1/apps/${BASE_TOKEN}/tables/${CRM_TABLE}/records`;
+      // List all
+      const allRecords = [];
+      let pageToken = '';
+      do {
+        const url = `${crmBase}?page_size=100${pageToken ? '&page_token=' + pageToken : ''}`;
+        const res = await fetch(url, { headers });
+        const data = await res.json();
+        if (data.code !== 0) throw new Error(`CRM list for migrate failed: ${data.msg}`);
+        allRecords.push(...(data.data?.items || []));
+        pageToken = data.data?.has_more ? data.data.page_token : '';
+      } while (pageToken);
+
+      const toMigrate = allRecords.filter(r => r.fields[CRM_FIELDS.status] === '发房源');
+      if (toMigrate.length === 0) return json({ success: true, migrated: 0, msg: '没有"发房源"状态的记录需要迁移' });
+
+      const results = [];
+      for (const r of toMigrate) {
+        const upd = await fetch(`${crmBase}/${r.record_id}`, {
+          method: 'PUT', headers,
+          body: JSON.stringify({ fields: { [CRM_FIELDS.status]: '已发房源等回复' } }),
+        });
+        const d = await upd.json();
+        results.push({ record_id: r.record_id, ok: d.code === 0, msg: d.msg });
+      }
+      const okCount = results.filter(r => r.ok).length;
+      return json({
+        success: true,
+        migrated: okCount,
+        total: toMigrate.length,
+        msg: `成功迁移 ${okCount}/${toMigrate.length} 条记录(发房源 → 已发房源等回复)`,
+        results,
+      });
+    }
+
     if (action === 'log_usage') {
       const USAGE_TABLE_ID = process.env.LARK_USAGE_TABLE_ID;
       if (!USAGE_TABLE_ID) return json({ success: true, skipped: true, msg: 'LARK_USAGE_TABLE_ID not set' });
@@ -475,6 +749,7 @@ exports.handler = async function(event) {
         LARK_BASE_TOKEN:    BASE_TOKEN ? `set (${BASE_TOKEN.length} chars)` : 'MISSING',
         LARK_TABLE_ID:      TABLE_ID   ? `set (${TABLE_ID.length} chars)` : 'MISSING',
         LARK_CRM_TABLE_ID:  CRM_TABLE  ? `set (${CRM_TABLE.length} chars)` : 'NOT SET (will be set after create_table)',
+        LARK_REC_TABLE_ID:  REC_TABLE  ? `set (${REC_TABLE.length} chars)` : 'NOT SET (will be set after create_rec_table)',
       });
     }
 
