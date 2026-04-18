@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CRM 测试表迁移工具</title>
+<style>
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+    max-width: 720px; margin: 0 auto; padding: 20px;
+    background: #F7F6F4; color: #1A1A1A;
+  }
+  h1 { font-size: 22px; margin: 10px 0 6px; }
+  .sub { color: #9A9A9A; font-size: 13px; margin-bottom: 24px; }
+  .warn {
+    background: #FEF7E0; border: 1px solid #D4AC0D;
+    padding: 12px 14px; border-radius: 8px; margin-bottom: 20px;
+    font-size: 13px; line-height: 1.5;
+  }
+  .step {
+    background: #fff; border: 1px solid #E8E5E0;
+    border-radius: 10px; padding: 16px 18px; margin-bottom: 12px;
+  }
+  .step h3 { margin: 0 0 8px; font-size: 15px; display: flex; align-items: center; gap: 8px; }
+  .step p { margin: 6px 0; font-size: 13px; color: #5A5A5A; }
+  .num { background: #D42B2B; color: #fff; width: 24px; height: 24px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; }
+  .done .num { background: #2D6A4F; }
+  button {
+    padding: 10px 18px; border: 0; border-radius: 8px;
+    background: #D42B2B; color: #fff; font-size: 14px; font-weight: 600;
+    cursor: pointer; margin-top: 8px;
+  }
+  button:disabled { background: #ccc; cursor: not-allowed; }
+  button.safe { background: #2D6A4F; }
+  button.danger { background: #D42B2B; }
+  button.ghost { background: #F4F3F1; color: #5A5A5A; border: 1px solid #E8E5E0; }
+  pre {
+    background: #F4F3F1; padding: 10px 12px; border-radius: 6px;
+    font-size: 12px; overflow-x: auto; margin: 8px 0 0;
+    max-height: 240px; overflow-y: auto;
+    white-space: pre-wrap; word-wrap: break-word;
+  }
+  .ok { color: #2D6A4F; font-weight: 600; }
+  .err { color: #D42B2B; font-weight: 600; }
+  .pending { color: #9A9A9A; }
+  .log { font-size: 12px; margin-top: 10px; }
+  #final {
+    background: #E8F4EE; border: 1px solid #2D6A4F; padding: 16px;
+    border-radius: 10px; margin-top: 20px; display: none;
+  }
+</style>
+</head>
+<body>
+
+<h1>🔧 CRM 测试表迁移工具</h1>
+<div class="sub">一次性脚本 — 把「优先级」字段换成「客户等级」+「预估金额」,并清空测试数据</div>
+
+<div class="warn">
+  <strong>⚠️ 在 dev 环境打开这个页面(dev--hhg-admin-tools.netlify.app/migrate.html)</strong><br>
+  确保环境变量 LARK_CRM_TABLE_ID 指向测试表 <code>tbl0NK9b4QRi7Plp</code>,不是生产表。<br>
+  迁移成功后,把本文件(migrate.html)从 GitHub 删除即可。
+</div>
+
+<div class="step" id="step0">
+  <h3><span class="num">0</span> 检查环境 & 当前字段</h3>
+  <p>先确认后端连接正常,读出测试表现有的字段列表。</p>
+  <button onclick="step0()">① 检查环境</button>
+  <div id="log0" class="log"></div>
+</div>
+
+<div class="step" id="step1">
+  <h3><span class="num">1</span> 删除旧字段「优先级」</h3>
+  <p>如果测试表里有这个字段,删掉它。</p>
+  <button onclick="step1()" disabled id="btn1" class="danger">② 删除优先级字段</button>
+  <div id="log1" class="log"></div>
+</div>
+
+<div class="step" id="step2">
+  <h3><span class="num">2</span> 新增字段「客户等级」(文本)</h3>
+  <p>存 vip 或 normal 字符串。</p>
+  <button onclick="step2()" disabled id="btn2" class="safe">③ 新增客户等级</button>
+  <div id="log2" class="log"></div>
+</div>
+
+<div class="step" id="step3">
+  <h3><span class="num">3</span> 新增字段「预估金额」(数字)</h3>
+  <p>存 S$ 金额,数字类型。</p>
+  <button onclick="step3()" disabled id="btn3" class="safe">④ 新增预估金额</button>
+  <div id="log3" class="log"></div>
+</div>
+
+<div class="step" id="step4">
+  <h3><span class="num">4</span> 清空所有测试数据</h3>
+  <p>删掉测试表里所有记录,准备重新录入测试数据。</p>
+  <button onclick="step4()" disabled id="btn4" class="danger">⑤ 清空测试数据</button>
+  <div id="log4" class="log"></div>
+</div>
+
+<div class="step" id="step5">
+  <h3><span class="num">5</span> 最终验证:重新列出字段</h3>
+  <p>确认迁移后字段正确。</p>
+  <button onclick="step5()" disabled id="btn5">⑥ 最终验证</button>
+  <div id="log5" class="log"></div>
+</div>
+
+<div id="final">
+  <h2 style="margin-top:0;color:#2D6A4F;">🎉 迁移完成!</h2>
+  <p>下一步:</p>
+  <ol style="font-size:14px;line-height:1.7;">
+    <li>把新版 <code>index.html</code> 和 <code>lark-bitable.js</code> 上传到 dev 分支</li>
+    <li>测试 CRM Tab 的新功能(交易类型/等级/金额/来源/Agent 筛选)</li>
+    <li>测试通过后 PR dev → main</li>
+    <li><strong>把 <code>migrate.html</code> 从 GitHub 删掉</strong>,不用保留</li>
+  </ol>
+</div>
+
+<script>
+const FN = '/.netlify/functions/lark-bitable';
+
+async function call(body) {
+  const res = await fetch(FN, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  return res.json();
+}
+
+function log(id, html, cls) {
+  const el = document.getElementById('log' + id);
+  el.innerHTML = html;
+  if (cls) el.className = 'log ' + cls;
+}
+
+function markDone(stepId) {
+  document.getElementById('step' + stepId).classList.add('done');
+  const nextBtn = document.getElementById('btn' + (stepId + 1));
+  if (nextBtn) nextBtn.disabled = false;
+}
+
+async function step0() {
+  log(0, '<span class="pending">检查中...</span>');
+  try {
+    // Check env
+    const dbg = await call({ action: 'debug' });
+    // List CRM fields
+    const data = await call({ action: 'crm_list_fields' });
+    if (!data.success) throw new Error(data.msg || data.error || '列字段失败');
+    const fields = data.fields || [];
+    const fieldsList = fields.map(f => `  • ${f.name} (type=${f.type}, id=${f.id})`).join('\n');
+    log(0, `
+      <div class="ok">✓ 环境正常</div>
+      <pre>LARK_CRM_TABLE_ID: ${data.table_id}
+Env check: ${JSON.stringify(dbg, null, 2).substring(0, 400)}
+
+当前字段 (${fields.length} 个):
+${fieldsList}</pre>
+    `);
+    // Check if this looks like the test table (empty or very few records)
+    window._fields = fields;
+    markDone(0);
+  } catch (e) {
+    log(0, `<div class="err">✗ ${e.message}</div>`);
+  }
+}
+
+async function step1() {
+  log(1, '<span class="pending">删除中...</span>');
+  const field = (window._fields || []).find(f => f.name === '优先级');
+  if (!field) {
+    log(1, `<div class="ok">⊙ 跳过(「优先级」字段不存在)</div>`);
+    markDone(1);
+    return;
+  }
+  try {
+    const data = await call({ action: 'crm_delete_field', field_id: field.id });
+    if (!data.success) {
+      // Some Lark errors are "already deleted" — treat as OK
+      throw new Error(data.msg || '删除失败');
+    }
+    log(1, `<div class="ok">✓ 已删除字段「优先级」(id=${field.id})</div>`);
+    markDone(1);
+  } catch (e) {
+    log(1, `<div class="err">✗ ${e.message}</div>`);
+  }
+}
+
+async function step2() {
+  log(2, '<span class="pending">添加中...</span>');
+  // Refresh field list first
+  const data0 = await call({ action: 'crm_list_fields' });
+  const existing = (data0.fields || []).find(f => f.name === '客户等级');
+  if (existing) {
+    log(2, `<div class="ok">⊙ 跳过(「客户等级」已存在,id=${existing.id})</div>`);
+    markDone(2);
+    return;
+  }
+  try {
+    const data = await call({ action: 'crm_add_field', field_name: '客户等级', field_type: 1 });
+    if (!data.success) throw new Error(data.msg || '添加失败');
+    log(2, `<div class="ok">✓ 已添加字段「客户等级」(文本类型)</div><pre>${JSON.stringify(data.field, null, 2)}</pre>`);
+    markDone(2);
+  } catch (e) {
+    log(2, `<div class="err">✗ ${e.message}</div>`);
+  }
+}
+
+async function step3() {
+  log(3, '<span class="pending">添加中...</span>');
+  const data0 = await call({ action: 'crm_list_fields' });
+  const existing = (data0.fields || []).find(f => f.name === '预估金额');
+  if (existing) {
+    log(3, `<div class="ok">⊙ 跳过(「预估金额」已存在,id=${existing.id},type=${existing.type})</div>`);
+    markDone(3);
+    return;
+  }
+  try {
+    // type 2 = Number in Lark Bitable
+    const data = await call({ action: 'crm_add_field', field_name: '预估金额', field_type: 2 });
+    if (!data.success) throw new Error(data.msg || '添加失败');
+    log(3, `<div class="ok">✓ 已添加字段「预估金额」(数字类型)</div><pre>${JSON.stringify(data.field, null, 2)}</pre>`);
+    markDone(3);
+  } catch (e) {
+    log(3, `<div class="err">✗ ${e.message}</div>`);
+  }
+}
+
+async function step4() {
+  if (!confirm('确认清空测试表的所有记录吗?此操作不可恢复。\n\n如果测试表是空的可以直接继续。')) return;
+  log(4, '<span class="pending">清空中...</span>');
+  try {
+    const data = await call({ action: 'crm_clear_all' });
+    if (!data.success) throw new Error(data.msg || '清空失败');
+    log(4, `<div class="ok">✓ 已清空 ${data.deleted} 条记录</div>`);
+    markDone(4);
+  } catch (e) {
+    log(4, `<div class="err">✗ ${e.message}</div>`);
+  }
+}
+
+async function step5() {
+  log(5, '<span class="pending">验证中...</span>');
+  try {
+    const data = await call({ action: 'crm_list_fields' });
+    if (!data.success) throw new Error(data.msg || '列字段失败');
+    const fields = data.fields || [];
+    const fieldsList = fields.map(f => `  • ${f.name} (type=${f.type})`).join('\n');
+    const hasTier = fields.find(f => f.name === '客户等级');
+    const hasAmount = fields.find(f => f.name === '预估金额');
+    const hasOldPrio = fields.find(f => f.name === '优先级');
+    let checks = '';
+    checks += `${hasTier ? '✓' : '✗'} 客户等级 字段存在\n`;
+    checks += `${hasAmount ? '✓' : '✗'} 预估金额 字段存在\n`;
+    checks += `${!hasOldPrio ? '✓' : '✗'} 优先级 字段已删除\n`;
+    const allGood = hasTier && hasAmount && !hasOldPrio;
+    log(5, `<div class="${allGood ? 'ok' : 'err'}">${allGood ? '✓ 所有检查通过' : '⚠ 有检查未通过'}</div>
+      <pre>${checks}\n当前所有字段 (${fields.length} 个):\n${fieldsList}</pre>`);
+    if (allGood) document.getElementById('final').style.display = 'block';
+  } catch (e) {
+    log(5, `<div class="err">✗ ${e.message}</div>`);
+  }
+}
+</script>
+
+</body>
+</html>
