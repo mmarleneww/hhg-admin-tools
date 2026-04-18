@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>HHG Phase 3a 迁移工具</title>
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; max-width: 720px; margin: 30px auto; padding: 20px; background: #f5f5f7; color: #1d1d1f; }
+  h1 { font-size: 22px; margin-bottom: 8px; }
+  .sub { color: #86868b; font-size: 13px; margin-bottom: 24px; }
+  .card { background: #fff; border-radius: 12px; padding: 20px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+  .card h2 { font-size: 16px; margin: 0 0 6px; }
+  .card .desc { color: #6e6e73; font-size: 13px; margin-bottom: 14px; line-height: 1.5; }
+  .step-num { display: inline-block; width: 22px; height: 22px; line-height: 22px; text-align: center; background: #d42b2b; color: #fff; border-radius: 50%; font-size: 12px; font-weight: 600; margin-right: 8px; }
+  button { background: #d42b2b; color: #fff; border: 0; padding: 10px 18px; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; }
+  button:hover { background: #b82424; }
+  button:disabled { background: #ccc; cursor: not-allowed; }
+  .out { background: #1d1d1f; color: #f5f5f7; padding: 12px 14px; border-radius: 8px; margin-top: 12px; font-family: "SF Mono", Menlo, monospace; font-size: 12px; line-height: 1.6; max-height: 320px; overflow: auto; white-space: pre-wrap; word-break: break-all; }
+  .ok { color: #30d158; }
+  .err { color: #ff453a; }
+  .warn { color: #ffd60a; }
+  .env-hint { background: #fff8e1; border-left: 3px solid #ffd60a; padding: 10px 12px; border-radius: 6px; margin-top: 12px; font-size: 13px; color: #6e4f00; }
+  code { background: #f0f0f0; padding: 2px 6px; border-radius: 4px; font-size: 12px; }
+  .danger-note { color: #d42b2b; font-size: 12px; margin-top: 8px; }
+</style>
+</head>
+<body>
+
+<h1>HHG Phase 3a 一次性迁移工具</h1>
+<p class="sub">按顺序点 1 → 2 → 3。每步完成后看输出,有问题不要继续。</p>
+
+<!-- STEP 1 -->
+<div class="card">
+  <h2><span class="step-num">1</span>检查环境配置</h2>
+  <div class="desc">确认 Netlify 环境变量都设置好了。会显示当前的 LARK_BASE_TOKEN / LARK_CRM_TABLE_ID 等。</div>
+  <button onclick="doDebug()">检查环境</button>
+  <div class="out" id="out-debug">点击按钮开始</div>
+</div>
+
+<!-- STEP 2 -->
+<div class="card">
+  <h2><span class="step-num">2</span>给 CRM 表加「成交时间」字段</h2>
+  <div class="desc">
+    Phase 3a 客户成交时需要记录成交日期。这步会调用 <code>crm_add_field</code> action,在当前 LARK_CRM_TABLE_ID 指向的表上加一个名为「成交时间」的 datetime 字段。
+    <br><br>
+    ⚠️ 如果字段已经存在会报错 <code>FieldNameExist</code>,这是正常的,跳到下一步即可。
+  </div>
+  <button onclick="addClosedAtField()">加「成交时间」字段</button>
+  <div class="out" id="out-closedat">点击按钮开始</div>
+</div>
+
+<!-- STEP 3 -->
+<div class="card">
+  <h2><span class="step-num">3</span>迁移 CRM 状态:发房源 → 已发房源等回复</h2>
+  <div class="desc">
+    Phase 3a 把客户状态从 5 个拆成 6 个(加了「待发房源」「已发房源等回复」)。<br>
+    所有当前状态 = <code>发房源</code> 的客户,会被改成 <code>已发房源等回复</code>。
+    <br>
+    Admin 之后可以手动把还没发的客户拖回到 <code>待发房源</code>。
+    <p class="danger-note">⚠️ 这个操作不可逆,但只改状态字段,不删数据。建议先在 dev 环境跑(LARK_CRM_TABLE_ID 应该是 dev 表 tbl0NK9b4QRi7Plp)。</p>
+  </div>
+  <button onclick="migrateStatus()">迁移 CRM 状态</button>
+  <div class="out" id="out-migrate">点击按钮开始</div>
+</div>
+
+<!-- STEP 4 -->
+<div class="card">
+  <h2><span class="step-num">4</span>创建「客户-房源推荐_测试」新表</h2>
+  <div class="desc">
+    在同一个 Base 下新建一张表(21 个字段)。完成后会返回新表的 <code>table_id</code>。
+    <br><br>
+    <b>注意:</b>建完表之后,你需要把 table_id 加到 Netlify <b>dev</b> 环境变量 <code>LARK_REC_TABLE_ID</code>,然后<b>重新触发 dev 部署</b>(Netlify → Deploys → Branch Deploy: dev → Retry with latest branch commit)。
+    <p class="danger-note">⚠️ 重复点击会创建多张同名表。如果第一次失败请先去 Lark Bitable 里手动删除新建的表再重试。</p>
+  </div>
+  <button onclick="createRecTable()">创建新表</button>
+  <div class="out" id="out-create">点击按钮开始</div>
+  <div class="env-hint" id="env-hint" style="display:none;"></div>
+</div>
+
+<!-- STEP 5 -->
+<div class="card">
+  <h2><span class="step-num">5</span>验证新表字段(配完环境变量后再执行)</h2>
+  <div class="desc">
+    完成 Step 4 + 配好 LARK_REC_TABLE_ID + 重新部署 dev 后,点这个验证。会列出新表的所有字段,核对字段名是否和后端代码一致。
+  </div>
+  <button onclick="listRecFields()">列出新表字段</button>
+  <div class="out" id="out-fields">点击按钮开始</div>
+</div>
+
+<script>
+const API = '/.netlify/functions/lark-bitable';
+
+async function call(action, body = {}) {
+  const res = await fetch(API, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action, ...body }),
+  });
+  return res.json();
+}
+
+function out(id, content, type = '') {
+  const el = document.getElementById(id);
+  const cls = type ? ` class="${type}"` : '';
+  el.innerHTML = `<span${cls}>${content}</span>`;
+}
+
+async function doDebug() {
+  out('out-debug', '检查中...');
+  try {
+    const data = await call('debug');
+    out('out-debug', JSON.stringify(data, null, 2), 'ok');
+  } catch (e) {
+    out('out-debug', '错误: ' + e.message, 'err');
+  }
+}
+
+async function addClosedAtField() {
+  out('out-closedat', '加字段中...');
+  try {
+    const data = await call('crm_add_field', { field_name: '成交时间', field_type: 5 });
+    if (data.success) {
+      out('out-closedat', '✅ 字段「成交时间」加好了。\n\n' + JSON.stringify(data, null, 2), 'ok');
+    } else if (data.msg && data.msg.includes('FieldNameExist')) {
+      out('out-closedat', '⚠️ 字段已存在,无需重复添加。可以继续下一步。\n\n' + JSON.stringify(data, null, 2), 'warn');
+    } else {
+      out('out-closedat', '❌ 失败: ' + JSON.stringify(data, null, 2), 'err');
+    }
+  } catch (e) {
+    out('out-closedat', '错误: ' + e.message, 'err');
+  }
+}
+
+async function migrateStatus() {
+  if (!confirm('确认把所有"发房源"状态的客户改成"已发房源等回复"?')) return;
+  out('out-migrate', '迁移中...');
+  try {
+    const data = await call('crm_migrate_status');
+    if (data.success) {
+      out('out-migrate', `✅ ${data.msg}\n\n详情:\n${JSON.stringify(data.results || [], null, 2)}`, 'ok');
+    } else {
+      out('out-migrate', '❌ 失败: ' + JSON.stringify(data, null, 2), 'err');
+    }
+  } catch (e) {
+    out('out-migrate', '错误: ' + e.message, 'err');
+  }
+}
+
+async function createRecTable() {
+  if (!confirm('确认创建新表「客户-房源推荐_测试」?')) return;
+  out('out-create', '创建中...大约需要 10 秒');
+  try {
+    const data = await call('create_rec_table', { table_name: '客户-房源推荐_测试' });
+    if (data.success) {
+      out('out-create', '✅ 表已创建!\n\n' + JSON.stringify(data, null, 2), 'ok');
+      const hint = document.getElementById('env-hint');
+      hint.style.display = 'block';
+      hint.innerHTML = `
+        <b>下一步:</b><br>
+        1. 复制这个 table_id: <code>${data.table_id}</code><br>
+        2. 去 Netlify → Site settings → Environment variables<br>
+        3. 加一个新变量:<br>
+           &nbsp;&nbsp;&nbsp;Key: <code>LARK_REC_TABLE_ID</code><br>
+           &nbsp;&nbsp;&nbsp;Value: <code>${data.table_id}</code><br>
+           &nbsp;&nbsp;&nbsp;Scope: <b>Branch deploys: dev only</b>(只配 dev,不要配生产)<br>
+        4. 去 Deploys → 找最新的 dev 部署 → Options ▾ → Retry with latest branch commit<br>
+        5. 等部署完成后回到这里点 Step 5 验证
+      `;
+    } else {
+      out('out-create', '❌ 失败: ' + JSON.stringify(data, null, 2), 'err');
+    }
+  } catch (e) {
+    out('out-create', '错误: ' + e.message, 'err');
+  }
+}
+
+async function listRecFields() {
+  out('out-fields', '读取中...');
+  try {
+    const data = await call('rec_list_fields');
+    if (data.success) {
+      const list = data.fields.map(f => `  ${f.name} (type=${f.type})`).join('\n');
+      out('out-fields', `✅ 共 ${data.fields.length} 个字段:\n\n${list}`, 'ok');
+    } else if (data.error && data.error.includes('LARK_REC_TABLE_ID')) {
+      out('out-fields', '⚠️ LARK_REC_TABLE_ID 还没配置或部署还没完成。请先完成 Step 4 后面的几个步骤。', 'warn');
+    } else {
+      out('out-fields', '❌ 失败: ' + JSON.stringify(data, null, 2), 'err');
+    }
+  } catch (e) {
+    out('out-fields', '错误: ' + e.message, 'err');
+  }
+}
+</script>
+
+</body>
+</html>
