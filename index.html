@@ -1330,7 +1330,7 @@
           </div>
           <div class="crm-field">
             <label>来源 *</label>
-            <select id="crm-f-source">
+            <select id="crm-f-source" onchange="crmSourceChange()">
               <option value="">请选择</option>
               <option value="MKT Organic">MKT Organic</option>
               <option value="MKT 活动">MKT 活动</option>
@@ -1339,7 +1339,9 @@
               <option value="Channel">Channel</option>
               <option value="Dada">Dada</option>
               <option value="Agent Personal Deal">Agent Personal Deal</option>
+              <option value="__other__">其他(自定义)</option>
             </select>
+            <input type="text" id="crm-f-source-other" placeholder="请输入来源" style="display:none;margin-top:6px;">
           </div>
           <div class="crm-field" id="crm-f-status-wrap" style="display:none;">
             <label>状态</label>
@@ -3405,33 +3407,34 @@ const CRM_STATUSES = ['新客户', '发房源', '看房中', '谈Offer', '成交
 const CRM_LS_KEY = 'hhg_crm_clients_cache';  // localStorage fallback
 
 // Compute color (red/yellow/green) based on tier + deal type + amount
-// Rules:
-//   🔴 Red:   VIP, or 买房/卖房 (any amount), or 写字楼 > $10k/mo,
-//             or 租房/出租 月租 > $20k
-//   🟡 Yellow: 租房/出租 $10k-$20k/mo, or 写字楼 ≤ $10k/mo, or Shophouse/Industrial
-//   🟢 Green:  租房/出租 < $10k/mo, or 金额未填
+// Rules (v2 updated):
+//   🔴 Red:   VIP,
+//             或 买房/卖房 预算 ≥ $30,000
+//             或 租房/出租/写字楼/Shophouse/Industrial 预算 ≥ $20,000
+//   🟡 Yellow: 买房/卖房 预算 $20k-$30k
+//              或 租房类 预算 $10k-$20k
+//   🟢 Green:  买房/卖房 预算 < $20k(或未填)
+//              或 租房类 预算 < $10k(或未填)
 function crmComputeColor(c) {
   // VIP always red
   if (c.tier === 'vip') return 'red';
   const amt = Number(c.amount) || 0;
   const deal = c.deal || '';
-  // Sales (买房/卖房) always red regardless of amount
-  if (deal === '买房' || deal === '卖房') return 'red';
-  // Office
-  if (deal === '写字楼') {
-    if (amt > 10000) return 'red';
-    return 'yellow';  // any office ≤10k or未填 → 黄 (共享写字楼)
+  const isSale = (deal === '买房' || deal === '卖房');
+  const isRental = (deal === '租房' || deal === '出租' || deal === '写字楼' || deal === 'Shophouse/Industrial');
+
+  if (isSale) {
+    if (amt === 0) return 'green';
+    if (amt >= 30000) return 'red';
+    if (amt >= 20000) return 'yellow';
+    return 'green';
   }
-  // Shophouse/Industrial → default yellow
-  if (deal === 'Shophouse/Industrial') return 'yellow';
-  // Rental (租房/出租)
-  if (deal === '租房' || deal === '出租') {
-    if (amt === 0) return 'green';   // 金额未填默认绿
-    if (amt > 20000) return 'red';
+  if (isRental) {
+    if (amt === 0) return 'green';
+    if (amt >= 20000) return 'red';
     if (amt >= 10000) return 'yellow';
     return 'green';
   }
-  // Unknown deal or empty
   return 'green';
 }
 
@@ -3446,15 +3449,11 @@ function crmAmountLabel(deal) {
 function crmFmtAmount(amt, deal) {
   if (!amt || amt === 0) return '';
   const n = Number(amt);
+  const withCommas = n.toLocaleString('en-US');  // 1000000 -> "1,000,000"
   if (deal === '买房' || deal === '卖房') {
-    // Purchase: display in millions if large
-    if (n >= 1000000) return `S$${(n / 1000000).toFixed(1)}M`;
-    if (n >= 1000) return `S$${(n / 1000).toFixed(0)}k`;
-    return `S$${n}`;
+    return `S$${withCommas}`;  // 买卖显示总价,不加 /月
   }
-  // Rental: display with /mo
-  if (n >= 1000) return `S$${(n / 1000).toFixed(1)}k/月`.replace('.0k', 'k');
-  return `S$${n}/月`;
+  return `S$${withCommas}/月`;   // 租赁类加 /月
 }
 
 // Initial load when Tab is opened
@@ -3557,6 +3556,18 @@ function crmFmtDate(ts) {
   const hh = String(d.getHours()).padStart(2, '0');
   const mm = String(d.getMinutes()).padStart(2, '0');
   return `${d.getFullYear()}-${m}-${day} ${hh}:${mm}`;
+}
+
+// Compute service time: 已成交 -> "X 天 (成交于 Y/M/D)", 进行中 -> "已 X 天"
+function crmServiceTimeLabel(c) {
+  const start = Number(c.createdAt) || 0;
+  if (!start) return '—';
+  const end = (c.status === '成交' && Number(c.closedAt) > 0) ? Number(c.closedAt) : Date.now();
+  const days = Math.floor((end - start) / (1000 * 60 * 60 * 24));
+  if (c.status === '成交' && Number(c.closedAt) > 0) {
+    return `${days} 天(成交于 ${crmFmtDate(c.closedAt).split(' ')[0]})`;
+  }
+  return `已 ${days} 天`;
 }
 
 function crmEscape(s) {
@@ -3669,11 +3680,14 @@ function crmRenderList(clients) {
 }
 
 // ── Form: new/edit ──────────────────────────────────────────────────────────
+const CRM_PREDEFINED_SOURCES = ['MKT Organic', 'MKT 活动', 'MKT PM', 'Friend Referral', 'Channel', 'Dada', 'Agent Personal Deal'];
+
 function crmShowForm(mode, id) {
   crmFormMode = mode;
   crmFormEditingId = id || null;
   const title = document.getElementById('crm-form-title');
   const statusWrap = document.getElementById('crm-f-status-wrap');
+  const sourceOther = document.getElementById('crm-f-source-other');
 
   if (mode === 'new') {
     title.textContent = '新客户';
@@ -3686,6 +3700,7 @@ function crmShowForm(mode, id) {
     document.getElementById('crm-f-admin').value = '';
     document.getElementById('crm-f-agent').value = 'Andy';
     document.getElementById('crm-f-source').value = '';
+    if (sourceOther) { sourceOther.value = ''; sourceOther.style.display = 'none'; }
     document.getElementById('crm-f-status').value = '新客户';
     crmFormTier = 'normal';
     statusWrap.style.display = 'none';
@@ -3701,7 +3716,18 @@ function crmShowForm(mode, id) {
     document.getElementById('crm-f-needs').value = c.needs || '';
     document.getElementById('crm-f-admin').value = c.admin || '';
     document.getElementById('crm-f-agent').value = c.agent || 'Andy';
-    document.getElementById('crm-f-source').value = c.source || '';
+    // source: 如果是预定义值就直接选,否则切到"其他"并填充
+    const src = c.source || '';
+    if (!src) {
+      document.getElementById('crm-f-source').value = '';
+      if (sourceOther) { sourceOther.value = ''; sourceOther.style.display = 'none'; }
+    } else if (CRM_PREDEFINED_SOURCES.includes(src)) {
+      document.getElementById('crm-f-source').value = src;
+      if (sourceOther) { sourceOther.value = ''; sourceOther.style.display = 'none'; }
+    } else {
+      document.getElementById('crm-f-source').value = '__other__';
+      if (sourceOther) { sourceOther.value = src; sourceOther.style.display = 'block'; }
+    }
     document.getElementById('crm-f-status').value = c.status || '新客户';
     crmFormTier = c.tier || 'normal';
     statusWrap.style.display = 'block';
@@ -3720,6 +3746,19 @@ function crmDealChange() {
   const deal = document.getElementById('crm-f-deal').value;
   const label = document.getElementById('crm-f-amount-label');
   if (label) label.textContent = '预算 · ' + crmAmountLabel(deal);
+}
+
+// Called when source dropdown changes: show/hide the 其他 input
+function crmSourceChange() {
+  const v = document.getElementById('crm-f-source').value;
+  const other = document.getElementById('crm-f-source-other');
+  if (!other) return;
+  if (v === '__other__') {
+    other.style.display = 'block';
+    other.focus();
+  } else {
+    other.style.display = 'none';
+  }
 }
 
 function crmPickPill(field, value) {
@@ -3741,7 +3780,12 @@ async function crmSaveClient() {
   if (!name) { alert('请填写客户姓名'); return; }
   const deal = document.getElementById('crm-f-deal').value;
   if (!deal) { alert('请选择交易类型'); return; }
-  const source = document.getElementById('crm-f-source').value;
+  const sourceRaw = document.getElementById('crm-f-source').value;
+  let source = sourceRaw;
+  if (sourceRaw === '__other__') {
+    source = document.getElementById('crm-f-source-other').value.trim();
+    if (!source) { alert('请填写「其他」来源的具体内容'); return; }
+  }
   if (!source) { alert('请选择来源'); return; }
 
   const btn = document.getElementById('crm-f-save-btn');
@@ -3768,6 +3812,7 @@ async function crmSaveClient() {
     if (crmFormMode === 'new') {
       clientData.id = now.toString();
       clientData.status = '新客户';
+      clientData.closedAt = 0;
       clientData.createdAt = now;
       clientData.timeline = [{ time: now, text: '客户创建' + (clientData.needs ? '：' + clientData.needs : '') }];
       const data = await asLark({ action: 'crm_create', client: clientData });
@@ -3783,6 +3828,12 @@ async function crmSaveClient() {
       if (newStatus !== existing.status) {
         updated.status = newStatus;
         updated.timeline = [...(existing.timeline || []), { time: now, text: `状态变更：${existing.status} → ${newStatus}` }];
+        // 进入成交:记录 closedAt;离开成交:清空
+        if (newStatus === '成交' && existing.status !== '成交') {
+          updated.closedAt = now;
+        } else if (existing.status === '成交' && newStatus !== '成交') {
+          updated.closedAt = 0;
+        }
       }
       const data = await asLark({ action: 'crm_update', lark_id: existing._lark_id, client: updated });
       if (!data.success) throw new Error(data.error || '保存失败');
@@ -3849,6 +3900,7 @@ function crmRenderDetailBody(c) {
         <div style="color:var(--text3);">负责</div><div>${crmEscape(c.admin) || '—'}${c.agent ? ' / ' + crmEscape(c.agent) : ''}</div>
         <div style="color:var(--text3);">来源</div><div>${crmEscape(c.source) || '<span style="color:var(--text3);">—</span>'}</div>
         <div style="color:var(--text3);">创建</div><div>${crmFmtDate(c.createdAt)}</div>
+        <div style="color:var(--text3);">服务时间</div><div>${crmServiceTimeLabel(c)}</div>
       </div>
     </div>
 
@@ -3885,6 +3937,12 @@ async function crmQuickChangeStatus(id, newStatus) {
     updatedAt: now,
     timeline: [...(c.timeline || []), { time: now, text: `状态变更：${c.status} → ${newStatus}` }],
   };
+  // 状态 → 成交:记录 closedAt;离开成交:清空 closedAt
+  if (newStatus === '成交' && c.status !== '成交') {
+    updated.closedAt = now;
+  } else if (c.status === '成交' && newStatus !== '成交') {
+    updated.closedAt = 0;
+  }
   try {
     const data = await asLark({ action: 'crm_update', lark_id: c._lark_id, client: updated });
     if (!data.success) throw new Error(data.error || '更新失败');
