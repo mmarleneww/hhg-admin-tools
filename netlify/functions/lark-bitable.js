@@ -71,7 +71,7 @@ function asFieldsToCase(record) {
 
 // ── CRM field mapping ─────────────────────────────────────────────────────────
 const CRM_FIELDS = {
-  primary:   '客户姓名',
+  primary:   '多行文本',  // Bitable 默认主键字段名(自动生成),保持和实际表一致
   contact:   '联系方式',
   type:      '客户类型',
   tier:      '客户等级',
