@@ -1218,9 +1218,13 @@
           <div class="crm-col-header"><span class="crm-col-title">新客户</span><span class="crm-col-count" data-count-status="新客户">0</span></div>
           <div class="crm-col-body" data-body-status="新客户"></div>
         </div>
-        <div class="crm-col" data-status="发房源">
-          <div class="crm-col-header"><span class="crm-col-title">发房源</span><span class="crm-col-count" data-count-status="发房源">0</span></div>
-          <div class="crm-col-body" data-body-status="发房源"></div>
+        <div class="crm-col" data-status="待发房源">
+          <div class="crm-col-header"><span class="crm-col-title">待发房源</span><span class="crm-col-count" data-count-status="待发房源">0</span></div>
+          <div class="crm-col-body" data-body-status="待发房源"></div>
+        </div>
+        <div class="crm-col" data-status="已发房源等回复">
+          <div class="crm-col-header"><span class="crm-col-title">已发房源等回复</span><span class="crm-col-count" data-count-status="已发房源等回复">0</span></div>
+          <div class="crm-col-body" data-body-status="已发房源等回复"></div>
         </div>
         <div class="crm-col" data-status="看房中">
           <div class="crm-col-header"><span class="crm-col-title">看房中</span><span class="crm-col-count" data-count-status="看房中">0</span></div>
@@ -1347,7 +1351,8 @@
             <label>状态</label>
             <select id="crm-f-status">
               <option value="新客户">新客户</option>
-              <option value="发房源">发房源</option>
+              <option value="待发房源">待发房源</option>
+              <option value="已发房源等回复">已发房源等回复</option>
               <option value="看房中">看房中</option>
               <option value="谈Offer">谈Offer</option>
               <option value="成交">成交</option>
@@ -3403,7 +3408,7 @@ let crmFormMode = 'new';            // 'new' | 'edit'
 let crmFormEditingId = null;
 let crmFormTier = 'normal';
 let crmDetailId = null;
-const CRM_STATUSES = ['新客户', '发房源', '看房中', '谈Offer', '成交'];
+const CRM_STATUSES = ['新客户', '待发房源', '已发房源等回复', '看房中', '谈Offer', '成交'];
 const CRM_LS_KEY = 'hhg_crm_clients_cache';  // localStorage fallback
 
 // Compute color (red/yellow/green) based on tier + deal type + amount
