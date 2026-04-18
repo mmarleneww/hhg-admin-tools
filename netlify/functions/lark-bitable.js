@@ -86,6 +86,11 @@ const CRM_FIELDS = {
   createdAt: '创建时间',
   updatedAt: '最近更新',
   closedAt:  '成交时间',
+  // ── Phase 3a 新增 ─────────────────────────────────────────────────────
+  role:        '客户角色',     // tenant/buyer/seller/landlord(默认 tenant)
+  nextAction:  '下一步动作',   // 待办类型(发房源/催客户回房源/...)
+  nextDueAt:   '下次跟进时间', // 何时该做这个动作
+  nextNotes:   '下一步备注',   // 上下文(选填)
 };
 
 function crmClientToFields(c) {
@@ -104,10 +109,18 @@ function crmClientToFields(c) {
     [CRM_FIELDS.timeline]:  JSON.stringify(c.timeline || []),
     [CRM_FIELDS.createdAt]: c.createdAt || Date.now(),
     [CRM_FIELDS.updatedAt]: c.updatedAt || Date.now(),
+    // ── Phase 3a 新增 ─────────────────────────────────────────────────
+    [CRM_FIELDS.role]:       c.role || 'tenant',     // 默认租客
+    [CRM_FIELDS.nextAction]: c.nextAction || '',
+    [CRM_FIELDS.nextNotes]:  c.nextNotes || '',
   };
   // closedAt:>0 时写入;=0/null 时不发该字段(Lark datetime 传 null 会报错;清空逻辑留给批 3)
   if (c.closedAt && c.closedAt > 0) {
     fields[CRM_FIELDS.closedAt] = c.closedAt;
+  }
+  // nextDueAt 同样:Date 类型,>0 才写入
+  if (c.nextDueAt && c.nextDueAt > 0) {
+    fields[CRM_FIELDS.nextDueAt] = c.nextDueAt;
   }
   return fields;
 }
@@ -134,6 +147,11 @@ function crmFieldsToClient(record) {
     createdAt: f[CRM_FIELDS.createdAt] || Date.now(),
     updatedAt: f[CRM_FIELDS.updatedAt] || Date.now(),
     closedAt:  f[CRM_FIELDS.closedAt]  || 0,
+    // ── Phase 3a 新增 ─────────────────────────────────────────────────
+    role:       f[CRM_FIELDS.role]       || 'tenant',
+    nextAction: f[CRM_FIELDS.nextAction] || '',
+    nextDueAt:  f[CRM_FIELDS.nextDueAt]  || 0,
+    nextNotes:  f[CRM_FIELDS.nextNotes]  || '',
   };
 }
 
@@ -156,8 +174,8 @@ const REC_FIELDS = {
   link:       '房源链接',
   source:     '房源来源',     // PG / 中介cobroke / 自有房源 / 其他
   address:    '地址',
-  price:      '价格',
-  priceType:  '价格类型',     // 月租 / 总价
+  price:      '价格',         // 租房=月租金额 / 买房=总价(由所属客户的 deal 决定)
+  priceType:  '价格类型',     // 月租 / 总价(冗余存,显示用)
   rooms:      '房型',         // "2房2卫"
   area:       '面积',         // sqft
   furnishing: '家具',
@@ -167,11 +185,15 @@ const REC_FIELDS = {
   agentPhone: '中介电话',
   agentCo:    '中介公司',
   cea:        'CEA',
-  status:     '状态',         // 备选/已发送/待约看/已约看/看过/Offer中/成交/拒绝
-  noShow:     '曾爽约',       // "是" / 空
-  viewLog:    '看房记录',     // JSON 数组
+  status:     '状态',         // 备选/已发送/约看房/Offer中/成交/拒绝(6 档,Phase 3a 定稿)
+  noShow:     '曾爽约',       // "是" / 空(预留,Phase 3b 用)
+  viewLog:    '看房记录',     // JSON 数组(预留,Phase 3b 用)
   createdAt:  '推荐时间',
   updatedAt:  '最近更新',
+  // ── Phase 3a 新增 ─────────────────────────────────────────────────────
+  viewTimeExact:   '看房时间精确', // Date 类型,精确时间戳,推 Lark Calendar 用
+  viewTimeDisplay: '看房时间显示', // Text 类型,Admin 看的、客户消息里用的(如"周五 10:15am"或"等中介回复")
+  viewNotes:       '看房备注',     // Text 类型,补充说明
 };
 
 function recRecToFields(r) {
@@ -193,12 +215,19 @@ function recRecToFields(r) {
     [REC_FIELDS.agentPhone]:   r.agentPhone || '',
     [REC_FIELDS.agentCo]:      r.agentCo || '',
     [REC_FIELDS.cea]:          r.cea || '',
-    [REC_FIELDS.status]:       r.status || '已发送',
+    [REC_FIELDS.status]:       r.status || '备选',  // Phase 3a:新房源默认进备选
     [REC_FIELDS.noShow]:       r.noShow || '',
     [REC_FIELDS.viewLog]:      JSON.stringify(r.viewLog || []),
     [REC_FIELDS.createdAt]:    r.createdAt || Date.now(),
     [REC_FIELDS.updatedAt]:    r.updatedAt || Date.now(),
+    // ── Phase 3a 新增 ─────────────────────────────────────────────────
+    [REC_FIELDS.viewTimeDisplay]: r.viewTimeDisplay || '',
+    [REC_FIELDS.viewNotes]:       r.viewNotes || '',
   };
+  // viewTimeExact:Date 类型,>0 才写入(避免传 null 导致 Lark 报错)
+  if (r.viewTimeExact && r.viewTimeExact > 0) {
+    fields[REC_FIELDS.viewTimeExact] = r.viewTimeExact;
+  }
   return fields;
 }
 
@@ -225,11 +254,15 @@ function recFieldsToRec(record) {
     agentPhone:   f[REC_FIELDS.agentPhone] || '',
     agentCo:      f[REC_FIELDS.agentCo]    || '',
     cea:          f[REC_FIELDS.cea]        || '',
-    status:       f[REC_FIELDS.status]     || '已发送',
+    status:       f[REC_FIELDS.status]     || '备选',  // Phase 3a:6 档默认值
     noShow:       f[REC_FIELDS.noShow]     || '',
     viewLog,
     createdAt:    f[REC_FIELDS.createdAt]  || Date.now(),
     updatedAt:    f[REC_FIELDS.updatedAt]  || Date.now(),
+    // ── Phase 3a 新增 ─────────────────────────────────────────────────
+    viewTimeExact:   f[REC_FIELDS.viewTimeExact]   || 0,
+    viewTimeDisplay: f[REC_FIELDS.viewTimeDisplay] || '',
+    viewNotes:       f[REC_FIELDS.viewNotes]       || '',
   };
 }
 
