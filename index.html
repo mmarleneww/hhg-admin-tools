@@ -1609,8 +1609,12 @@ let history = JSON.parse(localStorage.getItem('hhg_history') || '[]');
 function switchTab(tab) {
   // Phase 3a Tab 顺序:home / crm / repair / tools / history
   // search / daily / invoice 不再有顶部 Tab 入口,但 page 元素保留,可通过 switchTab 程序化打开
+  // 这些子页面进入时,顶部"工具"Tab 保持 active(因为它们都是从工具 Tab 二级入口下来的)
   const navIds = ['home', 'crm', 'repair', 'tools', 'history'];
-  document.querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('active', navIds[i] === tab));
+  // 子页面 → 父 Tab 映射
+  const childToParent = { search: 'tools', daily: 'tools', invoice: 'tools' };
+  const activeNavTab = childToParent[tab] || tab;
+  document.querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('active', navIds[i] === activeNavTab));
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   const pageEl = document.getElementById('page-' + tab);
   if (pageEl) pageEl.classList.add('active');
