@@ -1281,11 +1281,11 @@
               <label>交易类型 *</label>
               <select id="crm-f-deal" onchange="crmDealChange()">
                 <option value="">请选择</option>
-                <option value="买房">买房 (我方买方中介)</option>
-                <option value="卖房">卖房 (我方卖方中介)</option>
-                <option value="租房">租房 (我方租客中介)</option>
-                <option value="出租">出租 (我方房东中介)</option>
-                <option value="写字楼">写字楼 (Office)</option>
+                <option value="买房">买房</option>
+                <option value="卖房">卖房</option>
+                <option value="租房">租房</option>
+                <option value="出租">出租</option>
+                <option value="写字楼">写字楼</option>
                 <option value="Shophouse/Industrial">Shophouse/Industrial</option>
               </select>
             </div>
@@ -1299,7 +1299,7 @@
               </div>
             </div>
             <div class="crm-field">
-              <label id="crm-f-amount-label">预估金额 (S$)</label>
+              <label id="crm-f-amount-label">预算 (S$)</label>
               <input type="number" id="crm-f-amount" placeholder="选填" min="0">
             </div>
           </div>
@@ -1335,10 +1335,10 @@
               <option value="MKT Organic">MKT Organic</option>
               <option value="MKT 活动">MKT 活动</option>
               <option value="MKT PM">MKT PM</option>
-              <option value="Friend Referral">Friend Referral (朋友介绍,无返佣)</option>
-              <option value="Channel">Channel (渠道,有返佣)</option>
-              <option value="Dada">Dada (大渠道,返 30%)</option>
-              <option value="Agent Personal Deal">Agent Personal Deal (中介自带)</option>
+              <option value="Friend Referral">Friend Referral</option>
+              <option value="Channel">Channel</option>
+              <option value="Dada">Dada</option>
+              <option value="Agent Personal Deal">Agent Personal Deal</option>
             </select>
           </div>
           <div class="crm-field" id="crm-f-status-wrap" style="display:none;">
@@ -3719,7 +3719,7 @@ function crmShowForm(mode, id) {
 function crmDealChange() {
   const deal = document.getElementById('crm-f-deal').value;
   const label = document.getElementById('crm-f-amount-label');
-  if (label) label.textContent = '预估金额 · ' + crmAmountLabel(deal);
+  if (label) label.textContent = '预算 · ' + crmAmountLabel(deal);
 }
 
 function crmPickPill(field, value) {
