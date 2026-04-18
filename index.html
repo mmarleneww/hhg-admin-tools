@@ -486,6 +486,102 @@
     background: var(--accent-j); color: #fff; font-size: 13px; font-weight: 600; cursor: pointer;
   }
 
+  /* ═══ REC (推荐房源) 模块样式 ═══ */
+  .rec-section { margin-bottom: 14px; }
+  .rec-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+  .rec-add-btn {
+    padding: 4px 10px; background: var(--surface2); color: var(--text2);
+    border: 1px solid var(--border); border-radius: 6px;
+    font-size: 12px; font-weight: 500; cursor: pointer;
+  }
+  .rec-add-btn:hover { background: #fff; border-color: var(--accent-j); color: var(--accent-j); }
+  .rec-empty { font-size: 12px; color: var(--text3); text-align: center; padding: 12px 0; font-style: italic; }
+  .rec-group { margin-bottom: 10px; }
+  .rec-group-title {
+    font-size: 11px; color: var(--text3); font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.5px;
+    margin-bottom: 4px; padding-left: 2px;
+  }
+  .rec-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 7px; padding: 9px 11px; margin-bottom: 6px; cursor: pointer;
+  }
+  .rec-card:hover { border-color: var(--accent-j); }
+  .rec-card-row1 { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; color: var(--text); }
+  .rec-card-status {
+    font-size: 10px; font-weight: 500; padding: 1px 6px;
+    border-radius: 3px; white-space: nowrap;
+  }
+  .rec-status-备选     { background: #f0f0f0; color: #666; }
+  .rec-status-已发送   { background: #e3f2fd; color: #1565c0; }
+  .rec-status-待约看   { background: #fff3e0; color: #e65100; }
+  .rec-status-已约看   { background: #fff8e1; color: #f57f17; }
+  .rec-status-看过     { background: #e8f5e9; color: #2e7d32; }
+  .rec-status-Offer中  { background: #f3e5f5; color: #6a1b9a; font-weight: 600; }
+  .rec-status-成交     { background: #c8e6c9; color: #1b5e20; font-weight: 600; }
+  .rec-status-拒绝     { background: #ffebee; color: #c62828; }
+  .rec-card-addr { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .rec-card-noshow { font-size: 10px; color: #d42b2b; font-weight: 500; }
+  .rec-card-row2 {
+    font-size: 11px; color: var(--text2); margin-top: 3px;
+    display: flex; gap: 8px; flex-wrap: wrap;
+  }
+  .rec-card-row2 span { white-space: nowrap; }
+  .rec-card-row3 {
+    font-size: 10px; color: var(--text3); margin-top: 4px;
+    display: flex; gap: 6px; align-items: center; flex-wrap: wrap;
+  }
+  .rec-card-link { color: var(--accent-g); text-decoration: none; font-size: 11px; }
+
+  /* 房源详情弹窗:状态按钮组横滑 */
+  .rec-detail-status-row {
+    display: flex; gap: 5px; flex-wrap: wrap;
+  }
+  .rec-detail-status-btn {
+    font-size: 11px; padding: 4px 8px; border: 1px solid var(--border);
+    border-radius: 5px; background: #fff; color: var(--text2); cursor: pointer;
+    white-space: nowrap;
+  }
+  .rec-detail-status-btn:hover { border-color: var(--accent-j); color: var(--accent-j); }
+  .rec-detail-status-btn.active {
+    background: var(--accent-j); color: #fff; border-color: var(--accent-j); font-weight: 600;
+  }
+
+  /* 看房记录事件流 */
+  .rec-viewlog { margin-top: 8px; }
+  .rec-viewlog-item {
+    border-left: 2px solid var(--border); padding: 6px 10px; margin-bottom: 4px;
+    font-size: 12px;
+  }
+  .rec-viewlog-item.kind-预约      { border-left-color: #1565c0; }
+  .rec-viewlog-item.kind-改约      { border-left-color: #f57f17; }
+  .rec-viewlog-item.kind-爽约      { border-left-color: #d42b2b; }
+  .rec-viewlog-item.kind-看房完成   { border-left-color: #2e7d32; }
+  .rec-viewlog-time { color: var(--text3); font-size: 11px; }
+  .rec-viewlog-kind { font-weight: 600; margin: 0 4px; }
+  .rec-viewlog-text { color: var(--text2); margin-top: 2px; }
+
+  .rec-event-btns {
+    display: flex; gap: 5px; flex-wrap: wrap; margin-top: 8px;
+  }
+  .rec-event-btn {
+    font-size: 11px; padding: 5px 10px; background: var(--surface2);
+    border: 1px solid var(--border); border-radius: 5px; cursor: pointer; color: var(--text2);
+  }
+  .rec-event-btn:hover { background: #fff; border-color: var(--accent-j); color: var(--accent-j); }
+
+  /* 添加推荐房源弹窗 */
+  .rec-add-modal-textarea {
+    width: 100%; min-height: 100px; padding: 10px; border: 1px solid var(--border);
+    border-radius: 7px; font-size: 13px; font-family: inherit; resize: vertical;
+    background: var(--surface2); outline: none; box-sizing: border-box;
+  }
+  .rec-add-modal-textarea:focus { background: #fff; border-color: var(--accent-j); }
+  .rec-add-progress { font-size: 12px; color: var(--text3); margin-top: 8px; }
+  .rec-add-result-line { font-size: 12px; padding: 4px 0; }
+  .rec-add-result-ok { color: #2e7d32; }
+  .rec-add-result-err { color: #c62828; }
+
   /* Mobile: hide kanban by default on narrow screens, show list */
   @media (max-width: 640px) {
     .crm-col { flex: 0 0 85vw; min-width: 85vw; max-height: none; }
@@ -1361,6 +1457,38 @@
         </div>
       </div>
     </div>
+
+    <!-- 添加推荐房源弹窗 -->
+    <div id="rec-add-modal" class="crm-modal" style="display:none;" onclick="recCloseAdd(event)">
+      <div class="crm-modal-content" onclick="event.stopPropagation()">
+        <div class="crm-modal-header">
+          <div style="font-size:16px;font-weight:600;">+ 添加推荐房源</div>
+          <button onclick="recCloseAdd()" style="background:none;border:0;font-size:22px;color:var(--text3);cursor:pointer;padding:0 4px;">×</button>
+        </div>
+        <div class="crm-modal-body">
+          <div style="font-size:13px;color:var(--text2);margin-bottom:8px;">粘贴 PG 链接,每行一个。系统会自动提取地址、价格、中介等信息。</div>
+          <textarea id="rec-add-textarea" class="rec-add-modal-textarea" placeholder="https://www.propertyguru.com.sg/listing/...&#10;https://www.propertyguru.com.sg/listing/..."></textarea>
+          <div id="rec-add-progress" class="rec-add-progress" style="display:none;"></div>
+          <div id="rec-add-results" style="margin-top:8px;"></div>
+        </div>
+        <div style="padding:12px 18px 18px;display:flex;gap:10px;">
+          <button onclick="recCloseAdd()" style="flex:1;padding:11px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;font-size:14px;cursor:pointer;color:var(--text2);">关闭</button>
+          <button id="rec-add-submit-btn" onclick="recSubmitBatch()" style="flex:2;padding:11px;background:var(--accent-j);color:#fff;border:0;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;">开始提取</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 房源详情弹窗 -->
+    <div id="rec-detail-modal" class="crm-modal" style="display:none;" onclick="recCloseDetail(event)">
+      <div class="crm-modal-content" onclick="event.stopPropagation()">
+        <div class="crm-modal-header">
+          <div id="rec-detail-title" style="font-size:15px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;margin-right:10px;">房源详情</div>
+          <button onclick="recCloseDetail()" style="background:none;border:0;font-size:22px;color:var(--text3);cursor:pointer;padding:0 4px;">×</button>
+        </div>
+        <div class="crm-modal-body" id="rec-detail-body"></div>
+      </div>
+    </div>
+
   </div>
 </div>
 <!-- ═══════════════════════════════════════════════════════════════════════ -->
@@ -3924,6 +4052,8 @@ function crmOpenDetail(id) {
   document.getElementById('crm-detail-title').textContent = c.name || '客户详情';
   document.getElementById('crm-detail-body').innerHTML = crmRenderDetailBody(c);
   document.getElementById('crm-detail-modal').style.display = 'flex';
+  // 异步加载推荐房源
+  recLoadForClient(id);
 }
 
 function crmCloseDetail(evt) {
@@ -3973,6 +4103,17 @@ function crmRenderDetailBody(c) {
         <div class="crm-detail-val" style="white-space:pre-wrap;">${crmEscape(c.needs)}</div>
       </div>
     ` : ''}
+
+    <!-- 推荐房源 section,内容由 recLoadForClient 异步填充 -->
+    <div class="crm-detail-section rec-section">
+      <div class="rec-header">
+        <div class="crm-detail-label" style="margin-bottom:0;">推荐房源 <span id="rec-count-badge" style="color:var(--text3);font-weight:400;font-size:11px;"></span></div>
+        <button class="rec-add-btn" onclick="recOpenAdd()">+ 添加房源</button>
+      </div>
+      <div id="rec-list-container">
+        <div class="rec-empty">读取中...</div>
+      </div>
+    </div>
 
     <div class="crm-detail-section">
       <div class="crm-detail-label">跟进记录</div>
@@ -4065,6 +4206,485 @@ async function crmDeleteClient(id) {
   }
 }
 // ═══════════════════════════════════ END CRM MODULE ═══════════════════════════════════
+
+
+// ═══════════════════════════════════ REC MODULE (Phase 3a) ═══════════════════════════════════
+// 推荐房源管理:客户详情弹窗里的"推荐房源"section
+// 关键状态:备选 / 已发送 / 待约看 / 已约看 / 看过 / Offer中 / 成交 / 拒绝
+// 客户↔房源状态联动:取客户名下所有房源最"靠后"的状态决定客户状态
+
+const REC_STATUSES = ['备选', '已发送', '待约看', '已约看', '看过', 'Offer中', '成交', '拒绝'];
+// 显示分组顺序(把"备选"和"拒绝"放到最后,主流程在中间)
+const REC_GROUPS_ORDER = ['Offer中', '成交', '已约看', '待约看', '看过', '已发送', '备选', '拒绝'];
+// 状态优先级映射(数字越大越"靠后",用于联动重算客户状态)
+const REC_STATUS_RANK = { '备选': 0, '已发送': 1, '待约看': 2, '已约看': 3, '看过': 4, 'Offer中': 5, '成交': 6, '拒绝': -1 };
+// 房源 → 客户 状态映射
+const REC_TO_CRM = {
+  '已发送':   '已发房源等回复',
+  '待约看':   '看房中',
+  '已约看':   '看房中',
+  '看过':     '看房中',
+  'Offer中':  '谈Offer',
+  '成交':     '成交',
+};
+
+// 内存缓存:当前打开客户的房源列表
+let recCurrentClientId = null;
+let recCurrentList = [];
+let recDetailId = null;
+
+function recEscape(s) {
+  return String(s == null ? '' : s).replace(/[&<>"]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch]));
+}
+
+function recFmtPrice(price, priceType) {
+  if (!price || price === 0) return '—';
+  const n = Number(price).toLocaleString('en-US');
+  return priceType === '总价' ? `S$${n}` : `S$${n}/月`;
+}
+
+function recFmtDate(ts) {
+  if (!ts) return '';
+  const d = new Date(ts);
+  const today = new Date();
+  const sameDay = d.toDateString() === today.toDateString();
+  if (sameDay) return '今天 ' + d.toTimeString().substring(0, 5);
+  return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }) + ' ' + d.toTimeString().substring(0, 5);
+}
+
+// ── REC API 调用包装 ────────────────────────────────────────────────────
+async function recApi(action, body = {}) {
+  const res = await fetch('/.netlify/functions/lark-bitable', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action, ...body }),
+  });
+  return res.json();
+}
+
+// ── 加载某客户名下所有推荐房源 ─────────────────────────────────────────────
+async function recLoadForClient(clientId) {
+  recCurrentClientId = clientId;
+  const container = document.getElementById('rec-list-container');
+  if (!container) return;
+  try {
+    const data = await recApi('rec_list', { client_id: clientId });
+    if (data.success && Array.isArray(data.recs)) {
+      recCurrentList = data.recs;
+      recRenderList();
+    } else {
+      recCurrentList = [];
+      container.innerHTML = '<div class="rec-empty" style="color:#c62828;">读取失败:' + recEscape(data.error || '未知错误') + '</div>';
+    }
+  } catch (err) {
+    recCurrentList = [];
+    container.innerHTML = '<div class="rec-empty" style="color:#c62828;">读取失败:' + recEscape(err.message) + '</div>';
+  }
+}
+
+// ── 渲染房源列表(按状态分组) ─────────────────────────────────────────────
+function recRenderList() {
+  const container = document.getElementById('rec-list-container');
+  const badge = document.getElementById('rec-count-badge');
+  if (!container) return;
+  if (badge) badge.textContent = recCurrentList.length > 0 ? `(${recCurrentList.length})` : '';
+  if (recCurrentList.length === 0) {
+    container.innerHTML = '<div class="rec-empty">暂无推荐房源,点 + 添加</div>';
+    return;
+  }
+  // 按状态分组
+  const groups = {};
+  recCurrentList.forEach(r => {
+    const status = r.status || '已发送';
+    if (!groups[status]) groups[status] = [];
+    groups[status].push(r);
+  });
+  // 按 GROUPS_ORDER 顺序输出
+  const html = REC_GROUPS_ORDER.filter(s => groups[s] && groups[s].length).map(s => `
+    <div class="rec-group">
+      <div class="rec-group-title">${s} (${groups[s].length})</div>
+      ${groups[s].map(r => recRenderCard(r)).join('')}
+    </div>
+  `).join('');
+  container.innerHTML = html;
+}
+
+// ── 单个房源卡片 ─────────────────────────────────────────────────────────
+function recRenderCard(r) {
+  const addr = r.address || '(无地址)';
+  const priceDisplay = recFmtPrice(r.price, r.priceType);
+  const statusClass = r.status ? `rec-status-${r.status}` : '';
+  const noShowBadge = r.noShow === '是' ? '<span class="rec-card-noshow">⚠ 曾爽约</span>' : '';
+  const meta = [];
+  if (r.rooms) meta.push(`<span>${recEscape(r.rooms)}</span>`);
+  if (priceDisplay !== '—') meta.push(`<span>${recEscape(priceDisplay)}</span>`);
+  if (r.area) meta.push(`<span>${r.area} sqft</span>`);
+  if (r.furnishing) meta.push(`<span>${recEscape(r.furnishing)}</span>`);
+  if (r.availability) meta.push(`<span>${recEscape(r.availability)}</span>`);
+  const agentLine = [];
+  if (r.agentName) agentLine.push(recEscape(r.agentName));
+  if (r.agentPhone) agentLine.push(`<a href="tel:${recEscape(r.agentPhone)}" onclick="event.stopPropagation()" class="rec-card-link">${recEscape(r.agentPhone)}</a>`);
+  if (r.agentCo) agentLine.push(recEscape(r.agentCo));
+  return `
+    <div class="rec-card" onclick="recOpenDetail('${r._lark_id}')">
+      <div class="rec-card-row1">
+        <span class="rec-card-status ${statusClass}">${recEscape(r.status || '已发送')}</span>
+        <span class="rec-card-addr">${recEscape(addr)}</span>
+        ${noShowBadge}
+      </div>
+      ${meta.length ? `<div class="rec-card-row2">${meta.join('')}</div>` : ''}
+      ${agentLine.length || r.mrt ? `<div class="rec-card-row3">${agentLine.join(' · ')}${r.mrt ? (agentLine.length ? ' · ' : '') + '🚇 ' + recEscape(r.mrt) : ''}</div>` : ''}
+    </div>
+  `;
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// 添加推荐房源弹窗
+// ═══════════════════════════════════════════════════════════════════════
+function recOpenAdd() {
+  if (!recCurrentClientId) { alert('请先打开客户详情'); return; }
+  document.getElementById('rec-add-textarea').value = '';
+  document.getElementById('rec-add-progress').style.display = 'none';
+  document.getElementById('rec-add-results').innerHTML = '';
+  document.getElementById('rec-add-submit-btn').disabled = false;
+  document.getElementById('rec-add-submit-btn').textContent = '开始提取';
+  document.getElementById('rec-add-modal').style.display = 'flex';
+}
+
+function recCloseAdd(evt) {
+  if (evt && evt.target.id !== 'rec-add-modal') return;
+  document.getElementById('rec-add-modal').style.display = 'none';
+}
+
+async function recSubmitBatch() {
+  const textarea = document.getElementById('rec-add-textarea');
+  const lines = textarea.value.split('\n').map(l => l.trim()).filter(l => l && l.startsWith('http'));
+  if (lines.length === 0) { alert('请输入至少一个 PG 链接'); return; }
+  const submitBtn = document.getElementById('rec-add-submit-btn');
+  const progress = document.getElementById('rec-add-progress');
+  const results = document.getElementById('rec-add-results');
+  submitBtn.disabled = true;
+  results.innerHTML = '';
+  progress.style.display = 'block';
+
+  // 找客户姓名(冗余存到房源记录里)
+  const client = crmClients.find(c => c.id === recCurrentClientId);
+  const clientName = client ? client.name : '';
+  // 价格类型由客户的交易类型推断(简化:买房/卖房=总价,其他=月租)
+  const priceType = (client && (client.deal === '买房' || client.deal === '卖房')) ? '总价' : '月租';
+
+  let okCount = 0, errCount = 0;
+  for (let i = 0; i < lines.length; i++) {
+    const url = lines[i];
+    progress.textContent = `处理中 ${i + 1}/${lines.length}: ${url.substring(0, 50)}...`;
+    try {
+      // 1. 调 pg-search 单链接提取
+      const pgRes = await fetch('/.netlify/functions/pg-search', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ _extractUrl: url }),
+      });
+      const pgData = await pgRes.json();
+      if (!pgData.success || !pgData.listing) {
+        errCount++;
+        results.innerHTML += `<div class="rec-add-result-line rec-add-result-err">✗ ${recEscape(url.substring(0, 60))}: ${recEscape(pgData.error || '提取失败')}</div>`;
+        continue;
+      }
+      const L = pgData.listing;
+      // 2. 构建 rec 对象写入 Bitable
+      const rec = {
+        id: 'rec_' + Date.now() + '_' + i,
+        clientId: recCurrentClientId,
+        clientName,
+        link: url,
+        source: 'PG',
+        address: L.address || L.projectName || L.streetAddress || '',
+        price: Number(L.priceRaw) || 0,
+        priceType,
+        rooms: (L.beds && L.baths) ? `${L.beds}房${L.baths}卫` : (L.beds ? `${L.beds}房` : ''),
+        area: Number(L.areaSqft) || 0,
+        furnishing: L.furnishing || '',
+        availability: L.availability || '',
+        mrt: L.mrt || '',
+        agentName:  L.agent?.name  || '',
+        agentPhone: L.agent?.phone || '',
+        agentCo:    L.agent?.agency || '',
+        cea:        L.agent?.cea   || '',
+        status: '已发送',
+        noShow: '',
+        viewLog: [],
+      };
+      const createRes = await recApi('rec_create', { rec });
+      if (createRes.success) {
+        okCount++;
+        results.innerHTML += `<div class="rec-add-result-line rec-add-result-ok">✓ ${recEscape(rec.address || url.substring(0, 50))}</div>`;
+      } else {
+        errCount++;
+        results.innerHTML += `<div class="rec-add-result-line rec-add-result-err">✗ ${recEscape(rec.address || url.substring(0, 50))}: 写入失败 ${recEscape(createRes.error || createRes.msg || '')}</div>`;
+      }
+    } catch (err) {
+      errCount++;
+      results.innerHTML += `<div class="rec-add-result-line rec-add-result-err">✗ ${recEscape(url.substring(0, 60))}: ${recEscape(err.message)}</div>`;
+    }
+  }
+  progress.textContent = `完成。成功 ${okCount} 条,失败 ${errCount} 条。`;
+  submitBtn.textContent = '完成';
+
+  // 重新加载列表
+  if (okCount > 0) {
+    await recLoadForClient(recCurrentClientId);
+    // 触发客户状态联动
+    await recRecomputeClientStatus(recCurrentClientId);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// 房源详情弹窗:状态切换 + 看房记录事件流
+// ═══════════════════════════════════════════════════════════════════════
+function recOpenDetail(larkId) {
+  const r = recCurrentList.find(x => x._lark_id === larkId);
+  if (!r) return;
+  recDetailId = larkId;
+  document.getElementById('rec-detail-title').textContent = r.address || '(无地址)';
+  document.getElementById('rec-detail-body').innerHTML = recRenderDetailBody(r);
+  document.getElementById('rec-detail-modal').style.display = 'flex';
+}
+
+function recCloseDetail(evt) {
+  if (evt && evt.target.id !== 'rec-detail-modal') return;
+  document.getElementById('rec-detail-modal').style.display = 'none';
+  recDetailId = null;
+}
+
+function recRenderDetailBody(r) {
+  const statusBtns = REC_STATUSES.map(s =>
+    `<span class="rec-detail-status-btn ${r.status === s ? 'active' : ''}" onclick="recChangeStatus('${r._lark_id}','${s}')">${s}</span>`
+  ).join('');
+  const viewLog = (r.viewLog || []).slice().reverse().map(v => `
+    <div class="rec-viewlog-item kind-${v.kind || ''}">
+      <span class="rec-viewlog-time">${recFmtDate(v.time)}</span>
+      <span class="rec-viewlog-kind">${recEscape(v.kind || '')}</span>
+      ${v.text ? `<div class="rec-viewlog-text">${recEscape(v.text)}</div>` : ''}
+    </div>
+  `).join('') || '<div class="rec-empty">暂无看房记录</div>';
+  const linkBtn = r.link ? `<a href="${recEscape(r.link)}" target="_blank" style="color:var(--accent-g);font-size:12px;">🔗 PG 原链接</a>` : '';
+  const noShowBadge = r.noShow === '是' ? '<span style="color:#d42b2b;font-size:11px;font-weight:500;margin-left:8px;">⚠ 曾爽约</span>' : '';
+
+  const fields = [];
+  if (r.price) fields.push([recFmtPrice(r.price, r.priceType).includes('总价') ? '总价' : '月租', recFmtPrice(r.price, r.priceType)]);
+  if (r.rooms) fields.push(['房型', r.rooms]);
+  if (r.area) fields.push(['面积', r.area + ' sqft']);
+  if (r.furnishing) fields.push(['家具', r.furnishing]);
+  if (r.availability) fields.push(['入住', r.availability]);
+  if (r.mrt) fields.push(['MRT', r.mrt]);
+  if (r.agentName) fields.push(['中介', r.agentName]);
+  if (r.agentPhone) fields.push(['电话', r.agentPhone]);
+  if (r.agentCo) fields.push(['公司', r.agentCo]);
+  if (r.cea) fields.push(['CEA', r.cea]);
+
+  return `
+    <div class="crm-detail-section">
+      <div class="crm-detail-label">状态 ${noShowBadge}</div>
+      <div class="rec-detail-status-row">${statusBtns}</div>
+    </div>
+    <div class="crm-detail-section">
+      <div class="crm-detail-label">房源信息 ${linkBtn}</div>
+      <div style="display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:13px;">
+        ${fields.map(([k, v]) => `<div style="color:var(--text3);">${recEscape(k)}</div><div>${recEscape(v)}</div>`).join('')}
+      </div>
+    </div>
+    <div class="crm-detail-section">
+      <div class="crm-detail-label">看房记录</div>
+      <div class="rec-viewlog">${viewLog}</div>
+      <div class="rec-event-btns">
+        <button class="rec-event-btn" onclick="recAddEvent('预约')">+ 约看</button>
+        <button class="rec-event-btn" onclick="recAddEvent('改约')">+ 改约</button>
+        <button class="rec-event-btn" onclick="recAddEvent('爽约')">+ 爽约</button>
+        <button class="rec-event-btn" onclick="recAddEvent('看房完成')">+ 看房完成</button>
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;padding-top:10px;border-top:1px solid var(--border);margin-top:10px;">
+      <button onclick="recDelete('${r._lark_id}')" style="flex:1;padding:9px;background:#fff;border:1px solid #d42b2b;color:#d42b2b;border-radius:7px;font-size:13px;cursor:pointer;">删除房源</button>
+    </div>
+  `;
+}
+
+// ── 切换房源状态 ─────────────────────────────────────────────────────────
+async function recChangeStatus(larkId, newStatus) {
+  const r = recCurrentList.find(x => x._lark_id === larkId);
+  if (!r || r.status === newStatus) return;
+  const oldStatus = r.status;
+  const updated = { ...r, status: newStatus, updatedAt: Date.now() };
+
+  // 检查特殊情况:某房源进 成交,如果还有别的 Offer中,问要不要全标记拒绝
+  let othersToReject = [];
+  if (newStatus === '成交') {
+    othersToReject = recCurrentList.filter(x => x._lark_id !== larkId && x.status === 'Offer中');
+    if (othersToReject.length > 0) {
+      const yes = confirm(`这套房源标记为「成交」。\n\n您还有 ${othersToReject.length} 套房源在 Offer 中,是否一起标记为「拒绝」?\n\n点确定:其他全部标记拒绝\n点取消:其他保持 Offer 中`);
+      if (!yes) othersToReject = [];
+    }
+  }
+
+  try {
+    // 1. 更新当前房源
+    const res = await recApi('rec_update', { lark_id: larkId, rec: updated });
+    if (!res.success) throw new Error(res.error || '更新失败');
+    Object.assign(r, updated);
+    // 2. 批量拒绝其他 Offer 中房源
+    for (const other of othersToReject) {
+      const o = { ...other, status: '拒绝', updatedAt: Date.now() };
+      await recApi('rec_update', { lark_id: other._lark_id, rec: o });
+      Object.assign(other, o);
+    }
+    // 3. 重渲染当前 detail
+    document.getElementById('rec-detail-body').innerHTML = recRenderDetailBody(r);
+    recRenderList();
+    // 4. 联动客户状态
+    await recRecomputeClientStatus(recCurrentClientId);
+    showToast(`✓ 状态已改为 ${newStatus}`);
+  } catch (err) {
+    alert('更新失败:' + err.message);
+  }
+}
+
+// ── 添加看房记录事件 ─────────────────────────────────────────────────────
+async function recAddEvent(kind) {
+  const r = recCurrentList.find(x => x._lark_id === recDetailId);
+  if (!r) return;
+  let promptMsg, defaultText = '';
+  if (kind === '预约')      promptMsg = '约看时间(如 2026-04-22 10:00)及备注:';
+  else if (kind === '改约') promptMsg = '改约后的时间及原因:';
+  else if (kind === '爽约') promptMsg = '爽约原因(可选):';
+  else if (kind === '看房完成') promptMsg = '客户反馈:';
+  const text = prompt(promptMsg, defaultText);
+  if (text === null) return;  // 用户取消
+
+  const newEvent = { time: Date.now(), kind, text: text.trim() };
+  const updated = { ...r, viewLog: [...(r.viewLog || []), newEvent], updatedAt: Date.now() };
+
+  // 状态自动推进逻辑(可选)
+  let suggestedStatus = null;
+  if (kind === '预约' && (r.status === '已发送' || r.status === '待约看')) suggestedStatus = '已约看';
+  else if (kind === '看房完成' && (r.status === '已约看' || r.status === '待约看')) suggestedStatus = '看过';
+  else if (kind === '爽约') {
+    updated.noShow = '是';
+    if (r.status === '已约看') suggestedStatus = '待约看';
+  }
+
+  if (suggestedStatus && suggestedStatus !== r.status) {
+    if (confirm(`是否同时把状态从「${r.status}」改为「${suggestedStatus}」?`)) {
+      updated.status = suggestedStatus;
+    }
+  }
+
+  try {
+    const res = await recApi('rec_update', { lark_id: r._lark_id, rec: updated });
+    if (!res.success) throw new Error(res.error || '更新失败');
+    Object.assign(r, updated);
+    document.getElementById('rec-detail-body').innerHTML = recRenderDetailBody(r);
+    recRenderList();
+    if (suggestedStatus) await recRecomputeClientStatus(recCurrentClientId);
+    showToast('✓ 已记录');
+  } catch (err) {
+    alert('保存失败:' + err.message);
+  }
+}
+
+// ── 删除房源 ────────────────────────────────────────────────────────────
+async function recDelete(larkId) {
+  const r = recCurrentList.find(x => x._lark_id === larkId);
+  if (!r) return;
+  if (!confirm(`确认删除房源「${r.address || '(无地址)'}」?\n看房记录会一起删除,无法恢复。`)) return;
+  try {
+    const res = await recApi('rec_delete', { lark_id: larkId });
+    if (!res.success) throw new Error(res.error || '删除失败');
+    recCurrentList = recCurrentList.filter(x => x._lark_id !== larkId);
+    recCloseDetail();
+    recRenderList();
+    await recRecomputeClientStatus(recCurrentClientId);
+    showToast('✓ 已删除');
+  } catch (err) {
+    alert('删除失败:' + err.message);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// 客户↔房源 状态联动
+// ═══════════════════════════════════════════════════════════════════════
+// 规则:取客户名下所有房源中状态最"靠后"的那套,映射回客户状态
+// - 全是备选/拒绝/无房源 → 不动客户状态(让 admin 手动维护)
+// - 有 Offer中 → 客户=谈Offer
+// - 有成交 → 客户=成交(只在客户当前不是成交时才弹确认)
+// - 有看过/已约看/待约看 → 客户=看房中
+// - 只有已发送 → 客户=已发房源等回复
+async function recRecomputeClientStatus(clientId) {
+  if (!clientId) return;
+  const client = crmClients.find(c => c.id === clientId);
+  if (!client) return;
+  // 只看活跃房源(过滤掉拒绝)
+  const active = recCurrentList.filter(r => r.status && REC_STATUS_RANK[r.status] >= 0);
+  if (active.length === 0) return;  // 没有活跃房源,客户状态不动
+  // 找最靠后的房源状态
+  let topStatus = '已发送';
+  let topRank = -1;
+  active.forEach(r => {
+    const rank = REC_STATUS_RANK[r.status] ?? 0;
+    if (rank > topRank) { topRank = rank; topStatus = r.status; }
+  });
+  const newCrmStatus = REC_TO_CRM[topStatus];
+  if (!newCrmStatus || newCrmStatus === client.status) return;
+
+  // 成交联动需要弹确认(因为不可逆性强)
+  if (newCrmStatus === '成交') {
+    if (!confirm(`房源「${active.find(r => r.status === '成交')?.address || ''}」标记为成交。\n\n是否把客户「${client.name}」状态也改为「成交」?`)) {
+      return;
+    }
+  }
+
+  const now = Date.now();
+  const updated = {
+    ...client,
+    status: newCrmStatus,
+    updatedAt: now,
+    timeline: [...(client.timeline || []), { time: now, text: `状态联动:房源进入「${topStatus}」→ 客户改为「${newCrmStatus}」` }],
+  };
+  if (newCrmStatus === '成交' && client.status !== '成交') updated.closedAt = now;
+
+  try {
+    const data = await asLark({ action: 'crm_update', lark_id: client._lark_id, client: updated });
+    if (!data.success) throw new Error(data.error || '客户状态联动失败');
+    const idx = crmClients.findIndex(x => x.id === clientId);
+    if (idx >= 0) crmClients[idx] = updated;
+    try { localStorage.setItem(CRM_LS_KEY, JSON.stringify(crmClients)); } catch(e) {}
+    // 重渲染客户详情(状态行)+ kanban
+    if (document.getElementById('crm-detail-modal').style.display === 'flex') {
+      // 只更新状态按钮(避免覆盖推荐房源 section 异步加载的内容)
+      const statusRow = document.querySelector('.crm-status-row');
+      if (statusRow) {
+        statusRow.innerHTML = CRM_STATUSES.map(s =>
+          `<span class="crm-status-btn ${updated.status === s ? 'active' : ''}" onclick="crmQuickChangeStatus('${clientId}','${s}')">${s}</span>`
+        ).join('');
+      }
+    }
+    crmRender();
+  } catch (err) {
+    console.error('客户联动失败:', err);
+  }
+}
+
+// 拦截 crmQuickChangeStatus:客户从"成交"手动改回时,提示 admin 处理对应房源
+const _crmQuickChangeStatusOriginal = crmQuickChangeStatus;
+crmQuickChangeStatus = async function(id, newStatus) {
+  const c = crmClients.find(x => x.id === id);
+  if (c && c.status === '成交' && newStatus !== '成交') {
+    const ok = confirm(`客户从「成交」改回「${newStatus}」。\n\n注意:对应的「成交」房源不会自动改状态,需要您手动到房源里调整。\n\n继续吗?`);
+    if (!ok) return;
+  }
+  return _crmQuickChangeStatusOriginal(id, newStatus);
+};
+
+// ═══════════════════════════════════ END REC MODULE ═══════════════════════════════════
 
 </script>
 </body>
