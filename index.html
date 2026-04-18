@@ -524,12 +524,12 @@
     </div>
     <div class="tabs">
     <div class="tab active" onclick="switchTab('home')">首页</div>
-    <div class="tab" onclick="switchTab('search')">找房</div>
     <div class="tab" onclick="switchTab('crm')">客户</div>
-    <div class="tab" onclick="switchTab('daily')">日报</div>
     <div class="tab" onclick="switchTab('repair')">售后</div>
-    <div class="tab" onclick="switchTab('invoice')">发票</div>
+    <div class="tab" onclick="switchTab('tools')">工具</div>
     <div class="tab" onclick="switchTab('history')">记录</div>
+    <!-- 找房 Tab 入口已隐藏(代码保留在 page-search,可通过工具→单链接提取访问) -->
+    <!-- 日报/发票 Tab 入口已合并进"工具"二级导航 -->
   </div>
   </div><!-- /header-inner -->
 </div>
@@ -538,42 +538,38 @@
 <div class="page active" id="page-home">
   <div class="page-inner" style="padding-bottom:60px;">
 
-    <!-- 找房跟进 -->
-    <div style="font-size:10px;font-weight:600;color:var(--text3);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;display:flex;align-items:center;gap:6px;">找房 & 跟进 <span style="flex:1;height:1px;background:var(--border);display:block;"></span></div>
+    <!-- 主线业务 -->
+    <div style="font-size:10px;font-weight:600;color:var(--text3);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;display:flex;align-items:center;gap:6px;">主线业务 <span style="flex:1;height:1px;background:var(--border);display:block;"></span></div>
 
     <div style="background:var(--surface);border-radius:var(--radius-sm);border:1px solid var(--border);margin-bottom:14px;overflow:hidden;">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5px;background:var(--border);">
-        <div style="background:var(--surface);padding:14px 13px;cursor:pointer;" onclick="switchTab('search');setTimeout(()=>setFindStep(1),100)">
-          <div style="font-size:18px;margin-bottom:4px;">🔍</div>
-          <div style="font-size:13px;font-weight:600;">① 找房</div>
-          <div style="font-size:10px;color:var(--text3);margin-top:2px;line-height:1.4;">按条件搜房，勾选满意的</div>
-        </div>
-        <div style="background:var(--surface);padding:14px 13px;cursor:pointer;" onclick="switchTab('search');setTimeout(()=>{switchTab('search');setFindStep(1);toggleExtractor();},300)">
-          <div style="font-size:18px;margin-bottom:4px;">🔗</div>
-          <div style="font-size:13px;font-weight:600;">单链接提取</div>
-          <div style="font-size:10px;color:var(--text3);margin-top:2px;line-height:1.4;">粘贴PG链接，一键提取字段</div>
-        </div>
-        <div style="background:var(--surface);padding:14px 13px;cursor:pointer;grid-column:1/-1;" onclick="switchToStep2()">
-          <div style="font-size:13px;font-weight:600;">② 整理房源 → 发客户消息</div>
-          <div style="font-size:10px;color:var(--text3);margin-top:2px;">shortlist → 加亮点 → 生成微信消息</div>
+      <div style="display:grid;grid-template-columns:1fr;gap:0.5px;background:var(--border);">
+        <div style="background:var(--surface);padding:18px 16px;cursor:pointer;" onclick="switchTab('crm')">
+          <div style="display:flex;align-items:center;gap:12px;">
+            <div style="font-size:26px;">👥</div>
+            <div style="flex:1;">
+              <div style="font-size:15px;font-weight:600;margin-bottom:3px;">客户管理</div>
+              <div style="font-size:11px;color:var(--text3);line-height:1.4;">看板视图 · 推荐房源 · 跟进记录</div>
+            </div>
+            <div style="font-size:18px;color:var(--text3);">›</div>
+          </div>
         </div>
       </div>
     </div>
 
-    <!-- 日常运营 -->
-    <div style="font-size:10px;font-weight:600;color:var(--text3);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;display:flex;align-items:center;gap:6px;">日常运营 <span style="flex:1;height:1px;background:var(--border);display:block;"></span></div>
+    <!-- 日常工具 -->
+    <div style="font-size:10px;font-weight:600;color:var(--text3);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;display:flex;align-items:center;gap:6px;">日常工具 <span style="flex:1;height:1px;background:var(--border);display:block;"></span></div>
 
     <div style="background:var(--surface);border-radius:var(--radius-sm);border:1px solid var(--border);margin-bottom:14px;overflow:hidden;">
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.5px;background:var(--border);">
-        <div style="background:var(--surface);padding:14px 13px;cursor:pointer;" onclick="switchTab('daily')">
-          <div style="font-size:18px;margin-bottom:4px;">📝</div>
-          <div style="font-size:12px;font-weight:600;">日报整理</div>
-          <div style="font-size:10px;color:var(--text3);margin-top:2px;line-height:1.4;">随手记 → 标准日报</div>
-        </div>
         <div style="background:var(--surface);padding:14px 13px;cursor:pointer;" onclick="switchTab('repair')">
           <div style="font-size:18px;margin-bottom:4px;">🔧</div>
           <div style="font-size:12px;font-weight:600;">售后服务</div>
-          <div style="font-size:10px;color:var(--text3);margin-top:2px;line-height:1.4;">报修跟进，中英双语</div>
+          <div style="font-size:10px;color:var(--text3);margin-top:2px;line-height:1.4;">报修跟进,中英双语</div>
+        </div>
+        <div style="background:var(--surface);padding:14px 13px;cursor:pointer;" onclick="switchTab('tools')">
+          <div style="font-size:18px;margin-bottom:4px;">🛠</div>
+          <div style="font-size:12px;font-weight:600;">运营工具</div>
+          <div style="font-size:10px;color:var(--text3);margin-top:2px;line-height:1.4;">日报 · 发票 · PG 提取</div>
         </div>
         <div style="background:var(--surface);padding:14px 13px;cursor:pointer;" onclick="switchTab('history')">
           <div style="font-size:18px;margin-bottom:4px;">🗂</div>
@@ -590,15 +586,15 @@
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5px;background:var(--border);">
         <div style="background:var(--surface);padding:12px 13px;opacity:0.5;">
           <div style="font-size:12px;font-weight:500;">💬 看房反馈跟进</div>
-          <div style="font-size:10px;color:var(--text3);margin-top:2px;">输入反馈，生成跟进消息</div>
+          <div style="font-size:10px;color:var(--text3);margin-top:2px;">客户详情→推荐房源</div>
         </div>
         <div style="background:var(--surface);padding:12px 13px;opacity:0.5;">
           <div style="font-size:12px;font-weight:500;">📄 合同信息提取</div>
-          <div style="font-size:10px;color:var(--text3);margin-top:2px;">上传PDF，提取关键条款</div>
+          <div style="font-size:10px;color:var(--text3);margin-top:2px;">上传PDF,提取关键条款</div>
         </div>
         <div style="background:var(--surface);padding:12px 13px;opacity:0.5;">
-          <div style="font-size:12px;font-weight:500;">🧾 发票生成</div>
-          <div style="font-size:10px;color:var(--text3);margin-top:2px;">填写项目/金额，生成发票</div>
+          <div style="font-size:12px;font-weight:500;">📊 业务数据看板</div>
+          <div style="font-size:10px;color:var(--text3);margin-top:2px;">销售/客户漏斗</div>
         </div>
         <div style="background:var(--surface);padding:12px 13px;opacity:0.5;">
           <div style="font-size:12px;font-weight:500;">🎯 客户需求匹配</div>
@@ -1369,6 +1365,63 @@
 </div>
 <!-- ═══════════════════════════════════════════════════════════════════════ -->
 
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<!-- TOOLS PAGE — 二级导航集合页 -->
+<div class="page" id="page-tools">
+  <div class="page-inner" style="padding-bottom:60px;">
+
+    <div style="font-size:10px;font-weight:600;color:var(--text3);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;display:flex;align-items:center;gap:6px;">日常运营工具 <span style="flex:1;height:1px;background:var(--border);display:block;"></span></div>
+
+    <div style="background:var(--surface);border-radius:var(--radius-sm);border:1px solid var(--border);margin-bottom:14px;overflow:hidden;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5px;background:var(--border);">
+        <div style="background:var(--surface);padding:18px 14px;cursor:pointer;" onclick="switchTab('daily')">
+          <div style="font-size:22px;margin-bottom:6px;">📝</div>
+          <div style="font-size:14px;font-weight:600;margin-bottom:3px;">日报整理</div>
+          <div style="font-size:11px;color:var(--text3);line-height:1.4;">随手记 → AI 生成标准日报</div>
+        </div>
+        <div style="background:var(--surface);padding:18px 14px;cursor:pointer;" onclick="switchTab('invoice')">
+          <div style="font-size:22px;margin-bottom:6px;">🧾</div>
+          <div style="font-size:14px;font-weight:600;margin-bottom:3px;">发票生成</div>
+          <div style="font-size:11px;color:var(--text3);line-height:1.4;">填项目/金额 → 标准发票</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="font-size:10px;font-weight:600;color:var(--text3);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;display:flex;align-items:center;gap:6px;">辅助工具 <span style="flex:1;height:1px;background:var(--border);display:block;"></span></div>
+
+    <div style="background:var(--surface);border-radius:var(--radius-sm);border:1px solid var(--border);margin-bottom:14px;overflow:hidden;">
+      <div style="display:grid;grid-template-columns:1fr;gap:0.5px;background:var(--border);">
+        <div style="background:var(--surface);padding:16px 14px;cursor:pointer;" onclick="switchTab('search');setTimeout(()=>{toggleExtractor && toggleExtractor();},150)">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div style="font-size:20px;">🔗</div>
+            <div style="flex:1;">
+              <div style="font-size:14px;font-weight:600;margin-bottom:2px;">PG 单链接提取</div>
+              <div style="font-size:11px;color:var(--text3);line-height:1.4;">粘贴 PropertyGuru 链接,一键提取房源字段</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="font-size:10px;font-weight:600;color:var(--text3);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;display:flex;align-items:center;gap:6px;">即将上线 <span style="flex:1;height:1px;background:var(--border);display:block;"></span></div>
+
+    <div style="background:var(--surface);border-radius:var(--radius-sm);border:1px solid var(--border);margin-bottom:14px;overflow:hidden;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5px;background:var(--border);">
+        <div style="background:var(--surface);padding:14px;opacity:0.5;">
+          <div style="font-size:13px;font-weight:500;">📄 合同信息提取</div>
+          <div style="font-size:10px;color:var(--text3);margin-top:2px;">上传 PDF,提取关键条款</div>
+        </div>
+        <div style="background:var(--surface);padding:14px;opacity:0.5;">
+          <div style="font-size:13px;font-weight:500;">📊 数据看板</div>
+          <div style="font-size:10px;color:var(--text3);margin-top:2px;">业务数据统计</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+
 <div class="page" id="page-history">
   <div class="page-inner">
     <div id="history-list">
@@ -1554,9 +1607,10 @@ let selectedLang = '';
 let history = JSON.parse(localStorage.getItem('hhg_history') || '[]');
 
 function switchTab(tab) {
-  // listing is now inside search tab
-  const ids = ['home', 'search', 'crm', 'daily', 'repair', 'invoice', 'history'];
-  document.querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('active', ids[i] === tab));
+  // Phase 3a Tab 顺序:home / crm / repair / tools / history
+  // search / daily / invoice 不再有顶部 Tab 入口,但 page 元素保留,可通过 switchTab 程序化打开
+  const navIds = ['home', 'crm', 'repair', 'tools', 'history'];
+  document.querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('active', navIds[i] === tab));
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   const pageEl = document.getElementById('page-' + tab);
   if (pageEl) pageEl.classList.add('active');
