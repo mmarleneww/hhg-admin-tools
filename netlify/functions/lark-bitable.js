@@ -85,6 +85,7 @@ const CRM_FIELDS = {
   timeline:  '跟进记录',
   createdAt: '创建时间',
   updatedAt: '最近更新',
+  closedAt:  '成交时间',
 };
 
 function crmClientToFields(c) {
@@ -103,6 +104,7 @@ function crmClientToFields(c) {
     [CRM_FIELDS.timeline]:  JSON.stringify(c.timeline || []),
     [CRM_FIELDS.createdAt]: c.createdAt || Date.now(),
     [CRM_FIELDS.updatedAt]: c.updatedAt || Date.now(),
+    [CRM_FIELDS.closedAt]:  c.closedAt || 0,
   };
 }
 
@@ -127,6 +129,7 @@ function crmFieldsToClient(record) {
     timeline,
     createdAt: f[CRM_FIELDS.createdAt] || Date.now(),
     updatedAt: f[CRM_FIELDS.updatedAt] || Date.now(),
+    closedAt:  Number(f[CRM_FIELDS.closedAt]) || 0,
   };
 }
 
