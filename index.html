@@ -391,6 +391,7 @@
   }
   .crm-card-name { font-size: 14px; font-weight: 600; color: var(--text); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .crm-card-prio { font-size: 14px; line-height: 1; }
+  .crm-card-vip { font-size: 13px; line-height: 1; }
   .crm-card-meta { font-size: 11px; color: var(--text3); display: flex; gap: 6px; flex-wrap: wrap; margin-top: 2px; }
   .crm-card-meta span { background: var(--surface2); padding: 1px 6px; border-radius: 3px; }
   .crm-card-needs { font-size: 12px; color: var(--text2); margin-top: 5px; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
@@ -1176,12 +1177,11 @@
     <!-- CRM filter bar -->
     <div class="crm-filter-bar">
       <div class="crm-filter-group">
-        <span class="crm-filter-label">优先级</span>
-        <div class="crm-filter-chips" id="crm-filter-priority">
-          <div class="crm-chip active" data-val="all" onclick="crmSetFilter('priority','all')">全部</div>
-          <div class="crm-chip" data-val="high" onclick="crmSetFilter('priority','high')">🔴 高</div>
-          <div class="crm-chip" data-val="mid" onclick="crmSetFilter('priority','mid')">🟡 中</div>
-          <div class="crm-chip" data-val="low" onclick="crmSetFilter('priority','low')">🟢 普通</div>
+        <span class="crm-filter-label">等级</span>
+        <div class="crm-filter-chips" id="crm-filter-tier">
+          <div class="crm-chip active" data-val="all" onclick="crmSetFilter('tier','all')">全部</div>
+          <div class="crm-chip" data-val="vip" onclick="crmSetFilter('tier','vip')">⭐ VIP</div>
+          <div class="crm-chip" data-val="normal" onclick="crmSetFilter('tier','normal')">普通</div>
         </div>
       </div>
       <div class="crm-filter-group">
@@ -1192,6 +1192,16 @@
           <div class="crm-chip" data-val="Wiki" onclick="crmSetFilter('admin','Wiki')">Wiki</div>
           <div class="crm-chip" data-val="Yuting" onclick="crmSetFilter('admin','Yuting')">Yuting</div>
           <div class="crm-chip" data-val="Zico" onclick="crmSetFilter('admin','Zico')">Zico</div>
+        </div>
+      </div>
+      <div class="crm-filter-group">
+        <span class="crm-filter-label">Agent</span>
+        <div class="crm-filter-chips" id="crm-filter-agent">
+          <div class="crm-chip active" data-val="all" onclick="crmSetFilter('agent','all')">全部</div>
+          <div class="crm-chip" data-val="Andy" onclick="crmSetFilter('agent','Andy')">Andy</div>
+          <div class="crm-chip" data-val="Issac" onclick="crmSetFilter('agent','Issac')">Issac</div>
+          <div class="crm-chip" data-val="Boon Guan" onclick="crmSetFilter('agent','Boon Guan')">Boon Guan</div>
+          <div class="crm-chip" data-val="Connie" onclick="crmSetFilter('agent','Connie')">Connie</div>
         </div>
       </div>
     </div>
@@ -1268,19 +1278,29 @@
               </select>
             </div>
             <div class="crm-field">
-              <label>交易类型</label>
-              <select id="crm-f-deal">
-                <option value="租">租</option>
-                <option value="买">买</option>
+              <label>交易类型 *</label>
+              <select id="crm-f-deal" onchange="crmDealChange()">
+                <option value="">请选择</option>
+                <option value="买房">买房 (我方买方中介)</option>
+                <option value="卖房">卖房 (我方卖方中介)</option>
+                <option value="租房">租房 (我方租客中介)</option>
+                <option value="出租">出租 (我方房东中介)</option>
+                <option value="写字楼">写字楼 (Office)</option>
+                <option value="Shophouse/Industrial">Shophouse/Industrial</option>
               </select>
             </div>
           </div>
-          <div class="crm-field">
-            <label>优先级</label>
-            <div class="crm-pill-group" id="crm-f-priority-pills">
-              <div class="crm-pill" data-val="high" onclick="crmPickPill('priority','high')">🔴 高</div>
-              <div class="crm-pill active" data-val="mid" onclick="crmPickPill('priority','mid')">🟡 中</div>
-              <div class="crm-pill" data-val="low" onclick="crmPickPill('priority','low')">🟢 普通</div>
+          <div class="crm-field-row">
+            <div class="crm-field">
+              <label>客户等级</label>
+              <div class="crm-pill-group" id="crm-f-tier-pills">
+                <div class="crm-pill" data-val="vip" onclick="crmPickPill('tier','vip')">⭐ VIP</div>
+                <div class="crm-pill active" data-val="normal" onclick="crmPickPill('tier','normal')">普通</div>
+              </div>
+            </div>
+            <div class="crm-field">
+              <label id="crm-f-amount-label">预估金额 (S$)</label>
+              <input type="number" id="crm-f-amount" placeholder="选填" min="0">
             </div>
           </div>
           <div class="crm-field">
@@ -1309,8 +1329,17 @@
             </div>
           </div>
           <div class="crm-field">
-            <label>来源</label>
-            <input type="text" id="crm-f-source" placeholder="如：朋友介绍、小红书、客户转介">
+            <label>来源 *</label>
+            <select id="crm-f-source">
+              <option value="">请选择</option>
+              <option value="MKT Organic">MKT Organic</option>
+              <option value="MKT 活动">MKT 活动</option>
+              <option value="MKT PM">MKT PM</option>
+              <option value="Friend Referral">Friend Referral (朋友介绍,无返佣)</option>
+              <option value="Channel">Channel (渠道,有返佣)</option>
+              <option value="Dada">Dada (大渠道,返 30%)</option>
+              <option value="Agent Personal Deal">Agent Personal Deal (中介自带)</option>
+            </select>
           </div>
           <div class="crm-field" id="crm-f-status-wrap" style="display:none;">
             <label>状态</label>
@@ -3359,23 +3388,74 @@ function clearInvoice() {
 // ═══════════════════════════════════════════════════════════════════════════
 // CRM CLIENT PIPELINE MODULE (Phase 2)
 // Reads/writes Lark Bitable via crm_list / crm_create / crm_update / crm_delete
-// Data shape (from backend): {id, _lark_id, name, contact, type, priority, deal,
-//                             needs, admin, agent, source, status, timeline,
-//                             createdAt, updatedAt}
+// Data shape (from backend): {id, _lark_id, name, contact, type, tier, amount,
+//                             deal, needs, admin, agent, source, status,
+//                             timeline, createdAt, updatedAt}
 // ═══════════════════════════════════════════════════════════════════════════
 
 let crmClients = [];                // in-memory cache
 let crmLoaded = false;
 let crmView = window.innerWidth <= 640 ? 'list' : 'kanban';  // mobile defaults to list
-let crmFilters = { priority: 'all', admin: 'all' };
+let crmFilters = { tier: 'all', admin: 'all', agent: 'all' };
 let crmFormMode = 'new';            // 'new' | 'edit'
 let crmFormEditingId = null;
-let crmFormPriority = 'mid';
+let crmFormTier = 'normal';
 let crmDetailId = null;
 const CRM_STATUSES = ['新客户', '发房源', '看房中', '谈Offer', '成交'];
-const CRM_PRIO_ICON = { high: '🔴', mid: '🟡', low: '🟢' };
-const CRM_PRIO_LABEL = { high: '高', mid: '中', low: '普通' };
 const CRM_LS_KEY = 'hhg_crm_clients_cache';  // localStorage fallback
+
+// Compute color (red/yellow/green) based on tier + deal type + amount
+// Rules:
+//   🔴 Red:   VIP, or 买房/卖房 (any amount), or 写字楼 > $10k/mo,
+//             or 租房/出租 月租 > $20k
+//   🟡 Yellow: 租房/出租 $10k-$20k/mo, or 写字楼 ≤ $10k/mo, or Shophouse/Industrial
+//   🟢 Green:  租房/出租 < $10k/mo, or 金额未填
+function crmComputeColor(c) {
+  // VIP always red
+  if (c.tier === 'vip') return 'red';
+  const amt = Number(c.amount) || 0;
+  const deal = c.deal || '';
+  // Sales (买房/卖房) always red regardless of amount
+  if (deal === '买房' || deal === '卖房') return 'red';
+  // Office
+  if (deal === '写字楼') {
+    if (amt > 10000) return 'red';
+    return 'yellow';  // any office ≤10k or未填 → 黄 (共享写字楼)
+  }
+  // Shophouse/Industrial → default yellow
+  if (deal === 'Shophouse/Industrial') return 'yellow';
+  // Rental (租房/出租)
+  if (deal === '租房' || deal === '出租') {
+    if (amt === 0) return 'green';   // 金额未填默认绿
+    if (amt > 20000) return 'red';
+    if (amt >= 10000) return 'yellow';
+    return 'green';
+  }
+  // Unknown deal or empty
+  return 'green';
+}
+
+const CRM_COLOR_ICON = { red: '🔴', yellow: '🟡', green: '🟢' };
+
+// Format amount display based on deal type
+function crmAmountLabel(deal) {
+  if (deal === '买房' || deal === '卖房') return '总价 S$';
+  return '月租 S$';
+}
+
+function crmFmtAmount(amt, deal) {
+  if (!amt || amt === 0) return '';
+  const n = Number(amt);
+  if (deal === '买房' || deal === '卖房') {
+    // Purchase: display in millions if large
+    if (n >= 1000000) return `S$${(n / 1000000).toFixed(1)}M`;
+    if (n >= 1000) return `S$${(n / 1000).toFixed(0)}k`;
+    return `S$${n}`;
+  }
+  // Rental: display with /mo
+  if (n >= 1000) return `S$${(n / 1000).toFixed(1)}k/月`.replace('.0k', 'k');
+  return `S$${n}/月`;
+}
 
 // Initial load when Tab is opened
 async function crmOpenTab() {
@@ -3447,8 +3527,9 @@ function crmSetFilter(field, value) {
 
 function crmGetFilteredClients() {
   return crmClients.filter(c => {
-    if (crmFilters.priority !== 'all' && c.priority !== crmFilters.priority) return false;
+    if (crmFilters.tier !== 'all' && c.tier !== crmFilters.tier) return false;
     if (crmFilters.admin !== 'all' && c.admin !== crmFilters.admin) return false;
+    if (crmFilters.agent !== 'all' && c.agent !== crmFilters.agent) return false;
     return true;
   });
 }
@@ -3487,16 +3568,21 @@ function crmEscape(s) {
 
 function crmCardHTML(c) {
   const stale = crmIsStale(c);
-  const prio = CRM_PRIO_ICON[c.priority] || '🟡';
+  const color = crmComputeColor(c);
+  const colorIcon = CRM_COLOR_ICON[color];
+  const isVip = c.tier === 'vip';
+  const amtDisplay = crmFmtAmount(c.amount, c.deal);
   const metaTags = [];
   if (c.deal) metaTags.push(`<span>${crmEscape(c.deal)}</span>`);
-  if (c.type) metaTags.push(`<span>${crmEscape(c.type)}</span>`);
+  if (amtDisplay) metaTags.push(`<span>${crmEscape(amtDisplay)}</span>`);
   if (c.admin) metaTags.push(`<span>${crmEscape(c.admin)}</span>`);
+  if (c.agent) metaTags.push(`<span>${crmEscape(c.agent)}</span>`);
   return `
     <div class="crm-card ${stale ? 'stale' : ''}" onclick="crmOpenDetail('${c.id}')">
       <div class="crm-card-row1">
-        <span class="crm-card-prio">${prio}</span>
+        <span class="crm-card-prio">${colorIcon}</span>
         <span class="crm-card-name">${crmEscape(c.name) || '(未命名)'}</span>
+        ${isVip ? '<span class="crm-card-vip">⭐</span>' : ''}
       </div>
       ${metaTags.length ? `<div class="crm-card-meta">${metaTags.join('')}</div>` : ''}
       ${c.needs ? `<div class="crm-card-needs">${crmEscape(c.needs)}</div>` : ''}
@@ -3523,12 +3609,16 @@ function crmRender() {
 }
 
 function crmRenderKanban(clients) {
+  const colorRank = { red: 0, yellow: 1, green: 2 };
   CRM_STATUSES.forEach(status => {
     const body = document.querySelector(`[data-body-status="${status}"]`);
     const countEl = document.querySelector(`[data-count-status="${status}"]`);
     const inStatus = clients.filter(c => c.status === status);
-    // Sort: stale first (for non-closed), then by updatedAt desc
+    // Sort: color priority (red > yellow > green), then stale, then updatedAt desc
     inStatus.sort((a, b) => {
+      const aColor = colorRank[crmComputeColor(a)] ?? 2;
+      const bColor = colorRank[crmComputeColor(b)] ?? 2;
+      if (aColor !== bColor) return aColor - bColor;
       const aStale = crmIsStale(a) ? 1 : 0;
       const bStale = crmIsStale(b) ? 1 : 0;
       if (aStale !== bStale) return bStale - aStale;
@@ -3551,11 +3641,15 @@ function crmRenderList(clients) {
     box.innerHTML = '<div style="text-align:center;padding:40px 20px;color:var(--text3);font-size:13px;">暂无客户，点击右上角「+ 新客户」添加第一位客户</div>';
     return;
   }
+  const colorRank = { red: 0, yellow: 1, green: 2 };
   // Group by status
   const html = CRM_STATUSES.map(status => {
     const group = clients.filter(c => c.status === status);
     if (group.length === 0) return '';
     group.sort((a, b) => {
+      const aColor = colorRank[crmComputeColor(a)] ?? 2;
+      const bColor = colorRank[crmComputeColor(b)] ?? 2;
+      if (aColor !== bColor) return aColor - bColor;
       const aStale = crmIsStale(a) ? 1 : 0;
       const bStale = crmIsStale(b) ? 1 : 0;
       if (aStale !== bStale) return bStale - aStale;
@@ -3586,13 +3680,14 @@ function crmShowForm(mode, id) {
     document.getElementById('crm-f-name').value = '';
     document.getElementById('crm-f-contact').value = '';
     document.getElementById('crm-f-type').value = 'Residential';
-    document.getElementById('crm-f-deal').value = '租';
+    document.getElementById('crm-f-deal').value = '';
+    document.getElementById('crm-f-amount').value = '';
     document.getElementById('crm-f-needs').value = '';
     document.getElementById('crm-f-admin').value = '';
     document.getElementById('crm-f-agent').value = 'Andy';
     document.getElementById('crm-f-source').value = '';
     document.getElementById('crm-f-status').value = '新客户';
-    crmFormPriority = 'mid';
+    crmFormTier = 'normal';
     statusWrap.style.display = 'none';
   } else {
     const c = crmClients.find(x => x.id === id);
@@ -3601,26 +3696,36 @@ function crmShowForm(mode, id) {
     document.getElementById('crm-f-name').value = c.name || '';
     document.getElementById('crm-f-contact').value = c.contact || '';
     document.getElementById('crm-f-type').value = c.type || 'Residential';
-    document.getElementById('crm-f-deal').value = c.deal || '租';
+    document.getElementById('crm-f-deal').value = c.deal || '';
+    document.getElementById('crm-f-amount').value = c.amount && Number(c.amount) > 0 ? c.amount : '';
     document.getElementById('crm-f-needs').value = c.needs || '';
     document.getElementById('crm-f-admin').value = c.admin || '';
     document.getElementById('crm-f-agent').value = c.agent || 'Andy';
     document.getElementById('crm-f-source').value = c.source || '';
     document.getElementById('crm-f-status').value = c.status || '新客户';
-    crmFormPriority = c.priority || 'mid';
+    crmFormTier = c.tier || 'normal';
     statusWrap.style.display = 'block';
   }
-  // Update priority pills
-  document.querySelectorAll('#crm-f-priority-pills .crm-pill').forEach(p => {
-    p.classList.toggle('active', p.dataset.val === crmFormPriority);
+  // Update tier pills
+  document.querySelectorAll('#crm-f-tier-pills .crm-pill').forEach(p => {
+    p.classList.toggle('active', p.dataset.val === crmFormTier);
   });
+  // Update amount label based on deal type
+  crmDealChange();
   document.getElementById('crm-form-modal').style.display = 'flex';
 }
 
+// Called when deal type changes: update amount label
+function crmDealChange() {
+  const deal = document.getElementById('crm-f-deal').value;
+  const label = document.getElementById('crm-f-amount-label');
+  if (label) label.textContent = '预估金额 · ' + crmAmountLabel(deal);
+}
+
 function crmPickPill(field, value) {
-  if (field === 'priority') {
-    crmFormPriority = value;
-    document.querySelectorAll('#crm-f-priority-pills .crm-pill').forEach(p => {
+  if (field === 'tier') {
+    crmFormTier = value;
+    document.querySelectorAll('#crm-f-tier-pills .crm-pill').forEach(p => {
       p.classList.toggle('active', p.dataset.val === value);
     });
   }
@@ -3634,22 +3739,28 @@ function crmCloseForm(evt) {
 async function crmSaveClient() {
   const name = document.getElementById('crm-f-name').value.trim();
   if (!name) { alert('请填写客户姓名'); return; }
+  const deal = document.getElementById('crm-f-deal').value;
+  if (!deal) { alert('请选择交易类型'); return; }
+  const source = document.getElementById('crm-f-source').value;
+  if (!source) { alert('请选择来源'); return; }
 
   const btn = document.getElementById('crm-f-save-btn');
   btn.disabled = true;
   btn.textContent = '保存中...';
 
   const now = Date.now();
+  const amtRaw = document.getElementById('crm-f-amount').value;
   const clientData = {
     name,
     contact: document.getElementById('crm-f-contact').value.trim(),
     type: document.getElementById('crm-f-type').value,
-    priority: crmFormPriority,
-    deal: document.getElementById('crm-f-deal').value,
+    tier: crmFormTier,
+    amount: amtRaw ? Number(amtRaw) : 0,
+    deal,
     needs: document.getElementById('crm-f-needs').value.trim(),
     admin: document.getElementById('crm-f-admin').value,
     agent: document.getElementById('crm-f-agent').value,
-    source: document.getElementById('crm-f-source').value.trim(),
+    source,
     updatedAt: now,
   };
 
@@ -3708,7 +3819,10 @@ function crmCloseDetail(evt) {
 }
 
 function crmRenderDetailBody(c) {
-  const prio = `${CRM_PRIO_ICON[c.priority] || '🟡'} ${CRM_PRIO_LABEL[c.priority] || '中'}`;
+  const color = crmComputeColor(c);
+  const colorIcon = CRM_COLOR_ICON[color];
+  const tierDisplay = c.tier === 'vip' ? '⭐ VIP' : '普通';
+  const amtDisplay = crmFmtAmount(c.amount, c.deal) || '—';
   const statusRow = CRM_STATUSES.map(s =>
     `<span class="crm-status-btn ${c.status === s ? 'active' : ''}" onclick="crmQuickChangeStatus('${c.id}','${s}')">${s}</span>`
   ).join('');
@@ -3728,9 +3842,10 @@ function crmRenderDetailBody(c) {
     <div class="crm-detail-section">
       <div class="crm-detail-label">基本信息</div>
       <div style="display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:13px;">
-        <div style="color:var(--text3);">优先级</div><div>${prio}</div>
+        <div style="color:var(--text3);">标签</div><div>${colorIcon} ${tierDisplay}</div>
         <div style="color:var(--text3);">联系方式</div><div>${crmEscape(c.contact) || '<span style="color:var(--text3);">—</span>'}</div>
-        <div style="color:var(--text3);">类型</div><div>${crmEscape(c.type) || '—'} · ${crmEscape(c.deal) || '—'}</div>
+        <div style="color:var(--text3);">交易类型</div><div>${crmEscape(c.deal) || '—'} · ${crmEscape(c.type) || '—'}</div>
+        <div style="color:var(--text3);">${crmAmountLabel(c.deal)}</div><div>${amtDisplay}</div>
         <div style="color:var(--text3);">负责</div><div>${crmEscape(c.admin) || '—'}${c.agent ? ' / ' + crmEscape(c.agent) : ''}</div>
         <div style="color:var(--text3);">来源</div><div>${crmEscape(c.source) || '<span style="color:var(--text3);">—</span>'}</div>
         <div style="color:var(--text3);">创建</div><div>${crmFmtDate(c.createdAt)}</div>
