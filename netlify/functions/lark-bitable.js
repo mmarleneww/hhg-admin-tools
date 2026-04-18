@@ -1,13 +1,13 @@
 // netlify/functions/lark-bitable.js
 // Lark Bitable API bridge for HHG After-Sales + CRM
 
-const APP_ID = process.env.LARK_APP_ID;
+const APP_ID     = process.env.LARK_APP_ID;
 const APP_SECRET = process.env.LARK_APP_SECRET;
 const BASE_TOKEN = process.env.LARK_BASE_TOKEN;
-const TABLE_ID = process.env.LARK_TABLE_ID; // After-sales table
-const CRM_TABLE = process.env.LARK_CRM_TABLE_ID; // CRM clients table
+const TABLE_ID   = process.env.LARK_TABLE_ID;      // After-sales table
+const CRM_TABLE  = process.env.LARK_CRM_TABLE_ID;  // CRM clients table
 
-const LARK_API = 'https://open.larksuite.com/open-apis';
+const LARK_API  = 'https://open.larksuite.com/open-apis';
 
 async function getTenantToken() {
   const res = await fetch(`${LARK_API}/auth/v3/tenant_access_token/internal`, {
@@ -22,47 +22,36 @@ async function getTenantToken() {
 
 // ── After-sales field mapping ─────────────────────────────────────────────────
 const AS_FIELDS = {
-  primary: 'Text',
-  id: 'Case ID',
-  property: '物业',
-  client: '客户',
-  type: '问题类型',
-  role: '我方角色',
-  owner: '负责人',
-  status: '状态',
-  notes: '备注',
-  timeline: '跟进记录',
-  createdAt: '创建时间',
-  updatedAt: '最近更新',
-  resolvedAt: '解决时间',
+  primary: 'Text', id: 'Case ID', property: '物业', client: '客户',
+  type: '问题类型', role: '我方角色', owner: '负责人', status: '状态',
+  notes: '备注', timeline: '跟进记录', createdAt: '创建时间',
+  updatedAt: '最近更新', resolvedAt: '解决时间',
 };
 
 function asCaseToFields(c) {
   const title = [c.property, c.client].filter(Boolean).join(' · ') || c.id || '';
   return {
-    [AS_FIELDS.primary]: title,
-    [AS_FIELDS.id]: c.id || '',
-    [AS_FIELDS.property]: c.property || '',
-    [AS_FIELDS.client]: c.client || '',
-    [AS_FIELDS.type]: c.type || '',
-    [AS_FIELDS.role]: c.role === 'tenant' ? '租客(我方)' : '租客(对方)',
-    [AS_FIELDS.owner]: c.owner || '',
-    [AS_FIELDS.status]: { active:'处理中', waiting:'等待反馈', urgent:'紧急', resolved:'已解决' }[c.status] || c.status,
-    [AS_FIELDS.notes]: c.notes || '',
-    [AS_FIELDS.timeline]: JSON.stringify(c.timeline || []),
-    [AS_FIELDS.createdAt]: c.createdAt || Date.now(),
-    [AS_FIELDS.updatedAt]: c.updatedAt || Date.now(),
+    [AS_FIELDS.primary]:    title,
+    [AS_FIELDS.id]:         c.id || '',
+    [AS_FIELDS.property]:   c.property || '',
+    [AS_FIELDS.client]:     c.client || '',
+    [AS_FIELDS.type]:       c.type || '',
+    [AS_FIELDS.role]:       c.role === 'tenant' ? '租客(我方)' : '租客(对方)',
+    [AS_FIELDS.owner]:      c.owner || '',
+    [AS_FIELDS.status]:     { active:'处理中', waiting:'等待反馈', urgent:'紧急', resolved:'已解决' }[c.status] || c.status,
+    [AS_FIELDS.notes]:      c.notes || '',
+    [AS_FIELDS.timeline]:   JSON.stringify(c.timeline || []),
+    [AS_FIELDS.createdAt]:  c.createdAt || Date.now(),
+    [AS_FIELDS.updatedAt]:  c.updatedAt || Date.now(),
     [AS_FIELDS.resolvedAt]: c.resolvedAt || null,
   };
 }
 
-function asFieldsToCase(record, primaryFieldName) {
+function asFieldsToCase(record) {
   const f = record.fields;
   const statusMap = { '处理中':'active', '等待反馈':'waiting', '紧急':'urgent', '已解决':'resolved' };
   let timeline = [];
   try { timeline = JSON.parse(typeof f[AS_FIELDS.timeline] === 'string' ? f[AS_FIELDS.timeline] : JSON.stringify(f[AS_FIELDS.timeline] || '[]')); } catch {}
-  // primary 字段（title）读取时容错：生产表叫 'Text'，新建测试表叫 '多行文本'
-  // 不强依赖 primary 字段，因为 asFieldsToCase 主要靠 id 字段识别记录
   return {
     id: f[AS_FIELDS.id] || record.record_id,
     _lark_id: record.record_id,
@@ -82,85 +71,59 @@ function asFieldsToCase(record, primaryFieldName) {
 
 // ── CRM field mapping ─────────────────────────────────────────────────────────
 const CRM_FIELDS = {
-  primary: '客户姓名',
-  contact: '联系方式',
-  type: '客户类型',
-  priority: '优先级',
-  deal: '交易类型',
-  needs: '需求描述',
-  admin: '负责Admin',
-  agent: '负责Agent',
-  source: '来源',
-  status: '状态',
-  timeline: '跟进记录',
+  primary:   '客户姓名',
+  contact:   '联系方式',
+  type:      '客户类型',
+  tier:      '客户等级',
+  amount:    '预估金额',
+  deal:      '交易类型',
+  needs:     '需求描述',
+  admin:     '负责Admin',
+  agent:     '负责Agent',
+  source:    '来源',
+  status:    '状态',
+  timeline:  '跟进记录',
   createdAt: '创建时间',
   updatedAt: '最近更新',
 };
 
 function crmClientToFields(c) {
   return {
-    [CRM_FIELDS.primary]: c.name || '',
-    [CRM_FIELDS.contact]: c.contact || '',
-    [CRM_FIELDS.type]: c.type || 'Residential',
-    [CRM_FIELDS.priority]: c.priority || 'mid',
-    [CRM_FIELDS.deal]: c.deal || '',
-    [CRM_FIELDS.needs]: c.needs || '',
-    [CRM_FIELDS.admin]: c.admin || '',
-    [CRM_FIELDS.agent]: c.agent || '',
-    [CRM_FIELDS.source]: c.source || '',
-    [CRM_FIELDS.status]: c.status || '新客户',
-    [CRM_FIELDS.timeline]: JSON.stringify(c.timeline || []),
+    [CRM_FIELDS.primary]:   c.name || '',
+    [CRM_FIELDS.contact]:   c.contact || '',
+    [CRM_FIELDS.type]:      c.type || 'Residential',
+    [CRM_FIELDS.tier]:      c.tier || 'normal',
+    [CRM_FIELDS.amount]:    Number(c.amount) || 0,
+    [CRM_FIELDS.deal]:      c.deal || '',
+    [CRM_FIELDS.needs]:     c.needs || '',
+    [CRM_FIELDS.admin]:     c.admin || '',
+    [CRM_FIELDS.agent]:     c.agent || '',
+    [CRM_FIELDS.source]:    c.source || '',
+    [CRM_FIELDS.status]:    c.status || '新客户',
+    [CRM_FIELDS.timeline]:  JSON.stringify(c.timeline || []),
     [CRM_FIELDS.createdAt]: c.createdAt || Date.now(),
     [CRM_FIELDS.updatedAt]: c.updatedAt || Date.now(),
   };
 }
 
-// ── Primary field name resolver ──────────────────────────────────────────────
-// 动态查某个表的主键字段名（第一个字段）。缓存结果避免重复调用 Lark API。
-// 背景：不同时期创建的表，主键字段名可能不同（"Text" / "客户姓名" / "多行文本"），
-// 这函数让代码自动适配任何主键名。
-const _primaryFieldCache = {};
-async function getPrimaryFieldName(tableId, headers) {
-  if (_primaryFieldCache[tableId]) return _primaryFieldCache[tableId];
-  const res = await fetch(`${LARK_API}/bitable/v1/apps/${BASE_TOKEN}/tables/${tableId}/fields`, { headers });
-  const data = await res.json();
-  if (data.code !== 0) throw new Error(`Get fields failed: ${data.msg}`);
-  const primary = data.data?.items?.[0];
-  if (!primary) throw new Error('No fields found in table');
-  _primaryFieldCache[tableId] = primary.field_name;
-  return primary.field_name;
-}
-
-// 把一个 fields 对象中的"期望主键名"替换为实际主键名
-function remapPrimaryKey(fields, expectedPrimary, actualPrimary) {
-  if (expectedPrimary === actualPrimary) return fields;
-  const remapped = { ...fields };
-  if (expectedPrimary in remapped) {
-    remapped[actualPrimary] = remapped[expectedPrimary];
-    delete remapped[expectedPrimary];
-  }
-  return remapped;
-}
-
-function crmFieldsToClient(record, primaryFieldName) {
+function crmFieldsToClient(record) {
   const f = record.fields;
   let timeline = [];
   try { timeline = JSON.parse(typeof f[CRM_FIELDS.timeline] === 'string' ? f[CRM_FIELDS.timeline] : '[]'); } catch {}
-  // 主键字段名可能是 '客户姓名'（旧代码期望）或 '多行文本'（API 默认）或动态传入的实际名
-  const nameValue = (primaryFieldName && f[primaryFieldName]) || f[CRM_FIELDS.primary] || f['多行文本'] || f['Text'] || '';
   return {
-    id: record.record_id,
-    _lark_id: record.record_id,
-    name: nameValue,
-    contact: f[CRM_FIELDS.contact] || '',
-    type: f[CRM_FIELDS.type] || 'Residential',
-    priority: f[CRM_FIELDS.priority] || 'mid',
-    deal: f[CRM_FIELDS.deal] || '',
-    needs: f[CRM_FIELDS.needs] || '',
-    admin: f[CRM_FIELDS.admin] || '',
-    agent: f[CRM_FIELDS.agent] || '',
-    source: f[CRM_FIELDS.source] || '',
-    status: f[CRM_FIELDS.status] || '新客户',
+    id:        record.record_id,
+    _lark_id:  record.record_id,
+    name:      f[CRM_FIELDS.primary]   || '',
+    contact:   f[CRM_FIELDS.contact]   || '',
+    type:      f[CRM_FIELDS.type]      || 'Residential',
+    tier:      f[CRM_FIELDS.tier]      || 'normal',
+    amount:    Number(f[CRM_FIELDS.amount]) || 0,
+    deal:      f[CRM_FIELDS.deal]      || '',
+    needs:     f[CRM_FIELDS.needs]     || '',
+    admin:     f[CRM_FIELDS.admin]     || '',
+    agent:     f[CRM_FIELDS.agent]     || '',
+    source:    f[CRM_FIELDS.source]    || '',
+    status:    f[CRM_FIELDS.status]    || '新客户',
     timeline,
     createdAt: f[CRM_FIELDS.createdAt] || Date.now(),
     updatedAt: f[CRM_FIELDS.updatedAt] || Date.now(),
@@ -182,18 +145,19 @@ exports.handler = async function(event) {
 
   let body = {};
   try { body = JSON.parse(event.body || '{}'); } catch {}
+
   const action = body.action || event.queryStringParameters?.action;
   if (!action) return json({ error: 'Missing action' }, 400);
 
   try {
     const token = await getTenantToken();
     const headers = { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' };
-
     const asBase = `${LARK_API}/bitable/v1/apps/${BASE_TOKEN}/tables/${TABLE_ID}/records`;
 
     // ═══════════════════════════════════════════════════════════════════
     // AFTER-SALES ACTIONS (existing)
     // ═══════════════════════════════════════════════════════════════════
+
     if (action === 'list') {
       const allRecords = [];
       let pageToken = '';
@@ -210,9 +174,7 @@ exports.handler = async function(event) {
 
     if (action === 'create') {
       const fields = asCaseToFields(body.case);
-      const actualPrimary = await getPrimaryFieldName(TABLE_ID, headers);
-      const remapped = remapPrimaryKey(fields, AS_FIELDS.primary, actualPrimary);
-      const res = await fetch(asBase, { method: 'POST', headers, body: JSON.stringify({ fields: remapped }) });
+      const res = await fetch(asBase, { method: 'POST', headers, body: JSON.stringify({ fields }) });
       const data = await res.json();
       if (data.code !== 0) throw new Error(`Create failed: ${data.msg}`);
       return json({ success: true, case: asFieldsToCase(data.data.record) });
@@ -223,9 +185,7 @@ exports.handler = async function(event) {
       if (!larkId) return json({ error: 'Missing lark_id' }, 400);
       const fields = asCaseToFields(body.case);
       if (fields[AS_FIELDS.resolvedAt] === null) delete fields[AS_FIELDS.resolvedAt];
-      const actualPrimary = await getPrimaryFieldName(TABLE_ID, headers);
-      const remapped = remapPrimaryKey(fields, AS_FIELDS.primary, actualPrimary);
-      const res = await fetch(`${asBase}/${larkId}`, { method: 'PUT', headers, body: JSON.stringify({ fields: remapped }) });
+      const res = await fetch(`${asBase}/${larkId}`, { method: 'PUT', headers, body: JSON.stringify({ fields }) });
       const data = await res.json();
       if (data.code !== 0) throw new Error(`Update failed: ${data.msg}`);
       return json({ success: true });
@@ -241,8 +201,9 @@ exports.handler = async function(event) {
     }
 
     // ═══════════════════════════════════════════════════════════════════
-    // CRM ACTIONS (existing)
+    // CRM ACTIONS (new)
     // ═══════════════════════════════════════════════════════════════════
+
     if (action === 'crm_list') {
       if (!CRM_TABLE) return json({ error: 'LARK_CRM_TABLE_ID not configured' }, 500);
       const crmBase = `${LARK_API}/bitable/v1/apps/${BASE_TOKEN}/tables/${CRM_TABLE}/records`;
@@ -263,9 +224,7 @@ exports.handler = async function(event) {
       if (!CRM_TABLE) return json({ error: 'LARK_CRM_TABLE_ID not configured' }, 500);
       const crmBase = `${LARK_API}/bitable/v1/apps/${BASE_TOKEN}/tables/${CRM_TABLE}/records`;
       const fields = crmClientToFields(body.client);
-      const actualPrimary = await getPrimaryFieldName(CRM_TABLE, headers);
-      const remapped = remapPrimaryKey(fields, CRM_FIELDS.primary, actualPrimary);
-      const res = await fetch(crmBase, { method: 'POST', headers, body: JSON.stringify({ fields: remapped }) });
+      const res = await fetch(crmBase, { method: 'POST', headers, body: JSON.stringify({ fields }) });
       const data = await res.json();
       if (data.code !== 0) throw new Error(`CRM create failed: ${data.msg}`);
       return json({ success: true, client: crmFieldsToClient(data.data.record) });
@@ -277,9 +236,7 @@ exports.handler = async function(event) {
       if (!larkId) return json({ error: 'Missing lark_id' }, 400);
       const crmBase = `${LARK_API}/bitable/v1/apps/${BASE_TOKEN}/tables/${CRM_TABLE}/records`;
       const fields = crmClientToFields(body.client);
-      const actualPrimary = await getPrimaryFieldName(CRM_TABLE, headers);
-      const remapped = remapPrimaryKey(fields, CRM_FIELDS.primary, actualPrimary);
-      const res = await fetch(`${crmBase}/${larkId}`, { method: 'PUT', headers, body: JSON.stringify({ fields: remapped }) });
+      const res = await fetch(`${crmBase}/${larkId}`, { method: 'PUT', headers, body: JSON.stringify({ fields }) });
       const data = await res.json();
       if (data.code !== 0) throw new Error(`CRM update failed: ${data.msg}`);
       return json({ success: true });
@@ -300,7 +257,9 @@ exports.handler = async function(event) {
     if (action === 'create_table') {
       const tableName = body.table_name || 'CRM客户';
       const res = await fetch(`${LARK_API}/bitable/v1/apps/${BASE_TOKEN}/tables`, {
-        method: 'POST', headers, body: JSON.stringify({ table: { name: tableName } }),
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ table: { name: tableName } }),
       });
       const data = await res.json();
       if (data.code !== 0) throw new Error(`Create table failed: code=${data.code} msg=${data.msg}`);
@@ -310,13 +269,13 @@ exports.handler = async function(event) {
       const fieldsToCreate = [
         { field_name: '联系方式', type: 1 },
         { field_name: '客户类型', type: 1 },
-        { field_name: '优先级', type: 1 },
+        { field_name: '优先级',   type: 1 },
         { field_name: '交易类型', type: 1 },
         { field_name: '需求描述', type: 1 },
         { field_name: '负责Admin', type: 1 },
         { field_name: '负责Agent', type: 1 },
-        { field_name: '来源', type: 1 },
-        { field_name: '状态', type: 1 },
+        { field_name: '来源',     type: 1 },
+        { field_name: '状态',     type: 1 },
         { field_name: '跟进记录', type: 1 },
         { field_name: '创建时间', type: 5 },
         { field_name: '最近更新', type: 5 },
@@ -338,62 +297,17 @@ exports.handler = async function(event) {
       });
     }
 
-    // ── CREATE AFTER-SALES TABLE: create a new after-sales table in the Base ──
-    // 新增 action: 创建一个售后案例测试表
-    // 用法: POST { action: "create_as_table", table_name: "售后案例_测试" }
-    if (action === 'create_as_table') {
-      const tableName = body.table_name || '售后案例_测试';
-      // 1. Create empty table
-      const res = await fetch(`${LARK_API}/bitable/v1/apps/${BASE_TOKEN}/tables`, {
-        method: 'POST', headers, body: JSON.stringify({ table: { name: tableName } }),
-      });
-      const data = await res.json();
-      if (data.code !== 0) throw new Error(`Create table failed: code=${data.code} msg=${data.msg}`);
-      const tableId = data.data?.table_id;
-
-      // 2. Create after-sales fields (same as setup action)
-      const fieldsToCreate = [
-        { field_name: 'Case ID', type: 1 },
-        { field_name: '物业', type: 1 },
-        { field_name: '客户', type: 1 },
-        { field_name: '问题类型', type: 1 },
-        { field_name: '我方角色', type: 1 },
-        { field_name: '负责人', type: 1 },
-        { field_name: '状态', type: 1 },
-        { field_name: '备注', type: 1 },
-        { field_name: '跟进记录', type: 1 },
-        { field_name: '创建时间', type: 5 },
-        { field_name: '最近更新', type: 5 },
-        { field_name: '解决时间', type: 5 },
-      ];
-      const results = [];
-      for (const f of fieldsToCreate) {
-        const r = await fetch(`${LARK_API}/bitable/v1/apps/${BASE_TOKEN}/tables/${tableId}/fields`, {
-          method: 'POST', headers, body: JSON.stringify(f),
-        });
-        const d = await r.json();
-        results.push({ field: f.field_name, code: d.code, ok: d.code === 0 });
-      }
-      return json({
-        success: true,
-        table_id: tableId,
-        table_name: tableName,
-        msg: `✅ 售后案例测试表创建成功！请把 table_id 设为 Netlify 环境变量 LARK_TABLE_ID (Branch deploys context): ${tableId}`,
-        fields: results,
-      });
-    }
-
     // ── SETUP / INIT / existing helpers ──────────────────────────────────────
     if (action === 'setup') {
       const fieldsToCreate = [
-        { field_name: 'Case ID', type: 1 },
-        { field_name: '物业', type: 1 },
-        { field_name: '客户', type: 1 },
+        { field_name: 'Case ID',  type: 1 },
+        { field_name: '物业',     type: 1 },
+        { field_name: '客户',     type: 1 },
         { field_name: '问题类型', type: 1 },
         { field_name: '我方角色', type: 1 },
-        { field_name: '负责人', type: 1 },
-        { field_name: '状态', type: 1 },
-        { field_name: '备注', type: 1 },
+        { field_name: '负责人',   type: 1 },
+        { field_name: '状态',     type: 1 },
+        { field_name: '备注',     type: 1 },
         { field_name: '跟进记录', type: 1 },
         { field_name: '创建时间', type: 5 },
         { field_name: '最近更新', type: 5 },
@@ -419,18 +333,12 @@ exports.handler = async function(event) {
       const tableId = tables[0].table_id;
       const tableName = tables[0].name;
       const fieldsToCreate = [
-        { field_name: 'Case ID', type: 1 },
-        { field_name: '物业', type: 1 },
-        { field_name: '客户', type: 1 },
-        { field_name: '问题类型', type: 1 },
-        { field_name: '我方角色', type: 1 },
-        { field_name: '负责人', type: 1 },
-        { field_name: '状态', type: 1 },
-        { field_name: '备注', type: 1 },
-        { field_name: '跟进记录', type: 1 },
-        { field_name: '创建时间', type: 5 },
-        { field_name: '最近更新', type: 5 },
-        { field_name: '解决时间', type: 5 },
+        { field_name: 'Case ID',  type: 1 }, { field_name: '物业',     type: 1 },
+        { field_name: '客户',     type: 1 }, { field_name: '问题类型', type: 1 },
+        { field_name: '我方角色', type: 1 }, { field_name: '负责人',   type: 1 },
+        { field_name: '状态',     type: 1 }, { field_name: '备注',     type: 1 },
+        { field_name: '跟进记录', type: 1 }, { field_name: '创建时间', type: 5 },
+        { field_name: '最近更新', type: 5 }, { field_name: '解决时间', type: 5 },
       ];
       const results = [];
       for (const f of fieldsToCreate) {
@@ -441,7 +349,9 @@ exports.handler = async function(event) {
         results.push({ field: f.field_name, code: d.code, msg: d.msg });
       }
       const allOk = results.every(r => r.code === 0);
-      return json({ success: allOk, table_id: tableId, table_name: tableName, msg: allOk ? `✅ 完成！请把 LARK_TABLE_ID 更新为: ${tableId}` : `⚠️ 部分字段创建失败，但 table_id 是: ${tableId}`, results });
+      return json({ success: allOk, table_id: tableId, table_name: tableName,
+        msg: allOk ? `✅ 完成！请把 LARK_TABLE_ID 更新为: ${tableId}` : `⚠️ 部分字段创建失败，但 table_id 是: ${tableId}`,
+        results });
     }
 
     if (action === 'create_base') {
@@ -451,7 +361,8 @@ exports.handler = async function(event) {
       const data = await res.json();
       if (data.code !== 0) throw new Error(`Create base failed: code=${data.code} msg=${data.msg}`);
       const app = data.data?.app;
-      return json({ success: true, app_token: app?.app_token, url: app?.url, name: app?.name, msg: '新 Base 创建成功！请把 app_token 更新到 Netlify 环境变量 LARK_BASE_TOKEN' });
+      return json({ success: true, app_token: app?.app_token, url: app?.url, name: app?.name,
+        msg: '新 Base 创建成功！请把 app_token 更新到 Netlify 环境变量 LARK_BASE_TOKEN' });
     }
 
     if (action === 'delete_field') {
@@ -473,12 +384,79 @@ exports.handler = async function(event) {
       return json({ success: true, fields });
     }
 
+    // ═══════════════════════════════════════════════════════════════════════
+    // CRM TABLE ADMIN ACTIONS (for one-time migration)
+    // ═══════════════════════════════════════════════════════════════════════
+
+    if (action === 'crm_list_fields') {
+      if (!CRM_TABLE) return json({ error: 'LARK_CRM_TABLE_ID not configured' }, 500);
+      const res = await fetch(`${LARK_API}/bitable/v1/apps/${BASE_TOKEN}/tables/${CRM_TABLE}/fields`, { headers });
+      const data = await res.json();
+      if (data.code !== 0) throw new Error(`CRM list fields failed: code=${data.code} msg=${data.msg}`);
+      const fields = (data.data?.items || []).map(f => ({ id: f.field_id, name: f.field_name, type: f.type }));
+      return json({ success: true, table_id: CRM_TABLE, fields });
+    }
+
+    if (action === 'crm_delete_field') {
+      if (!CRM_TABLE) return json({ error: 'LARK_CRM_TABLE_ID not configured' }, 500);
+      const fieldId = body.field_id;
+      if (!fieldId) return json({ error: 'Missing field_id' }, 400);
+      const res = await fetch(`${LARK_API}/bitable/v1/apps/${BASE_TOKEN}/tables/${CRM_TABLE}/fields/${fieldId}`, {
+        method: 'DELETE', headers,
+      });
+      const data = await res.json();
+      if (data.code !== 0) return json({ success: false, code: data.code, msg: data.msg });
+      return json({ success: true, field_id: fieldId });
+    }
+
+    if (action === 'crm_add_field') {
+      if (!CRM_TABLE) return json({ error: 'LARK_CRM_TABLE_ID not configured' }, 500);
+      const fieldName = body.field_name;
+      const fieldType = Number(body.field_type) || 1;  // 1=text, 2=number, 3=single-select
+      if (!fieldName) return json({ error: 'Missing field_name' }, 400);
+      const res = await fetch(`${LARK_API}/bitable/v1/apps/${BASE_TOKEN}/tables/${CRM_TABLE}/fields`, {
+        method: 'POST', headers,
+        body: JSON.stringify({ field_name: fieldName, type: fieldType }),
+      });
+      const data = await res.json();
+      if (data.code !== 0) return json({ success: false, code: data.code, msg: data.msg });
+      return json({ success: true, field: data.data?.field });
+    }
+
+    if (action === 'crm_clear_all') {
+      if (!CRM_TABLE) return json({ error: 'LARK_CRM_TABLE_ID not configured' }, 500);
+      const crmBase = `${LARK_API}/bitable/v1/apps/${BASE_TOKEN}/tables/${CRM_TABLE}/records`;
+      // List all records
+      const allRecords = [];
+      let pageToken = '';
+      do {
+        const url = `${crmBase}?page_size=100${pageToken ? '&page_token=' + pageToken : ''}`;
+        const res = await fetch(url, { headers });
+        const data = await res.json();
+        if (data.code !== 0) throw new Error(`CRM list for clear failed: ${data.msg}`);
+        allRecords.push(...(data.data?.items || []));
+        pageToken = data.data?.has_more ? data.data.page_token : '';
+      } while (pageToken);
+      if (allRecords.length === 0) return json({ success: true, deleted: 0 });
+      // Batch delete (Lark supports batch up to 500)
+      const recordIds = allRecords.map(r => r.record_id);
+      const res = await fetch(`${crmBase}/batch_delete`, {
+        method: 'POST', headers,
+        body: JSON.stringify({ records: recordIds }),
+      });
+      const data = await res.json();
+      if (data.code !== 0) return json({ success: false, code: data.code, msg: data.msg });
+      return json({ success: true, deleted: recordIds.length });
+    }
+
     if (action === 'log_usage') {
       const USAGE_TABLE_ID = process.env.LARK_USAGE_TABLE_ID;
       if (!USAGE_TABLE_ID) return json({ success: true, skipped: true, msg: 'LARK_USAGE_TABLE_ID not set' });
       const entries = body.entries || [];
       if (!Array.isArray(entries) || entries.length === 0) return json({ success: true, skipped: true });
-      const records = entries.map(e => ({ fields: { '用户': e.user || 'Unknown', '功能': e.action || '', '时间': e.ts || Date.now() } }));
+      const records = entries.map(e => ({
+        fields: { '用户': e.user || 'Unknown', '功能': e.action || '', '时间': e.ts || Date.now() }
+      }));
       const res = await fetch(`${LARK_API}/bitable/v1/apps/${BASE_TOKEN}/tables/${USAGE_TABLE_ID}/records/batch_create`, {
         method: 'POST', headers, body: JSON.stringify({ records }),
       });
@@ -489,15 +467,16 @@ exports.handler = async function(event) {
 
     if (action === 'debug') {
       return json({
-        LARK_APP_ID: APP_ID ? `set (${APP_ID.length} chars, starts: ${APP_ID.substring(0,8)}...)` : 'MISSING',
-        LARK_APP_SECRET: APP_SECRET ? `set (${APP_SECRET.length} chars)` : 'MISSING',
-        LARK_BASE_TOKEN: BASE_TOKEN ? `set (${BASE_TOKEN.length} chars)` : 'MISSING',
-        LARK_TABLE_ID: TABLE_ID ? `set (${TABLE_ID.length} chars)` : 'MISSING',
-        LARK_CRM_TABLE_ID: CRM_TABLE ? `set (${CRM_TABLE.length} chars)` : 'NOT SET (will be set after create_table)',
+        LARK_APP_ID:        APP_ID     ? `set (${APP_ID.length} chars, starts: ${APP_ID.substring(0,8)}...)` : 'MISSING',
+        LARK_APP_SECRET:    APP_SECRET ? `set (${APP_SECRET.length} chars)` : 'MISSING',
+        LARK_BASE_TOKEN:    BASE_TOKEN ? `set (${BASE_TOKEN.length} chars)` : 'MISSING',
+        LARK_TABLE_ID:      TABLE_ID   ? `set (${TABLE_ID.length} chars)` : 'MISSING',
+        LARK_CRM_TABLE_ID:  CRM_TABLE  ? `set (${CRM_TABLE.length} chars)` : 'NOT SET (will be set after create_table)',
       });
     }
 
     return json({ error: `Unknown action: ${action}` }, 400);
+
   } catch (err) {
     return json({ error: err.message }, 500);
   }
