@@ -179,7 +179,7 @@ function recRecToFields(r) {
     [REC_FIELDS.primary]:      r.id || `rec_${Date.now()}`,
     [REC_FIELDS.clientId]:     r.clientId || '',
     [REC_FIELDS.clientName]:   r.clientName || '',
-    [REC_FIELDS.link]:         r.link || '',
+    [REC_FIELDS.link]:         r.link ? { link: r.link, text: r.link } : '',
     [REC_FIELDS.source]:       r.source || 'PG',
     [REC_FIELDS.address]:      r.address || '',
     [REC_FIELDS.price]:        Number(r.price) || 0,
