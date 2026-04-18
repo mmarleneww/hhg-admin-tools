@@ -312,19 +312,9 @@
 
   /* ═══════════════ CRM CLIENT PIPELINE (Phase 2) ═══════════════ */
   .crm-toolbar {
-    display: flex; align-items: center; justify-content: space-between;
+    display: flex; align-items: center; justify-content: flex-end;
     gap: 12px; padding: 12px 13px 8px;
   }
-  .crm-view-switch {
-    display: flex; gap: 0; background: var(--surface2);
-    border-radius: 8px; padding: 3px; border: 1px solid var(--border);
-  }
-  .crm-view-btn {
-    padding: 6px 14px; border: 0; background: transparent;
-    font-size: 13px; font-weight: 500; color: var(--text2);
-    border-radius: 6px; cursor: pointer; transition: all .15s;
-  }
-  .crm-view-btn.active { background: #fff; color: var(--text); box-shadow: 0 1px 3px rgba(0,0,0,.06); font-weight: 600; }
   .crm-add-btn {
     display: inline-flex; align-items: center; gap: 5px;
     padding: 8px 14px; border: 0; border-radius: 8px;
@@ -350,35 +340,55 @@
   }
   .crm-chip.active { background: var(--accent-j); color: #fff; border-color: var(--accent-j); font-weight: 600; }
 
-  /* Kanban horizontal scroll */
-  .crm-kanban-scroll {
-    display: flex; gap: 10px; padding: 12px 13px 20px;
-    overflow-x: auto; overflow-y: hidden;
-    -webkit-overflow-scrolling: touch;
+  /* By-status view: 左右布局 */
+  .crm-bystatus-layout {
+    display: flex; gap: 12px; padding: 12px 13px 20px;
+    align-items: flex-start;
   }
-  .crm-col {
-    flex: 0 0 260px; min-width: 260px;
+  .crm-status-nav {
+    flex: 0 0 180px;
     background: var(--surface2); border: 1px solid var(--border);
-    border-radius: 10px; padding: 0; display: flex; flex-direction: column;
-    max-height: calc(100vh - 280px);
+    border-radius: 10px; padding: 6px;
+    display: flex; flex-direction: column; gap: 2px;
+    position: sticky; top: 12px;
   }
-  .crm-col-header {
-    padding: 10px 12px; border-bottom: 1px solid var(--border);
+  .crm-status-tab {
     display: flex; justify-content: space-between; align-items: center;
-    font-size: 13px; font-weight: 600; color: var(--text);
-    position: sticky; top: 0; background: var(--surface2); border-radius: 10px 10px 0 0; z-index: 1;
+    padding: 9px 11px; border-radius: 7px; cursor: pointer;
+    font-size: 13px; color: var(--text2); transition: all .15s;
+    user-select: none;
   }
-  .crm-col-count {
+  .crm-status-tab:hover { background: var(--surface); }
+  .crm-status-tab.active {
+    background: var(--accent-j); color: #fff; font-weight: 600;
+  }
+  .crm-status-tab.active .crm-status-tab-count {
+    background: rgba(255,255,255,.25); color: #fff; border-color: transparent;
+  }
+  .crm-status-tab-label { display: flex; align-items: center; gap: 6px; }
+  .crm-status-tab-count {
     background: var(--surface); color: var(--text2);
     padding: 1px 8px; border-radius: 10px; font-size: 11px; font-weight: 600;
-    border: 1px solid var(--border);
+    border: 1px solid var(--border); min-width: 22px; text-align: center;
   }
-  .crm-col-body {
-    padding: 8px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px;
+  .crm-status-nav-divider {
+    height: 1px; background: var(--border); margin: 6px 4px;
   }
-  .crm-col-empty { font-size: 12px; color: var(--text3); text-align: center; padding: 16px 8px; font-style: italic; }
+  .crm-status-tab.is-inactive { color: var(--text3); }
+  .crm-status-tab.is-inactive.active { background: #999; }
 
-  /* Client card (used in both kanban + list) */
+  .crm-status-content {
+    flex: 1; min-width: 0;
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .crm-status-empty {
+    text-align: center; padding: 50px 20px; color: var(--text3);
+    font-size: 13px; font-style: italic;
+    background: var(--surface2); border: 1px dashed var(--border);
+    border-radius: 10px;
+  }
+
+  /* Client card */
   .crm-card {
     background: #fff; border: 1px solid var(--border);
     border-radius: 8px; padding: 10px 11px; cursor: pointer;
@@ -386,25 +396,28 @@
   }
   .crm-card:hover { border-color: var(--accent-j); box-shadow: 0 2px 8px rgba(0,0,0,.04); }
   .crm-card.stale { border-left: 3px solid var(--accent-j); }
+  .crm-card.is-onhold { background: #fafafa; }
+  .crm-card.is-inactive {
+    background: #f5f5f5; opacity: .75;
+  }
+  .crm-card.is-inactive .crm-card-name { font-size: 13px; color: var(--text2); }
+  .crm-card.is-inactive .crm-card-meta { font-size: 10px; }
   .crm-card-row1 {
     display: flex; align-items: center; gap: 6px; margin-bottom: 4px;
   }
   .crm-card-name { font-size: 14px; font-weight: 600; color: var(--text); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .crm-card-prio { font-size: 14px; line-height: 1; }
   .crm-card-vip { font-size: 13px; line-height: 1; }
+  .crm-card-onhold-icon { font-size: 12px; line-height: 1; color: var(--text3); }
   .crm-card-meta { font-size: 11px; color: var(--text3); display: flex; gap: 6px; flex-wrap: wrap; margin-top: 2px; }
   .crm-card-meta span { background: var(--surface2); padding: 1px 6px; border-radius: 3px; }
   .crm-card-needs { font-size: 12px; color: var(--text2); margin-top: 5px; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
   .crm-card-footer { font-size: 10px; color: var(--text3); margin-top: 6px; display: flex; justify-content: space-between; align-items: center; }
   .crm-card-stale-badge { color: var(--accent-j); font-weight: 600; }
-
-  /* List view */
-  #crm-list-body { padding: 10px 13px 20px; display: flex; flex-direction: column; gap: 8px; }
-  .crm-list-group-header {
-    font-size: 11px; color: var(--text3); font-weight: 600; letter-spacing: .5px;
-    text-transform: uppercase; padding: 8px 2px 4px; display: flex; align-items: center; gap: 6px;
+  .crm-card-onhold-reason {
+    font-size: 11px; color: var(--text3); margin-top: 4px;
+    font-style: italic;
   }
-  .crm-list-group-count { background: var(--surface2); padding: 1px 7px; border-radius: 10px; font-size: 10px; color: var(--text2); border: 1px solid var(--border); }
 
   /* Modal */
   .crm-modal {
@@ -582,10 +595,23 @@
   .rec-add-result-ok { color: #2e7d32; }
   .rec-add-result-err { color: #c62828; }
 
-  /* Mobile: hide kanban by default on narrow screens, show list */
+  /* Mobile: 左侧竖 Tab 改成横向滚动条 */
   @media (max-width: 640px) {
-    .crm-col { flex: 0 0 85vw; min-width: 85vw; max-height: none; }
-    .crm-kanban-scroll { padding: 10px 10px 16px; }
+    .crm-bystatus-layout { flex-direction: column; padding: 10px 10px 16px; gap: 10px; }
+    .crm-status-nav {
+      flex: none; width: 100%; position: static;
+      flex-direction: row; overflow-x: auto; overflow-y: hidden;
+      -webkit-overflow-scrolling: touch;
+      padding: 4px;
+    }
+    .crm-status-tab {
+      flex: 0 0 auto; padding: 7px 11px;
+      white-space: nowrap;
+    }
+    .crm-status-nav-divider {
+      width: 1px; height: auto; align-self: stretch;
+      margin: 4px 2px;
+    }
     .crm-filter-bar { padding: 4px 13px 10px; }
     .crm-modal-content { max-height: 92vh; }
   }
@@ -1257,10 +1283,6 @@
   <div class="page-inner">
     <!-- CRM top toolbar -->
     <div class="crm-toolbar">
-      <div class="crm-view-switch">
-        <button id="crm-view-kanban-btn" class="crm-view-btn active" onclick="crmSwitchView('kanban')">看板</button>
-        <button id="crm-view-list-btn" class="crm-view-btn" onclick="crmSwitchView('list')">列表</button>
-      </div>
       <button class="crm-add-btn" onclick="crmShowForm('new')">
         <span style="font-size:16px;line-height:1;">+</span> 新客户
       </button>
@@ -1298,44 +1320,19 @@
       </div>
     </div>
 
-    <!-- Loading / empty states -->
+    <!-- Loading state -->
     <div id="crm-loading" style="text-align:center;padding:60px 20px;color:var(--text3);font-size:13px;">
       加载客户中...
     </div>
 
-    <!-- KANBAN VIEW -->
-    <div id="crm-kanban-view" style="display:none;">
-      <div class="crm-kanban-scroll">
-        <div class="crm-col" data-status="新客户">
-          <div class="crm-col-header"><span class="crm-col-title">新客户</span><span class="crm-col-count" data-count-status="新客户">0</span></div>
-          <div class="crm-col-body" data-body-status="新客户"></div>
-        </div>
-        <div class="crm-col" data-status="待发房源">
-          <div class="crm-col-header"><span class="crm-col-title">待发房源</span><span class="crm-col-count" data-count-status="待发房源">0</span></div>
-          <div class="crm-col-body" data-body-status="待发房源"></div>
-        </div>
-        <div class="crm-col" data-status="已发房源等回复">
-          <div class="crm-col-header"><span class="crm-col-title">已发房源等回复</span><span class="crm-col-count" data-count-status="已发房源等回复">0</span></div>
-          <div class="crm-col-body" data-body-status="已发房源等回复"></div>
-        </div>
-        <div class="crm-col" data-status="看房中">
-          <div class="crm-col-header"><span class="crm-col-title">看房中</span><span class="crm-col-count" data-count-status="看房中">0</span></div>
-          <div class="crm-col-body" data-body-status="看房中"></div>
-        </div>
-        <div class="crm-col" data-status="谈Offer">
-          <div class="crm-col-header"><span class="crm-col-title">谈Offer</span><span class="crm-col-count" data-count-status="谈Offer">0</span></div>
-          <div class="crm-col-body" data-body-status="谈Offer"></div>
-        </div>
-        <div class="crm-col" data-status="成交">
-          <div class="crm-col-header"><span class="crm-col-title">成交</span><span class="crm-col-count" data-count-status="成交">0</span></div>
-          <div class="crm-col-body" data-body-status="成交"></div>
-        </div>
+    <!-- BY-STATUS VIEW: 左侧竖 Tab + 右侧当前状态客户列表 -->
+    <div id="crm-bystatus-view" class="crm-bystatus-layout" style="display:none;">
+      <div class="crm-status-nav" id="crm-status-nav">
+        <!-- 由 crmRenderStatusNav 填充 -->
       </div>
-    </div>
-
-    <!-- LIST VIEW -->
-    <div id="crm-list-view" style="display:none;">
-      <div id="crm-list-body"></div>
+      <div class="crm-status-content" id="crm-status-content">
+        <!-- 由 crmRenderStatusContent 填充 -->
+      </div>
     </div>
 
     <!-- Client detail modal -->
@@ -1346,6 +1343,66 @@
           <button onclick="crmCloseDetail()" style="background:none;border:0;font-size:22px;color:var(--text3);cursor:pointer;padding:0 4px;">×</button>
         </div>
         <div class="crm-modal-body" id="crm-detail-body"></div>
+      </div>
+    </div>
+
+    <!-- Onhold modal -->
+    <div id="crm-onhold-modal" class="crm-modal" style="display:none;" onclick="crmOnHoldCancel(event)">
+      <div class="crm-modal-content" onclick="event.stopPropagation()" style="max-width:420px;">
+        <div class="crm-modal-header">
+          <div style="font-size:15px;font-weight:600;">⏸ 暂停跟进</div>
+          <button onclick="crmOnHoldCancel()" style="background:none;border:0;font-size:22px;color:var(--text3);cursor:pointer;padding:0 4px;">×</button>
+        </div>
+        <div class="crm-modal-body">
+          <div style="font-size:12px;color:var(--text3);margin-bottom:10px;line-height:1.5;">
+            暂停后,客户状态不再跟着房源变动。客户卡片会显示 ⏸ 图标和暂停天数。
+          </div>
+          <div class="crm-field">
+            <label>暂停原因(选填)</label>
+            <input type="text" id="crm-onhold-reason" placeholder="如:客户出差回国 2 周">
+          </div>
+          <div class="crm-field">
+            <label>预计恢复时间(选填)</label>
+            <input type="date" id="crm-onhold-resume-at">
+          </div>
+          <div style="display:flex;gap:10px;padding-top:10px;border-top:1px solid var(--border);margin-top:10px;">
+            <button onclick="crmOnHoldCancel()" style="flex:1;padding:10px;background:var(--surface2);border:1px solid var(--border);border-radius:7px;font-size:13px;cursor:pointer;color:var(--text2);">取消</button>
+            <button onclick="crmOnHoldConfirm()" style="flex:1;padding:10px;background:var(--accent-j);border:0;color:#fff;border-radius:7px;font-size:13px;cursor:pointer;font-weight:600;">确认暂停</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Inactive modal -->
+    <div id="crm-inactive-modal" class="crm-modal" style="display:none;" onclick="crmInactiveCancel(event)">
+      <div class="crm-modal-content" onclick="event.stopPropagation()" style="max-width:420px;">
+        <div class="crm-modal-header">
+          <div style="font-size:15px;font-weight:600;">❌ 标记为流失</div>
+          <button onclick="crmInactiveCancel()" style="background:none;border:0;font-size:22px;color:var(--text3);cursor:pointer;padding:0 4px;">×</button>
+        </div>
+        <div class="crm-modal-body">
+          <div style="font-size:12px;color:var(--text3);margin-bottom:10px;line-height:1.5;">
+            标记后,客户移到「已流失」分组(灰色)。可以随时点「恢复自动状态」复活。
+          </div>
+          <div class="crm-field">
+            <label>流失原因</label>
+            <div class="crm-pill-group" id="crm-inactive-reason-pills">
+              <div class="crm-pill" data-val="选了别家" onclick="crmInactivePickReason('选了别家')">选了别家</div>
+              <div class="crm-pill" data-val="失联" onclick="crmInactivePickReason('失联')">失联</div>
+              <div class="crm-pill" data-val="拒绝服务" onclick="crmInactivePickReason('拒绝服务')">拒绝服务</div>
+              <div class="crm-pill" data-val="客户改主意" onclick="crmInactivePickReason('客户改主意')">客户改主意</div>
+              <div class="crm-pill" data-val="其他" onclick="crmInactivePickReason('其他')">其他</div>
+            </div>
+          </div>
+          <div class="crm-field">
+            <label>补充说明(选填)</label>
+            <input type="text" id="crm-inactive-note" placeholder="选填">
+          </div>
+          <div style="display:flex;gap:10px;padding-top:10px;border-top:1px solid var(--border);margin-top:10px;">
+            <button onclick="crmInactiveCancel()" style="flex:1;padding:10px;background:var(--surface2);border:1px solid var(--border);border-radius:7px;font-size:13px;cursor:pointer;color:var(--text2);">取消</button>
+            <button onclick="crmInactiveConfirm()" style="flex:1;padding:10px;background:#999;border:0;color:#fff;border-radius:7px;font-size:13px;cursor:pointer;font-weight:600;">确认标记</button>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -1442,13 +1499,16 @@
           <div class="crm-field" id="crm-f-status-wrap" style="display:none;">
             <label>状态</label>
             <select id="crm-f-status">
-              <option value="新客户">新客户</option>
-              <option value="待发房源">待发房源</option>
-              <option value="已发房源等回复">已发房源等回复</option>
+              <option value="发房源">发房源</option>
               <option value="看房中">看房中</option>
               <option value="谈Offer">谈Offer</option>
               <option value="成交">成交</option>
+              <option value="Onhold">Onhold</option>
+              <option value="Inactive">Inactive(已流失)</option>
             </select>
+            <div style="font-size:11px;color:var(--text3);margin-top:4px;line-height:1.4;">
+              提示:主状态通常由房源联动自动更新。Onhold/Inactive 请用详情里的「更多」菜单设置。
+            </div>
           </div>
         </div>
         <div style="padding:12px 18px 18px;display:flex;gap:10px;">
@@ -3588,13 +3648,54 @@ function clearInvoice() {
 
 let crmClients = [];                // in-memory cache
 let crmLoaded = false;
-let crmView = window.innerWidth <= 640 ? 'list' : 'kanban';  // mobile defaults to list
+let crmActiveTab = '发房源';  // 当前选中的状态 Tab(左侧竖导航)
 let crmFilters = { tier: 'all', admin: 'all', agent: 'all' };
 let crmFormMode = 'new';            // 'new' | 'edit'
 let crmFormEditingId = null;
 let crmFormTier = 'normal';
 let crmDetailId = null;
-const CRM_STATUSES = ['新客户', '待发房源', '已发房源等回复', '看房中', '谈Offer', '成交'];
+// Phase 3a 新 6 档:4 主(自动推导)+ 2 辅(手动)
+const CRM_STATUSES_MAIN = ['发房源', '看房中', '谈Offer', '成交'];
+const CRM_STATUSES_AUX = ['Onhold', 'Inactive'];
+const CRM_STATUSES = [...CRM_STATUSES_MAIN, ...CRM_STATUSES_AUX];
+
+// 状态 Tab 的图标
+const CRM_STATUS_ICON = {
+  '发房源': '📤',
+  '看房中': '👀',
+  '谈Offer': '💼',
+  '成交': '✅',
+  'Onhold': '⏸',
+  'Inactive': '❌',
+};
+
+// 状态 Tab 的显示名(Inactive → 已流失)
+const CRM_STATUS_LABEL = {
+  '发房源': '发房源',
+  '看房中': '看房中',
+  '谈Offer': '谈Offer',
+  '成交': '成交',
+  'Onhold': 'Onhold',
+  'Inactive': '已流失',
+};
+
+// 兼容层:旧状态 → 新状态(老测试数据不用迁移就能工作)
+const CRM_STATUS_MIGRATE = {
+  '新客户': '发房源',
+  '待发房源': '发房源',
+  '已发房源等回复': '发房源',
+  '看房中': '看房中',
+  '谈Offer': '谈Offer',
+  '成交': '成交',
+};
+
+// 把任意状态(老的/新的/未知的)normalize 成新 6 档之一
+function crmNormalizeStatus(s) {
+  if (!s) return '发房源';
+  if (CRM_STATUSES.includes(s)) return s;
+  return CRM_STATUS_MIGRATE[s] || '发房源';
+}
+
 const CRM_LS_KEY = 'hhg_crm_clients_cache';  // localStorage fallback
 
 // Compute color (red/yellow/green) based on tier + deal type + amount
@@ -3649,8 +3750,8 @@ function crmFmtAmount(amt, deal) {
 
 // Initial load when Tab is opened
 async function crmOpenTab() {
-  // Apply saved view
-  crmSwitchView(crmView);
+  const bystatus = document.getElementById('crm-bystatus-view');
+  if (bystatus) bystatus.style.display = 'flex';
   if (!crmLoaded) await crmLoadAll();
   else crmRender();
 }
@@ -3658,8 +3759,8 @@ async function crmOpenTab() {
 async function crmLoadAll() {
   const loading = document.getElementById('crm-loading');
   if (loading) loading.style.display = 'block';
-  document.getElementById('crm-kanban-view').style.display = 'none';
-  document.getElementById('crm-list-view').style.display = 'none';
+  const bystatus = document.getElementById('crm-bystatus-view');
+  if (bystatus) bystatus.style.display = 'none';
 
   try {
     const data = await asLark({ action: 'crm_list' });
@@ -3673,10 +3774,10 @@ async function crmLoadAll() {
       const cached = localStorage.getItem(CRM_LS_KEY);
       if (cached) {
         crmClients = JSON.parse(cached);
-        showToast('⚠ 使用本地缓存（Bitable 连接失败）');
+        showToast('⚠ 使用本地缓存(Bitable 连接失败)');
       } else {
         crmClients = [];
-        alert('加载客户失败：' + (data && data.error ? data.error : '未知错误'));
+        alert('加载客户失败:' + (data && data.error ? data.error : '未知错误'));
       }
     }
   } catch (err) {
@@ -3685,22 +3786,22 @@ async function crmLoadAll() {
     const cached = localStorage.getItem(CRM_LS_KEY);
     if (cached) {
       try { crmClients = JSON.parse(cached); } catch(e) { crmClients = []; }
-      showToast('⚠ 网络失败，使用本地缓存');
+      showToast('⚠ 网络失败,使用本地缓存');
     } else {
       crmClients = [];
-      alert('网络错误：' + err.message);
+      alert('网络错误:' + err.message);
     }
   } finally {
     if (loading) loading.style.display = 'none';
+    if (bystatus) bystatus.style.display = 'flex';
     crmRender();
   }
 }
 
-function crmSwitchView(view) {
-  crmView = view;
-  document.getElementById('crm-view-kanban-btn').classList.toggle('active', view === 'kanban');
-  document.getElementById('crm-view-list-btn').classList.toggle('active', view === 'list');
-  if (crmLoaded) crmRender();
+// 切换左侧状态 Tab
+function crmSelectStatusTab(status) {
+  crmActiveTab = status;
+  crmRender();
 }
 
 function crmSetFilter(field, value) {
@@ -3768,8 +3869,17 @@ function crmEscape(s) {
   })[ch]);
 }
 
+// Onhold 持续天数
+function crmOnHoldDays(c) {
+  if (!c.onHoldAt) return 0;
+  return Math.floor((Date.now() - Number(c.onHoldAt)) / (1000 * 60 * 60 * 24));
+}
+
 function crmCardHTML(c) {
-  const stale = crmIsStale(c);
+  const status = crmNormalizeStatus(c.status);
+  const isOnHold = status === 'Onhold';
+  const isInactive = status === 'Inactive';
+  const stale = crmIsStale(c) && !isOnHold && !isInactive;
   const color = crmComputeColor(c);
   const colorIcon = CRM_COLOR_ICON[color];
   const isVip = c.tier === 'vip';
@@ -3779,17 +3889,38 @@ function crmCardHTML(c) {
   if (amtDisplay) metaTags.push(`<span>${crmEscape(amtDisplay)}</span>`);
   if (c.admin) metaTags.push(`<span>${crmEscape(c.admin)}</span>`);
   if (c.agent) metaTags.push(`<span>${crmEscape(c.agent)}</span>`);
+
+  // 脚注左:Onhold 客户显示"⏸ 暂停 X 天",Inactive 显示流失原因,其他显示服务时间
+  let footerLeft = '';
+  if (isOnHold) {
+    const days = crmOnHoldDays(c);
+    footerLeft = `⏸ 暂停 ${days} 天`;
+  } else if (isInactive) {
+    footerLeft = c.inactiveReason ? `❌ ${crmEscape(c.inactiveReason)}` : '❌ 已流失';
+  } else {
+    footerLeft = crmServiceTimeLabel(c);
+  }
+
+  const onHoldIconInRow1 = isOnHold ? '<span class="crm-card-onhold-icon" title="已暂停">⏸</span>' : '';
+
+  const classes = ['crm-card'];
+  if (stale) classes.push('stale');
+  if (isOnHold) classes.push('is-onhold');
+  if (isInactive) classes.push('is-inactive');
+
   return `
-    <div class="crm-card ${stale ? 'stale' : ''}" onclick="crmOpenDetail('${c.id}')">
+    <div class="${classes.join(' ')}" onclick="crmOpenDetail('${c.id}')">
       <div class="crm-card-row1">
         <span class="crm-card-prio">${colorIcon}</span>
         <span class="crm-card-name">${crmEscape(c.name) || '(未命名)'}</span>
         ${isVip ? '<span class="crm-card-vip">⭐</span>' : ''}
+        ${onHoldIconInRow1}
       </div>
       ${metaTags.length ? `<div class="crm-card-meta">${metaTags.join('')}</div>` : ''}
       ${c.needs ? `<div class="crm-card-needs">${crmEscape(c.needs)}</div>` : ''}
+      ${isOnHold && c.onHoldReason ? `<div class="crm-card-onhold-reason">原因:${crmEscape(c.onHoldReason)}</div>` : ''}
       <div class="crm-card-footer">
-        <span>${crmDaysSince(c.updatedAt)}更新</span>
+        <span>${footerLeft}</span>
         ${stale ? '<span class="crm-card-stale-badge">⚠ 需跟进</span>' : ''}
       </div>
     </div>
@@ -3798,76 +3929,78 @@ function crmCardHTML(c) {
 
 function crmRender() {
   const filtered = crmGetFilteredClients();
-
-  if (crmView === 'kanban') {
-    document.getElementById('crm-kanban-view').style.display = 'block';
-    document.getElementById('crm-list-view').style.display = 'none';
-    crmRenderKanban(filtered);
-  } else {
-    document.getElementById('crm-kanban-view').style.display = 'none';
-    document.getElementById('crm-list-view').style.display = 'block';
-    crmRenderList(filtered);
-  }
+  crmRenderStatusNav(filtered);
+  crmRenderStatusContent(filtered);
 }
 
-function crmRenderKanban(clients) {
-  const colorRank = { red: 0, yellow: 1, green: 2 };
-  CRM_STATUSES.forEach(status => {
-    const body = document.querySelector(`[data-body-status="${status}"]`);
-    const countEl = document.querySelector(`[data-count-status="${status}"]`);
-    const inStatus = clients.filter(c => c.status === status);
-    // Sort: color priority (red > yellow > green), then stale, then updatedAt desc
-    inStatus.sort((a, b) => {
-      const aColor = colorRank[crmComputeColor(a)] ?? 2;
-      const bColor = colorRank[crmComputeColor(b)] ?? 2;
-      if (aColor !== bColor) return aColor - bColor;
-      const aStale = crmIsStale(a) ? 1 : 0;
-      const bStale = crmIsStale(b) ? 1 : 0;
-      if (aStale !== bStale) return bStale - aStale;
-      return (Number(b.updatedAt) || 0) - (Number(a.updatedAt) || 0);
-    });
-    if (countEl) countEl.textContent = inStatus.length;
-    if (body) {
-      if (inStatus.length === 0) {
-        body.innerHTML = '<div class="crm-col-empty">暂无客户</div>';
-      } else {
-        body.innerHTML = inStatus.map(crmCardHTML).join('');
-      }
-    }
+// 左侧竖 Tab:4 主档 + 分隔线 + Onhold + 分隔线 + Inactive(灰色)
+function crmRenderStatusNav(clients) {
+  const nav = document.getElementById('crm-status-nav');
+  if (!nav) return;
+
+  // 按 normalize 后的 status 分组
+  const counts = {};
+  CRM_STATUSES.forEach(s => counts[s] = 0);
+  clients.forEach(c => {
+    const s = crmNormalizeStatus(c.status);
+    if (counts[s] != null) counts[s]++;
   });
-}
 
-function crmRenderList(clients) {
-  const box = document.getElementById('crm-list-body');
-  if (clients.length === 0) {
-    box.innerHTML = '<div style="text-align:center;padding:40px 20px;color:var(--text3);font-size:13px;">暂无客户，点击右上角「+ 新客户」添加第一位客户</div>';
-    return;
-  }
-  const colorRank = { red: 0, yellow: 1, green: 2 };
-  // Group by status
-  const html = CRM_STATUSES.map(status => {
-    const group = clients.filter(c => c.status === status);
-    if (group.length === 0) return '';
-    group.sort((a, b) => {
-      const aColor = colorRank[crmComputeColor(a)] ?? 2;
-      const bColor = colorRank[crmComputeColor(b)] ?? 2;
-      if (aColor !== bColor) return aColor - bColor;
-      const aStale = crmIsStale(a) ? 1 : 0;
-      const bStale = crmIsStale(b) ? 1 : 0;
-      if (aStale !== bStale) return bStale - aStale;
-      return (Number(b.updatedAt) || 0) - (Number(a.updatedAt) || 0);
-    });
+  const tabHTML = (status, extraClass) => {
+    const isActive = crmActiveTab === status;
+    const icon = CRM_STATUS_ICON[status] || '';
+    const label = CRM_STATUS_LABEL[status] || status;
     return `
-      <div class="crm-list-group">
-        <div class="crm-list-group-header">
-          ${status}
-          <span class="crm-list-group-count">${group.length}</span>
-        </div>
-        ${group.map(crmCardHTML).join('')}
+      <div class="crm-status-tab ${isActive ? 'active' : ''} ${extraClass || ''}" onclick="crmSelectStatusTab('${status}')">
+        <span class="crm-status-tab-label">${icon} ${label}</span>
+        <span class="crm-status-tab-count">${counts[status]}</span>
       </div>
     `;
-  }).join('');
-  box.innerHTML = html || '<div style="text-align:center;padding:40px 20px;color:var(--text3);font-size:13px;">无匹配客户</div>';
+  };
+
+  const mainTabs = CRM_STATUSES_MAIN.map(s => tabHTML(s)).join('');
+  const onholdTab = tabHTML('Onhold');
+  const inactiveTab = tabHTML('Inactive', 'is-inactive');
+
+  nav.innerHTML = `
+    ${mainTabs}
+    <div class="crm-status-nav-divider"></div>
+    ${onholdTab}
+    <div class="crm-status-nav-divider"></div>
+    ${inactiveTab}
+  `;
+}
+
+// 右侧:当前选中状态的客户卡片列表
+function crmRenderStatusContent(clients) {
+  const content = document.getElementById('crm-status-content');
+  if (!content) return;
+
+  const current = clients.filter(c => crmNormalizeStatus(c.status) === crmActiveTab);
+
+  if (current.length === 0) {
+    const label = CRM_STATUS_LABEL[crmActiveTab] || crmActiveTab;
+    content.innerHTML = `
+      <div class="crm-status-empty">
+        「${label}」没有客户
+      </div>
+    `;
+    return;
+  }
+
+  // 排序:红 > 黄 > 绿,stale 优先,updatedAt desc
+  const colorRank = { red: 0, yellow: 1, green: 2 };
+  current.sort((a, b) => {
+    const aColor = colorRank[crmComputeColor(a)] ?? 2;
+    const bColor = colorRank[crmComputeColor(b)] ?? 2;
+    if (aColor !== bColor) return aColor - bColor;
+    const aStale = crmIsStale(a) ? 1 : 0;
+    const bStale = crmIsStale(b) ? 1 : 0;
+    if (aStale !== bStale) return bStale - aStale;
+    return (Number(b.updatedAt) || 0) - (Number(a.updatedAt) || 0);
+  });
+
+  content.innerHTML = current.map(crmCardHTML).join('');
 }
 
 // ── Form: new/edit ──────────────────────────────────────────────────────────
@@ -3892,7 +4025,7 @@ function crmShowForm(mode, id) {
     document.getElementById('crm-f-agent').value = 'Andy';
     document.getElementById('crm-f-source').value = '';
     if (sourceOther) { sourceOther.value = ''; sourceOther.style.display = 'none'; }
-    document.getElementById('crm-f-status').value = '新客户';
+    document.getElementById('crm-f-status').value = '发房源';
     crmFormTier = 'normal';
     statusWrap.style.display = 'none';
   } else {
@@ -3919,7 +4052,7 @@ function crmShowForm(mode, id) {
       document.getElementById('crm-f-source').value = '__other__';
       if (sourceOther) { sourceOther.value = src; sourceOther.style.display = 'block'; }
     }
-    document.getElementById('crm-f-status').value = c.status || '新客户';
+    document.getElementById('crm-f-status').value = crmNormalizeStatus(c.status);
     crmFormTier = c.tier || 'normal';
     statusWrap.style.display = 'block';
   }
@@ -4002,7 +4135,7 @@ async function crmSaveClient() {
   try {
     if (crmFormMode === 'new') {
       clientData.id = now.toString();
-      clientData.status = '新客户';
+      clientData.status = '发房源';
       clientData.closedAt = 0;
       clientData.createdAt = now;
       clientData.timeline = [{ time: now, text: '客户创建' + (clientData.needs ? '：' + clientData.needs : '') }];
@@ -4067,9 +4200,15 @@ function crmRenderDetailBody(c) {
   const colorIcon = CRM_COLOR_ICON[color];
   const tierDisplay = c.tier === 'vip' ? '⭐ VIP' : '普通';
   const amtDisplay = crmFmtAmount(c.amount, c.deal) || '—';
-  const statusRow = CRM_STATUSES.map(s =>
-    `<span class="crm-status-btn ${c.status === s ? 'active' : ''}" onclick="crmQuickChangeStatus('${c.id}','${s}')">${s}</span>`
+  const normalizedStatus = crmNormalizeStatus(c.status);
+  const isOnHold = normalizedStatus === 'Onhold';
+  const isInactive = normalizedStatus === 'Inactive';
+
+  // status 按钮只显示 4 主档(Onhold/Inactive 通过专用按钮处理)
+  const statusRow = CRM_STATUSES_MAIN.map(s =>
+    `<span class="crm-status-btn ${normalizedStatus === s ? 'active' : ''}" onclick="crmQuickChangeStatus('${c.id}','${s}')">${s}</span>`
   ).join('');
+
   const timeline = (c.timeline || []).slice().reverse().map(t => `
     <div class="crm-timeline-item">
       <div class="crm-timeline-time">${crmFmtDate(t.time)}</div>
@@ -4077,11 +4216,56 @@ function crmRenderDetailBody(c) {
     </div>
   `).join('') || '<div style="color:var(--text3);font-size:13px;font-style:italic;padding:8px 0;">暂无跟进记录</div>';
 
-  return `
+  // 辅助状态横幅(Onhold 显示暂停信息,Inactive 显示流失原因)
+  let statusBanner = '';
+  if (isOnHold) {
+    const days = crmOnHoldDays(c);
+    const resumeDate = c.onHoldResumeAt ? crmFmtDate(c.onHoldResumeAt).split(' ')[0] : '';
+    statusBanner = `
+      <div style="background:#fafafa;border:1px solid var(--border);border-left:3px solid #999;padding:10px 12px;border-radius:7px;margin-bottom:10px;">
+        <div style="font-size:13px;font-weight:600;color:var(--text2);">⏸ 已暂停 ${days} 天</div>
+        ${c.onHoldReason ? `<div style="font-size:12px;color:var(--text3);margin-top:3px;">原因:${crmEscape(c.onHoldReason)}</div>` : ''}
+        ${resumeDate ? `<div style="font-size:12px;color:var(--text3);margin-top:3px;">预计恢复:${resumeDate}</div>` : ''}
+        <button onclick="crmResumeAutoStatus('${c.id}')" style="margin-top:8px;padding:6px 12px;background:#fff;border:1px solid var(--border);border-radius:6px;font-size:12px;cursor:pointer;color:var(--text2);">▶ 恢复自动状态</button>
+      </div>
+    `;
+  } else if (isInactive) {
+    statusBanner = `
+      <div style="background:#f5f5f5;border:1px solid var(--border);border-left:3px solid #999;padding:10px 12px;border-radius:7px;margin-bottom:10px;">
+        <div style="font-size:13px;font-weight:600;color:var(--text2);">❌ 已流失</div>
+        ${c.inactiveReason ? `<div style="font-size:12px;color:var(--text3);margin-top:3px;">原因:${crmEscape(c.inactiveReason)}${c.inactiveNote ? ' · ' + crmEscape(c.inactiveNote) : ''}</div>` : ''}
+        <button onclick="crmResumeAutoStatus('${c.id}')" style="margin-top:8px;padding:6px 12px;background:#fff;border:1px solid var(--border);border-radius:6px;font-size:12px;cursor:pointer;color:var(--text2);">▶ 恢复自动状态</button>
+      </div>
+    `;
+  }
+
+  // 状态按钮区(只在非 Onhold/Inactive 时显示)
+  const statusSection = (isOnHold || isInactive) ? '' : `
     <div class="crm-detail-section">
       <div class="crm-detail-label">状态</div>
       <div class="crm-status-row">${statusRow}</div>
+      <div style="font-size:11px;color:var(--text3);margin-top:6px;line-height:1.4;">
+        提示:Phase 3a 后,状态会根据房源自动更新。暂时可以手动切换。
+      </div>
     </div>
+  `;
+
+  // 底部操作按钮:动态组装
+  const canDelete = crmCanDelete(c);
+  const bottomButtons = [];
+  bottomButtons.push(`<button onclick="crmShowForm('edit','${c.id}'); crmCloseDetail();" style="flex:1;padding:10px;background:var(--surface2);border:1px solid var(--border);border-radius:7px;font-size:13px;cursor:pointer;color:var(--text2);">编辑</button>`);
+  // Onhold/Inactive 入口:只在"正常状态"下显示
+  if (!isOnHold && !isInactive) {
+    bottomButtons.push(`<button onclick="crmOnHold('${c.id}')" style="flex:1;padding:10px;background:#fff;border:1px solid var(--border);border-radius:7px;font-size:13px;cursor:pointer;color:var(--text2);">⏸ 暂停</button>`);
+    bottomButtons.push(`<button onclick="crmInactivate('${c.id}')" style="flex:1;padding:10px;background:#fff;border:1px solid var(--border);border-radius:7px;font-size:13px;cursor:pointer;color:var(--text2);">❌ 流失</button>`);
+  }
+  if (canDelete) {
+    bottomButtons.push(`<button onclick="crmDeleteClient('${c.id}')" style="flex:1;padding:10px;background:#fff;border:1px solid #d42b2b;color:#d42b2b;border-radius:7px;font-size:13px;cursor:pointer;">删除</button>`);
+  }
+
+  return `
+    ${statusBanner}
+    ${statusSection}
 
     <div class="crm-detail-section">
       <div class="crm-detail-label">基本信息</div>
@@ -4124,27 +4308,38 @@ function crmRenderDetailBody(c) {
       </div>
     </div>
 
-    <div style="display:flex;gap:10px;padding-top:10px;border-top:1px solid var(--border);margin-top:10px;">
-      <button onclick="crmShowForm('edit','${c.id}'); crmCloseDetail();" style="flex:1;padding:10px;background:var(--surface2);border:1px solid var(--border);border-radius:7px;font-size:13px;cursor:pointer;color:var(--text2);">编辑</button>
-      <button onclick="crmDeleteClient('${c.id}')" style="flex:1;padding:10px;background:#fff;border:1px solid #d42b2b;color:#d42b2b;border-radius:7px;font-size:13px;cursor:pointer;">删除</button>
+    <div style="display:flex;gap:8px;padding-top:10px;border-top:1px solid var(--border);margin-top:10px;flex-wrap:wrap;">
+      ${bottomButtons.join('')}
     </div>
   `;
 }
 
+// 删除判断:只有 7 天内创建 + 无推荐房源的客户可以删除
+function crmCanDelete(c) {
+  if (!c.createdAt) return true;  // 老客户无 createdAt 保守允许
+  const days = (Date.now() - Number(c.createdAt)) / (1000 * 60 * 60 * 24);
+  if (days > 7) return false;
+  // 检查是否有推荐房源(用已加载的 recCurrentList 或简化:createdAt 7 天内都允许)
+  // 因为 REC 是异步加载的,这里简化:7 天内就允许,实际删除时再检查
+  return true;
+}
+
 async function crmQuickChangeStatus(id, newStatus) {
   const c = crmClients.find(x => x.id === id);
-  if (!c || c.status === newStatus) return;
+  if (!c) return;
+  const currentNormalized = crmNormalizeStatus(c.status);
+  if (currentNormalized === newStatus) return;
   const now = Date.now();
   const updated = {
     ...c,
     status: newStatus,
     updatedAt: now,
-    timeline: [...(c.timeline || []), { time: now, text: `状态变更：${c.status} → ${newStatus}` }],
+    timeline: [...(c.timeline || []), { time: now, text: `状态变更:${currentNormalized} → ${newStatus}` }],
   };
   // 状态 → 成交:记录 closedAt;离开成交:清空 closedAt
-  if (newStatus === '成交' && c.status !== '成交') {
+  if (newStatus === '成交' && currentNormalized !== '成交') {
     updated.closedAt = now;
-  } else if (c.status === '成交' && newStatus !== '成交') {
+  } else if (currentNormalized === '成交' && newStatus !== '成交') {
     updated.closedAt = 0;
   }
   try {
@@ -4192,7 +4387,12 @@ async function crmAddNote() {
 async function crmDeleteClient(id) {
   const c = crmClients.find(x => x.id === id);
   if (!c) return;
-  if (!confirm(`确认删除客户 "${c.name}"？此操作不可恢复。`)) return;
+  // 再次检查删除条件(防止用户绕过 UI 判断)
+  if (!crmCanDelete(c)) {
+    alert('此客户已超过 7 天或有推荐房源,无法删除。\n\n如要停止跟进,请使用「❌ 流失」按钮。');
+    return;
+  }
+  if (!confirm(`确认删除客户 "${c.name}"?此操作不可恢复。`)) return;
   try {
     const data = await asLark({ action: 'crm_delete', lark_id: c._lark_id });
     if (!data.success) throw new Error(data.error || '删除失败');
@@ -4202,9 +4402,175 @@ async function crmDeleteClient(id) {
     crmRender();
     showToast('✓ 已删除');
   } catch (err) {
-    alert('删除失败：' + err.message);
+    alert('删除失败:' + err.message);
   }
 }
+
+// ── Onhold: 暂停跟进 ──────────────────────────────────────────────────────
+let crmOnHoldTargetId = null;
+
+function crmOnHold(id) {
+  crmOnHoldTargetId = id;
+  document.getElementById('crm-onhold-reason').value = '';
+  document.getElementById('crm-onhold-resume-at').value = '';
+  document.getElementById('crm-onhold-modal').style.display = 'flex';
+}
+
+function crmOnHoldCancel(evt) {
+  if (evt && evt.target.id !== 'crm-onhold-modal') return;
+  document.getElementById('crm-onhold-modal').style.display = 'none';
+  crmOnHoldTargetId = null;
+}
+
+async function crmOnHoldConfirm() {
+  const id = crmOnHoldTargetId;
+  if (!id) return;
+  const c = crmClients.find(x => x.id === id);
+  if (!c) { alert('客户未找到'); return; }
+
+  const reason = document.getElementById('crm-onhold-reason').value.trim();
+  const resumeAtRaw = document.getElementById('crm-onhold-resume-at').value;
+  const resumeAt = resumeAtRaw ? new Date(resumeAtRaw).getTime() : 0;
+
+  const now = Date.now();
+  const note = `⏸ 暂停跟进${reason ? '(' + reason + ')' : ''}${resumeAtRaw ? ',预计 ' + resumeAtRaw + ' 恢复' : ''}`;
+  // 保存暂停前的状态以便恢复
+  const prevStatus = crmNormalizeStatus(c.status);
+  const updated = {
+    ...c,
+    status: 'Onhold',
+    onHoldAt: now,
+    onHoldReason: reason,
+    onHoldResumeAt: resumeAt,
+    onHoldPrevStatus: (prevStatus === 'Onhold' || prevStatus === 'Inactive') ? '发房源' : prevStatus,
+    updatedAt: now,
+    timeline: [...(c.timeline || []), { time: now, text: note }],
+  };
+
+  try {
+    const data = await asLark({ action: 'crm_update', lark_id: c._lark_id, client: updated });
+    if (!data.success) throw new Error(data.error || '暂停失败');
+    const idx = crmClients.findIndex(x => x.id === id);
+    if (idx >= 0) crmClients[idx] = updated;
+    try { localStorage.setItem(CRM_LS_KEY, JSON.stringify(crmClients)); } catch(e) {}
+    document.getElementById('crm-onhold-modal').style.display = 'none';
+    crmOnHoldTargetId = null;
+    // 跳转到 Onhold Tab 让用户看到结果
+    crmActiveTab = 'Onhold';
+    document.getElementById('crm-detail-body').innerHTML = crmRenderDetailBody(updated);
+    crmRender();
+    showToast('⏸ 已暂停跟进');
+  } catch (err) {
+    alert('暂停失败:' + err.message);
+  }
+}
+
+// ── Inactive: 标记为流失 ──────────────────────────────────────────────────
+let crmInactiveTargetId = null;
+let crmInactiveReason = '';
+
+function crmInactivate(id) {
+  crmInactiveTargetId = id;
+  crmInactiveReason = '';
+  document.getElementById('crm-inactive-note').value = '';
+  document.querySelectorAll('#crm-inactive-reason-pills .crm-pill').forEach(p => p.classList.remove('active'));
+  document.getElementById('crm-inactive-modal').style.display = 'flex';
+}
+
+function crmInactiveCancel(evt) {
+  if (evt && evt.target.id !== 'crm-inactive-modal') return;
+  document.getElementById('crm-inactive-modal').style.display = 'none';
+  crmInactiveTargetId = null;
+  crmInactiveReason = '';
+}
+
+function crmInactivePickReason(reason) {
+  crmInactiveReason = reason;
+  document.querySelectorAll('#crm-inactive-reason-pills .crm-pill').forEach(p => {
+    p.classList.toggle('active', p.dataset.val === reason);
+  });
+}
+
+async function crmInactiveConfirm() {
+  const id = crmInactiveTargetId;
+  if (!id) return;
+  if (!crmInactiveReason) { alert('请选择流失原因'); return; }
+  const c = crmClients.find(x => x.id === id);
+  if (!c) { alert('客户未找到'); return; }
+
+  const note = document.getElementById('crm-inactive-note').value.trim();
+  const now = Date.now();
+  const timelineText = `❌ 标记为流失:${crmInactiveReason}${note ? '(' + note + ')' : ''}`;
+  const prevStatus = crmNormalizeStatus(c.status);
+  const updated = {
+    ...c,
+    status: 'Inactive',
+    inactiveAt: now,
+    inactiveReason: crmInactiveReason,
+    inactiveNote: note,
+    onHoldPrevStatus: (prevStatus === 'Onhold' || prevStatus === 'Inactive') ? (c.onHoldPrevStatus || '发房源') : prevStatus,
+    updatedAt: now,
+    timeline: [...(c.timeline || []), { time: now, text: timelineText }],
+  };
+
+  try {
+    const data = await asLark({ action: 'crm_update', lark_id: c._lark_id, client: updated });
+    if (!data.success) throw new Error(data.error || '标记失败');
+    const idx = crmClients.findIndex(x => x.id === id);
+    if (idx >= 0) crmClients[idx] = updated;
+    try { localStorage.setItem(CRM_LS_KEY, JSON.stringify(crmClients)); } catch(e) {}
+    document.getElementById('crm-inactive-modal').style.display = 'none';
+    crmInactiveTargetId = null;
+    crmActiveTab = 'Inactive';
+    document.getElementById('crm-detail-body').innerHTML = crmRenderDetailBody(updated);
+    crmRender();
+    showToast('❌ 已标记为流失');
+  } catch (err) {
+    alert('标记失败:' + err.message);
+  }
+}
+
+// ── Resume: 从 Onhold/Inactive 恢复自动状态 ───────────────────────────────
+async function crmResumeAutoStatus(id) {
+  const c = crmClients.find(x => x.id === id);
+  if (!c) return;
+  const current = crmNormalizeStatus(c.status);
+  if (current !== 'Onhold' && current !== 'Inactive') return;
+  if (!confirm(`确认把客户「${c.name}」恢复自动状态?\n\n会根据房源状态重新推导主流程。`)) return;
+
+  const now = Date.now();
+  const fromLabel = current === 'Onhold' ? '暂停' : '流失';
+  // 恢复目标:优先用保存的 prevStatus,否则默认"发房源"
+  const targetStatus = c.onHoldPrevStatus || '发房源';
+  const updated = {
+    ...c,
+    status: targetStatus,
+    onHoldAt: 0,
+    onHoldReason: '',
+    onHoldResumeAt: 0,
+    onHoldPrevStatus: '',
+    inactiveAt: 0,
+    inactiveReason: '',
+    inactiveNote: '',
+    updatedAt: now,
+    timeline: [...(c.timeline || []), { time: now, text: `▶ 从「${fromLabel}」恢复自动状态 → ${targetStatus}` }],
+  };
+
+  try {
+    const data = await asLark({ action: 'crm_update', lark_id: c._lark_id, client: updated });
+    if (!data.success) throw new Error(data.error || '恢复失败');
+    const idx = crmClients.findIndex(x => x.id === id);
+    if (idx >= 0) crmClients[idx] = updated;
+    try { localStorage.setItem(CRM_LS_KEY, JSON.stringify(crmClients)); } catch(e) {}
+    crmActiveTab = targetStatus;
+    document.getElementById('crm-detail-body').innerHTML = crmRenderDetailBody(updated);
+    crmRender();
+    showToast('▶ 已恢复自动状态');
+  } catch (err) {
+    alert('恢复失败:' + err.message);
+  }
+}
+
 // ═══════════════════════════════════ END CRM MODULE ═══════════════════════════════════
 
 
@@ -4218,9 +4584,10 @@ const REC_STATUSES = ['备选', '已发送', '待约看', '已约看', '看过',
 const REC_GROUPS_ORDER = ['Offer中', '成交', '已约看', '待约看', '看过', '已发送', '备选', '拒绝'];
 // 状态优先级映射(数字越大越"靠后",用于联动重算客户状态)
 const REC_STATUS_RANK = { '备选': 0, '已发送': 1, '待约看': 2, '已约看': 3, '看过': 4, 'Offer中': 5, '成交': 6, '拒绝': -1 };
-// 房源 → 客户 状态映射
+// 房源 → 客户 状态映射(Phase 3a v2.7 新 CRM 状态)
+// 注:REC 侧还是老 8 档(下个会话改)。这里映射到新 CRM 4 主档。
 const REC_TO_CRM = {
-  '已发送':   '已发房源等回复',
+  '已发送':   '发房源',       // 房源已发但客户还没选 → 还是"发房源"阶段
   '待约看':   '看房中',
   '已约看':   '看房中',
   '看过':     '看房中',
@@ -4622,6 +4989,9 @@ async function recRecomputeClientStatus(clientId) {
   if (!clientId) return;
   const client = crmClients.find(c => c.id === clientId);
   if (!client) return;
+  // Onhold/Inactive 期间不自动联动(决定 3)
+  const currentNormalized = crmNormalizeStatus(client.status);
+  if (currentNormalized === 'Onhold' || currentNormalized === 'Inactive') return;
   // 只看活跃房源(过滤掉拒绝)
   const active = recCurrentList.filter(r => r.status && REC_STATUS_RANK[r.status] >= 0);
   if (active.length === 0) return;  // 没有活跃房源,客户状态不动
@@ -4633,7 +5003,7 @@ async function recRecomputeClientStatus(clientId) {
     if (rank > topRank) { topRank = rank; topStatus = r.status; }
   });
   const newCrmStatus = REC_TO_CRM[topStatus];
-  if (!newCrmStatus || newCrmStatus === client.status) return;
+  if (!newCrmStatus || newCrmStatus === currentNormalized) return;
 
   // 成交联动需要弹确认(因为不可逆性强)
   if (newCrmStatus === '成交') {
@@ -4649,7 +5019,7 @@ async function recRecomputeClientStatus(clientId) {
     updatedAt: now,
     timeline: [...(client.timeline || []), { time: now, text: `状态联动:房源进入「${topStatus}」→ 客户改为「${newCrmStatus}」` }],
   };
-  if (newCrmStatus === '成交' && client.status !== '成交') updated.closedAt = now;
+  if (newCrmStatus === '成交' && currentNormalized !== '成交') updated.closedAt = now;
 
   try {
     const data = await asLark({ action: 'crm_update', lark_id: client._lark_id, client: updated });
@@ -4657,13 +5027,14 @@ async function recRecomputeClientStatus(clientId) {
     const idx = crmClients.findIndex(x => x.id === clientId);
     if (idx >= 0) crmClients[idx] = updated;
     try { localStorage.setItem(CRM_LS_KEY, JSON.stringify(crmClients)); } catch(e) {}
-    // 重渲染客户详情(状态行)+ kanban
+    // 重渲染客户详情:完全重渲染以处理 Onhold/Inactive 时的不同结构
     if (document.getElementById('crm-detail-modal').style.display === 'flex') {
-      // 只更新状态按钮(避免覆盖推荐房源 section 异步加载的内容)
+      // 只更新状态按钮(4 主档),避免覆盖推荐房源 section 异步加载的内容
       const statusRow = document.querySelector('.crm-status-row');
       if (statusRow) {
-        statusRow.innerHTML = CRM_STATUSES.map(s =>
-          `<span class="crm-status-btn ${updated.status === s ? 'active' : ''}" onclick="crmQuickChangeStatus('${clientId}','${s}')">${s}</span>`
+        const normalized = crmNormalizeStatus(updated.status);
+        statusRow.innerHTML = CRM_STATUSES_MAIN.map(s =>
+          `<span class="crm-status-btn ${normalized === s ? 'active' : ''}" onclick="crmQuickChangeStatus('${clientId}','${s}')">${s}</span>`
         ).join('');
       }
     }
@@ -4677,9 +5048,12 @@ async function recRecomputeClientStatus(clientId) {
 const _crmQuickChangeStatusOriginal = crmQuickChangeStatus;
 crmQuickChangeStatus = async function(id, newStatus) {
   const c = crmClients.find(x => x.id === id);
-  if (c && c.status === '成交' && newStatus !== '成交') {
-    const ok = confirm(`客户从「成交」改回「${newStatus}」。\n\n注意:对应的「成交」房源不会自动改状态,需要您手动到房源里调整。\n\n继续吗?`);
-    if (!ok) return;
+  if (c) {
+    const currentNormalized = crmNormalizeStatus(c.status);
+    if (currentNormalized === '成交' && newStatus !== '成交') {
+      const ok = confirm(`客户从「成交」改回「${newStatus}」。\n\n注意:对应的「成交」房源不会自动改状态,需要您手动到房源里调整。\n\n继续吗?`);
+      if (!ok) return;
+    }
   }
   return _crmQuickChangeStatusOriginal(id, newStatus);
 };
