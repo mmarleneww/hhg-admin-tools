@@ -590,6 +590,24 @@
     display: flex; align-items: center; justify-content: center;
     min-height: 200px; color: var(--text3); font-size: 13px;
   }
+  /* 约看 modal 每套房源一行 + 时间输入(会话 6)*/
+  .rec-viewing-row {
+    display: flex; align-items: center; gap: 8px;
+    padding: 7px 10px; background: #fff;
+    border: 1px solid var(--border); border-radius: 6px;
+    margin-bottom: 6px;
+  }
+  .rec-viewing-row-addr {
+    flex: 1; font-size: 12px; color: var(--text2);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .rec-viewing-row-time {
+    width: 100px; padding: 5px 8px;
+    border: 1px solid var(--border); border-radius: 5px;
+    font-size: 12px; font-family: inherit; outline: none;
+  }
+  .rec-viewing-row-time:focus { border-color: var(--accent-j); }
+  .rec-viewing-row-time::placeholder { color: #aaa; }
   /* ═════════════════════════════════════════════════ */
 
   /* 房源详情弹窗:状态按钮组横滑 */
@@ -1723,6 +1741,60 @@
         <div style="padding:12px 18px 18px;display:flex;gap:10px;">
           <button onclick="recCloseSendPreview()" style="flex:1;padding:11px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;font-size:14px;cursor:pointer;color:var(--text2);">取消</button>
           <button id="rec-send-copy-btn" onclick="recSendCopyAndMarkSent()" disabled style="flex:2;padding:11px;background:var(--accent-j);color:#fff;border:0;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;">复制(状态改为已发送)</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 批量约看消息预览 modal(会话 6) -->
+    <div id="rec-viewing-modal" class="crm-modal" style="display:none;" onclick="recCloseViewingPreview(event)">
+      <div class="crm-modal-content" onclick="event.stopPropagation()" style="max-width:680px;">
+        <div class="crm-modal-header">
+          <div style="font-size:16px;font-weight:600;">📅 生成约看消息 <span style="font-size:12px;color:var(--text3);font-weight:400;">(<span id="rec-viewing-count">0</span> 套)</span></div>
+          <button onclick="recCloseViewingPreview()" style="background:none;border:0;font-size:22px;color:var(--text3);cursor:pointer;padding:0 4px;">×</button>
+        </div>
+        <div class="crm-modal-body">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+            <div class="crm-field">
+              <label>客户称呼</label>
+              <input type="text" id="rec-viewing-client" placeholder="如:老板、张总" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;background:#fff;box-sizing:border-box;">
+            </div>
+            <div class="crm-field">
+              <label>看房日期</label>
+              <input type="text" id="rec-viewing-date" placeholder="如:17/04 周五" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;background:#fff;box-sizing:border-box;">
+            </div>
+          </div>
+          <div class="crm-field" style="margin-bottom:10px;">
+            <label>开头语(选填)</label>
+            <select id="rec-viewing-intro-select" onchange="recViewingIntroChange(this.value)" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;background:#fff;margin-bottom:6px;box-sizing:border-box;">
+              <option value="">— 不加开头语 —</option>
+              <option value="这是目前为您安排好的看房时间，您先参考一下，如有变化我会及时更新。">这是目前为您安排好的看房时间，您先参考一下，如有变化我会及时更新。</option>
+              <option value="以下是目前确认好的看房安排，供您参考，一有新的确认我再补充给您。">以下是目前确认好的看房安排，供您参考，一有新的确认我再补充给您。</option>
+              <option value="目前先确认了以下几套，其他的还在等中介回复，一有更新马上告诉您。">目前先确认了以下几套，其他的还在等中介回复，一有更新马上告诉您。</option>
+              <option value="刚刚又确认了几套可以加入一起看，整理给您。">刚刚又确认了几套可以加入一起看，整理给您。</option>
+              <option value="看房时间这边有一点调整，我重新整理给您。">看房时间这边有一点调整，我重新整理给您。</option>
+              <option value="__custom_v__">✏️ 自定义...</option>
+            </select>
+            <input type="text" id="rec-viewing-intro-custom" placeholder="自定义开头语..." style="display:none;width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;background:#fff;box-sizing:border-box;">
+          </div>
+          <div class="crm-field" style="margin-bottom:10px;">
+            <label>备注(选填)</label>
+            <input type="text" id="rec-viewing-note" placeholder="如:其他的还在等中介回复中" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;background:#fff;box-sizing:border-box;">
+          </div>
+          <div style="margin-bottom:10px;">
+            <div style="font-size:12px;color:var(--text3);margin-bottom:5px;">每套房源时间(选填,留空 = 等待确认)</div>
+            <div id="rec-viewing-rows"></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+            <div style="font-size:12px;color:var(--text3);">消息预览</div>
+            <button id="rec-viewing-gen-btn" onclick="recGenerateViewingMessage()" style="padding:6px 14px;background:var(--accent-g);color:#fff;border:0;border-radius:6px;font-size:12px;font-weight:500;cursor:pointer;">🤖 生成消息</button>
+          </div>
+          <div class="rec-send-preview" id="rec-viewing-preview-area">
+            <div class="rec-send-loading">填好日期和时间后,点「生成消息」</div>
+          </div>
+        </div>
+        <div style="padding:12px 18px 18px;display:flex;gap:10px;">
+          <button onclick="recCloseViewingPreview()" style="flex:1;padding:11px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;font-size:14px;cursor:pointer;color:var(--text2);">取消</button>
+          <button id="rec-viewing-copy-btn" onclick="recViewingCopyAndSchedule()" disabled style="flex:2;padding:11px;background:var(--accent-j);color:#fff;border:0;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;">复制(状态改为已约看)</button>
         </div>
       </div>
     </div>
@@ -5054,9 +5126,12 @@ function recRenderList() {
     groups[status].push(r);
   });
 
-  // 会话 5:批量操作条
-  // 只统计 selectable(备选/已发送)状态的房源
-  const selectableList = recCurrentList.filter(r => r.status === '备选' || r.status === '已发送');
+  // 会话 5:批量操作条 / 会话 6:扩展至 待约看 + 约看按钮
+  // 发消息按钮:备选 + 已发送(已有)
+  // 约看按钮:  备选 + 已发送 + 待约看(新增)
+  const canSend = r => r.status === '备选' || r.status === '已发送';
+  const canSchedule = r => r.status === '备选' || r.status === '已发送' || r.status === '待约看';
+  const selectableList = recCurrentList.filter(canSchedule);
   const draftList = recCurrentList.filter(r => r.status === '备选');
   // 清掉 selectedIds 里已失效的(比如被删的房源)
   const validIds = new Set(recCurrentList.map(r => r._lark_id));
@@ -5064,6 +5139,10 @@ function recRenderList() {
     if (!validIds.has(id)) recSelectedIds.delete(id);
   }
   const selectedCount = recSelectedIds.size;
+  // 判断选中的房源里是否有可发送/可约看的
+  const selectedList = recCurrentList.filter(r => recSelectedIds.has(r._lark_id));
+  const hasSendable = selectedList.some(canSend);
+  const hasSchedulable = selectedList.some(canSchedule);
   let batchBarHtml = '';
   if (selectableList.length > 0) {
     const hasDraft = draftList.length > 0;
@@ -5076,8 +5155,11 @@ function recRenderList() {
         <div class="rec-batch-bar-spacer"></div>
         ${hasDraft && !allDraftSelected ? `<button class="rec-batch-bar-link" onclick="recBatchSelectAvailable()">全选备选</button>` : ''}
         ${selectedCount > 0 ? `<button class="rec-batch-bar-link" onclick="recClearSelection()">取消全选</button>` : ''}
-        <button class="rec-batch-bar-send" ${selectedCount === 0 ? 'disabled' : ''} onclick="recOpenSendPreview()">
-          ✉️ 生成发客户消息
+        <button class="rec-batch-bar-send" ${!hasSendable ? 'disabled' : ''} onclick="recOpenSendPreview()" title="${hasSendable ? '' : '需选中备选/已发送状态的房源'}">
+          ✉️ 发房源
+        </button>
+        <button class="rec-batch-bar-send" ${!hasSchedulable ? 'disabled' : ''} onclick="recOpenViewingPreview()" title="${hasSchedulable ? '' : '需选中备选/已发送/待约看状态的房源'}" style="background:var(--accent-g);">
+          📅 约看
         </button>
       </div>
     `;
@@ -5110,8 +5192,8 @@ function recRenderCard(r) {
   if (r.agentPhone) agentLine.push(`<a href="tel:${recEscape(r.agentPhone)}" onclick="event.stopPropagation()" class="rec-card-link">${recEscape(r.agentPhone)}</a>`);
   if (r.agentCo) agentLine.push(recEscape(r.agentCo));
 
-  // 会话 5:备选/已发送 状态房源显示勾选框(备选=默认新加的,已发送=可以重发)
-  const isSelectable = (r.status === '备选' || r.status === '已发送');
+  // 会话 5+6:备选/已发送/待约看 状态房源显示勾选框(备选=发消息+约看,已发送=重发+约看,待约看=只能约看)
+  const isSelectable = (r.status === '备选' || r.status === '已发送' || r.status === '待约看');
   const isChecked = recSelectedIds.has(r._lark_id);
   const checkboxHtml = isSelectable
     ? `<input type="checkbox" class="rec-card-checkbox" ${isChecked ? 'checked' : ''} onclick="event.stopPropagation();recToggleSelect('${r._lark_id}')">`
@@ -5347,6 +5429,266 @@ async function recSendCopyAndMarkSent() {
       showToast(`✓ 已复制消息,${okCount > 0 ? `${okCount} 套已标记为已发送` : '无状态变动'}`);
     } else {
       showToast(`✓ 已复制消息。${okCount} 套成功,${errCount} 套失败`);
+    }
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// 批量约看(会话 6)
+// 流程:勾选备选/已发送/待约看 → 填日期+每套时间 → 生成消息 → 复制 → 状态改已约看 + 写 viewLog
+// 复用找房 Tab 的 viewing(看房安排)prompt 逻辑
+// ═══════════════════════════════════════════════════════════════════════
+
+// 打开约看预览 modal
+function recOpenViewingPreview() {
+  if (recSelectedIds.size === 0) { alert('请先勾选至少一套房源'); return; }
+  const selected = recCurrentList.filter(r =>
+    recSelectedIds.has(r._lark_id) &&
+    (r.status === '备选' || r.status === '已发送' || r.status === '待约看')
+  );
+  if (selected.length === 0) { alert('选中的房源状态不支持约看(需要:备选/已发送/待约看)'); return; }
+
+  const modal = document.getElementById('rec-viewing-modal');
+  if (!modal) { alert('约看窗口未找到'); return; }
+
+  const client = crmClients.find(c => c.id === recCurrentClientId);
+  const defaultCall = client?.name || '老板';
+
+  // 填基本字段
+  document.getElementById('rec-viewing-client').value = defaultCall;
+  document.getElementById('rec-viewing-date').value = '';
+  document.getElementById('rec-viewing-note').value = '';
+  document.getElementById('rec-viewing-intro-select').value = '';
+  document.getElementById('rec-viewing-intro-custom').style.display = 'none';
+  document.getElementById('rec-viewing-intro-custom').value = '';
+  document.getElementById('rec-viewing-count').textContent = selected.length;
+
+  // 渲染每套房源一行
+  const rowsHtml = selected.map((r, i) => `
+    <div class="rec-viewing-row">
+      <div class="rec-viewing-row-addr" title="${recEscape(r.address || '')}">${i+1}. ${recEscape(r.address || '(无地址)')}</div>
+      <input type="text" class="rec-viewing-row-time" data-lark-id="${r._lark_id}" placeholder="时间(选填)" />
+    </div>
+  `).join('');
+  document.getElementById('rec-viewing-rows').innerHTML = rowsHtml;
+
+  document.getElementById('rec-viewing-preview-area').innerHTML =
+    '<div class="rec-send-loading">填好日期和时间后,点「生成消息」</div>';
+  document.getElementById('rec-viewing-copy-btn').disabled = true;
+  document.getElementById('rec-viewing-copy-btn').textContent = '复制(状态改为已约看)';
+
+  window._recViewingSelected = selected.slice();
+  window._recViewingGeneratedText = '';
+
+  modal.style.display = 'flex';
+}
+
+function recCloseViewingPreview(evt) {
+  if (evt && evt.target.id !== 'rec-viewing-modal') return;
+  const modal = document.getElementById('rec-viewing-modal');
+  if (modal) modal.style.display = 'none';
+  window._recViewingSelected = null;
+  window._recViewingGeneratedText = '';
+}
+
+function recViewingIntroChange(val) {
+  const custom = document.getElementById('rec-viewing-intro-custom');
+  if (val === '__custom_v__') {
+    custom.style.display = 'block';
+    custom.focus();
+  } else {
+    custom.style.display = 'none';
+  }
+}
+
+// 从 UI 收集每套房源的时间
+function recCollectViewingTimes() {
+  const times = {};
+  const inputs = document.querySelectorAll('#rec-viewing-rows .rec-viewing-row-time');
+  inputs.forEach(inp => {
+    const id = inp.getAttribute('data-lark-id');
+    const v = (inp.value || '').trim();
+    times[id] = v;  // 可能为空字符串 = 等待确认
+  });
+  return times;
+}
+
+// 生成消息(调用 Claude API,复用找房 Tab 的 viewing prompt)
+async function recGenerateViewingMessage() {
+  const selected = window._recViewingSelected || [];
+  if (selected.length === 0) { alert('选中的房源丢失,请重开预览'); return; }
+
+  const client = document.getElementById('rec-viewing-client').value.trim() || '老板';
+  const viewingDate = document.getElementById('rec-viewing-date').value.trim();
+  const viewingNote = document.getElementById('rec-viewing-note').value.trim();
+  const introSel = document.getElementById('rec-viewing-intro-select').value;
+  const introCustom = document.getElementById('rec-viewing-intro-custom').value.trim();
+  const intro = introSel === '__custom_v__' ? introCustom : (introSel || '');
+  const times = recCollectViewingTimes();
+
+  // 更新选中列表里每个房源的时间(供复制后写入 viewLog)
+  selected.forEach(r => { r._viewingTime = times[r._lark_id] || ''; });
+  window._recViewingSelected = selected;
+
+  const confirmedCount = selected.filter(r => r._viewingTime).length;
+
+  const genBtn = document.getElementById('rec-viewing-gen-btn');
+  const previewArea = document.getElementById('rec-viewing-preview-area');
+  const copyBtn = document.getElementById('rec-viewing-copy-btn');
+  genBtn.disabled = true;
+  genBtn.textContent = '生成中...';
+  previewArea.innerHTML = '<div class="rec-send-loading">AI 正在整理消息...</div>';
+  copyBtn.disabled = true;
+
+  // 构造 listingsText(完全复用找房 Tab viewing mode 格式)
+  const listingsText = selected.map((r, i) => {
+    const priceDisplay = recFmtPrice(r.price, r.priceType);
+    let s = `房源${i+1}:\n链接: ${r.link || '(无链接)'}`;
+    s += `\n小区名: ${r.address||''}, 价格: ${priceDisplay !== '—' ? priceDisplay : ''}, 户型: ${r.rooms||''}, 面积: ${r.area ? r.area + 'sqft' : ''}, 家具: ${r.furnishing||''}, 入住: ${r.availability||''}`;
+    s += `\n确认时间: ${r._viewingTime || '等待确认'}`;
+    return s;
+  }).join('\n\n');
+
+  // System/User prompt 复用 generateListing 的 viewing-mode(3274-3305 行)
+  const systemPrompt = `你是新加坡房地产中介"好好过 Haohaoguo Realty"的AI助手。
+任务：生成看房安排消息发给客户（微信中文）。
+
+输出格式（严格按此顺序）：
+
+有开头语时：
+[客户称呼]，[开头语]
+[备注（如有）]
+
+【1】...
+
+无开头语时：
+[客户称呼]，这是[日期]目前的看房安排, 加了[N]套 :
+[备注（如有）]
+
+【1】...
+
+【1】🏠 [小区名]
+💰 $[月租] | [X]房[X]卫 | [面积]sqft
+🛋 [家具情况] | [入住日期]
+🔗 [PropertyGuru链接，原样粘贴，不要修改]
+【已确定[时间]】（已确认的才加，等待确认的省略）
+
+规则：
+- 已确认时间的排前面，等待确认的排后面
+- 编号用【1】【2】格式
+- 等待确认的房源不加【已确定】行
+- 🔗 后面必须是完整的PropertyGuru URL，直接原样输出
+- ⚠️ 面积（如484sqft）是纯文字，不是链接，不要变成超链接格式
+- 直接输出消息，不要加前缀`;
+
+  const userPrompt = `客户称呼：${client}
+${intro ? '开头语：' + intro : '（无开头语，直接从看房安排内容开始）'}
+看房日期：${viewingDate || '待定'}
+备注：${viewingNote || '无'}
+已确认${confirmedCount}套
+
+${listingsText}`;
+
+  try {
+    const text = await callAPI(systemPrompt, userPrompt);
+    window._recViewingGeneratedText = text;
+    previewArea.textContent = text;
+    copyBtn.disabled = false;
+    genBtn.textContent = '重新生成';
+    genBtn.disabled = false;
+  } catch (err) {
+    previewArea.innerHTML = '<div style="color:#c62828;padding:14px;">❌ 生成失败:' + recEscape(err.message) + '</div>';
+    genBtn.textContent = '重试';
+    genBtn.disabled = false;
+  }
+}
+
+// 复制 + 批量:状态 → 已约看 + viewLog 加预约事件 + 客户状态联动
+async function recViewingCopyAndSchedule() {
+  const text = window._recViewingGeneratedText || '';
+  if (!text) { alert('请先生成消息'); return; }
+  const selected = window._recViewingSelected || [];
+  if (selected.length === 0) { alert('选中的房源丢失'); return; }
+
+  const viewingDate = document.getElementById('rec-viewing-date').value.trim();
+
+  const copyBtn = document.getElementById('rec-viewing-copy-btn');
+  copyBtn.disabled = true;
+  copyBtn.textContent = '处理中...';
+
+  // 1. 复制到剪贴板
+  try {
+    await navigator.clipboard.writeText(text);
+  } catch (e) {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand('copy'); } catch(_) {}
+    document.body.removeChild(ta);
+  }
+
+  // 2. 批量更新每套房源:状态 → 已约看,viewLog 加"预约"事件
+  const now = Date.now();
+  let okCount = 0, errCount = 0;
+  for (const r of selected) {
+    // 构造 viewLog 事件文本
+    const t = r._viewingTime || '';
+    let logText = '';
+    if (viewingDate && t) logText = `${viewingDate} ${t}`;
+    else if (viewingDate) logText = `${viewingDate} 等待确认`;
+    else if (t) logText = t;
+    else logText = '等待确认';
+
+    const newEvent = { time: now, kind: '预约', text: logText };
+    const updated = {
+      ...r,
+      status: '已约看',
+      viewLog: [...(r.viewLog || []), newEvent],
+      updatedAt: now,
+    };
+    // 去掉临时字段
+    delete updated._viewingTime;
+    try {
+      const res = await recApi('rec_update', { lark_id: r._lark_id, rec: updated });
+      if (res.success) {
+        // 同步 recCurrentList
+        const idx = recCurrentList.findIndex(x => x._lark_id === r._lark_id);
+        if (idx >= 0) {
+          recCurrentList[idx] = {
+            ...recCurrentList[idx],
+            status: '已约看',
+            viewLog: updated.viewLog,
+            updatedAt: now,
+          };
+        }
+        okCount++;
+      } else {
+        errCount++;
+      }
+    } catch (err) {
+      errCount++;
+    }
+  }
+
+  // 3. 清空选择
+  recSelectedIds.clear();
+
+  // 4. 联动客户状态(已约看 → 客户=看房中)
+  if (okCount > 0 && recCurrentClientId) {
+    try { await recRecomputeClientStatus(recCurrentClientId); } catch(_) {}
+  }
+
+  // 5. 重渲染
+  recRenderList();
+
+  // 6. 关闭 modal + toast
+  recCloseViewingPreview();
+  if (typeof showToast === 'function') {
+    if (errCount === 0) {
+      showToast(`✓ 已复制消息,${okCount} 套标记为已约看`);
+    } else {
+      showToast(`✓ 已复制。${okCount} 套成功,${errCount} 套失败`);
     }
   }
 }
