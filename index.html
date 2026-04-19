@@ -5692,12 +5692,13 @@ function recRenderList() {
 
   // 会话 5:批量操作条 / 会话 6:扩展至 待约看 + 约看按钮
   // 会话 10:拆分「约看」按钮为「📅 填约看时间」+「✉️ 发约看消息」
+  // 会话 11-fix:「发约看消息」启用条件放宽 —— 客户有任何已约看 OR 勾选了可操作状态
   // 发消息按钮(✉️ 发房源):备选 + 已发送
   // 填时间按钮(📅 填约看时间):备选 + 已发送 + 待约看 + 已约看(可改约)
-  // 发约看消息(✉️ 发约看消息):备选 + 已发送 + 待约看(复用旧逻辑)
+  // 发约看消息(✉️ 发约看消息):客户有已约看 即可(内部可切"只发勾选/发全部")
   const canSend = r => r.status === '备选' || r.status === '已发送';
   const canFillTime = r => r.status === '备选' || r.status === '已发送' || r.status === '待约看' || r.status === '已约看';
-  const canSchedule = r => r.status === '备选' || r.status === '已发送' || r.status === '待约看';
+  const canSchedule = r => r.status === '已约看' || r.status === '待约看' || r.status === '已发送' || r.status === '备选';
   const selectableList = recCurrentList.filter(r => canFillTime(r) || canSchedule(r));
   const draftList = recCurrentList.filter(r => r.status === '备选');
   // 清掉 selectedIds 里已失效的(比如被删的房源)
@@ -5710,7 +5711,9 @@ function recRenderList() {
   const selectedList = recCurrentList.filter(r => recSelectedIds.has(r._lark_id));
   const hasSendable = selectedList.some(canSend);
   const hasFillable = selectedList.some(canFillTime);
-  const hasSchedulable = selectedList.some(canSchedule);
+  // 会话 11-fix:发约看消息的启用条件 = 客户有任何已约看 OR 勾选的里有可操作状态
+  const clientHasBooked = recCurrentList.some(r => r.status === '已约看');
+  const canOpenViewingMsg = clientHasBooked || selectedList.some(canSchedule);
   let batchBarHtml = '';
   if (selectableList.length > 0) {
     const hasDraft = draftList.length > 0;
@@ -5729,7 +5732,7 @@ function recRenderList() {
         <button class="rec-batch-bar-send" ${!hasFillable ? 'disabled' : ''} onclick="recVtOpen()" title="${hasFillable ? '' : '需选中备选/已发送/待约看/已约看状态的房源'}" style="background:var(--accent-g);">
           📅 填约看时间
         </button>
-        <button class="rec-batch-bar-send" ${!hasSchedulable ? 'disabled' : ''} onclick="recOpenViewingPreview()" title="${hasSchedulable ? '' : '需选中备选/已发送/待约看状态的房源'}" style="background:var(--accent-g);">
+        <button class="rec-batch-bar-send" ${!canOpenViewingMsg ? 'disabled' : ''} onclick="recOpenViewingPreview()" title="${canOpenViewingMsg ? '' : '当前客户没有已约看的房源,也没勾选可操作的房源'}" style="background:var(--accent-g);">
           ✉️ 发约看消息
         </button>
       </div>
