@@ -564,16 +564,36 @@
   .rec-card-created {
     font-size: 10px; color: var(--text3); white-space: nowrap; flex-shrink: 0;
   }
-  /* 会话 7:客户卡片 — 右侧紧急标签(方案 D)─────────────────── */
+  /* 会话 8:客户卡片紧急标签 — 7 条细化(按房源池最靠后状态)─────── */
   .crm-card-row1-urgent {
     font-size: 10px; font-weight: 500;
     padding: 2px 7px; border-radius: 3px; white-space: nowrap;
     margin-left: auto; flex-shrink: 0;
   }
-  .crm-card-urgent-发房源   { background: #fff3e0; color: #e65100; }
-  .crm-card-urgent-看房中   { background: #e8f5e9; color: #2e7d32; }
-  .crm-card-urgent-谈Offer  { background: #f3e5f5; color: #6a1b9a; }
-  .crm-card-urgent-成交     { background: #c8e6c9; color: #1b5e20; }
+  /* 橙:球在 Admin */
+  .crm-urgent-draft    { background: #fff3e0; color: #e65100; }
+  .crm-urgent-booking  { background: #fff3e0; color: #e65100; }
+  /* 蓝:球在客户 */
+  .crm-urgent-sent     { background: #e3f2fd; color: #1565c0; }
+  .crm-urgent-viewed   { background: #e3f2fd; color: #1565c0; }
+  /* 黄:球在中介 */
+  .crm-urgent-booked   { background: #fffde7; color: #f57f17; }
+  .crm-urgent-offer    { background: #fffde7; color: #f57f17; }
+  /* 深绿:已成交 */
+  .crm-urgent-deal     { background: #c8e6c9; color: #1b5e20; }
+  /* ═════════════════════════════════════════════════════════════ */
+
+  /* 会话 8:客户详情 — 阶段摘要(房源状态分布)──────────────── */
+  .crm-rec-summary {
+    display: flex; flex-wrap: wrap; gap: 6px;
+    margin: 8px 0 12px 0;
+  }
+  .crm-rec-summary-chip {
+    font-size: 12px; color: var(--text2);
+    background: #f5f5f5; border: 1px solid var(--border);
+    padding: 3px 9px; border-radius: 12px;
+    white-space: nowrap;
+  }
   /* ═════════════════════════════════════════════════════════════ */
 
   /* 批量发送房源(会话 5) ═════════════════════════════ */
@@ -4077,9 +4097,103 @@ async function crmLoadAll() {
   } finally {
     if (loading) loading.style.display = 'none';
     if (bystatus) bystatus.style.display = 'flex';
+    // 会话 8:先用缓存渲染(秒开),再后台刷新房源摘要
+    crmApplyRecSummaryCache();
     crmRender();
+    crmLoadRecSummaries();
   }
 }
+
+// ═══ 会话 8:房源池聚合快照 ═══════════════════════════════════════════
+// 对每个客户并行取 rec_list,算出 "最靠后状态" + 各状态计数,塞进 c._recSummary
+// 目的:客户卡片紧急标签 + 详情页阶段摘要 + 为会话 9 的 todolist 打地基
+
+const CRM_REC_SUMMARY_LS_KEY = 'hhg_crm_rec_summary_cache';
+
+// 先把 localStorage 里的旧摘要合并进 crmClients(首次渲染秒开)
+function crmApplyRecSummaryCache() {
+  try {
+    const cached = localStorage.getItem(CRM_REC_SUMMARY_LS_KEY);
+    if (!cached) return;
+    const map = JSON.parse(cached);
+    crmClients.forEach(c => {
+      if (map[c.id]) c._recSummary = map[c.id];
+    });
+  } catch (e) {}
+}
+
+// 从一组房源算出摘要
+function crmComputeRecSummary(recs) {
+  const counts = { '备选': 0, '已发送': 0, '待约看': 0, '已约看': 0, '看过': 0, 'Offer中': 0, '成交': 0, '拒绝': 0 };
+  let lastStatus = null;
+  let lastRank = -1;
+  (recs || []).forEach(r => {
+    if (!r.status) return;
+    if (counts[r.status] != null) counts[r.status]++;
+    const rank = REC_STATUS_RANK[r.status];
+    // 拒绝 rank = -1,不参与"最靠后"判断
+    if (rank != null && rank >= 0 && rank > lastRank) {
+      lastRank = rank;
+      lastStatus = r.status;
+    }
+  });
+  return { counts, lastStatus, total: (recs || []).length };
+}
+
+// 并行拉取所有客户的房源并聚合
+async function crmLoadRecSummaries() {
+  if (!Array.isArray(crmClients) || crmClients.length === 0) return;
+  // 只拉活跃客户(Onhold/Inactive 不需要紧急标签和阶段摘要)
+  const targets = crmClients.filter(c => {
+    const s = crmNormalizeStatus(c.status);
+    return s !== 'Onhold' && s !== 'Inactive';
+  });
+  if (targets.length === 0) return;
+
+  const results = await Promise.allSettled(
+    targets.map(c => recApi('rec_list', { client_id: c.id }).then(data => ({
+      clientId: c.id,
+      recs: (data && data.success && Array.isArray(data.recs)) ? data.recs : [],
+    })))
+  );
+
+  const summaryMap = {};
+  results.forEach(r => {
+    if (r.status !== 'fulfilled') return;
+    const { clientId, recs } = r.value;
+    const summary = crmComputeRecSummary(recs);
+    summaryMap[clientId] = summary;
+    const idx = crmClients.findIndex(c => c.id === clientId);
+    if (idx >= 0) crmClients[idx]._recSummary = summary;
+  });
+
+  // 把旧缓存和新结果合并(活跃客户用新的,Onhold/Inactive 保留旧的)
+  try {
+    const prev = JSON.parse(localStorage.getItem(CRM_REC_SUMMARY_LS_KEY) || '{}');
+    const merged = { ...prev, ...summaryMap };
+    localStorage.setItem(CRM_REC_SUMMARY_LS_KEY, JSON.stringify(merged));
+  } catch (e) {}
+
+  // 重新渲染(紧急标签更新)
+  crmRender();
+}
+
+// 单客户摘要刷新(状态联动后调用,保持卡片实时)
+async function crmRefreshRecSummary(clientId) {
+  try {
+    const data = await recApi('rec_list', { client_id: clientId });
+    if (!data || !data.success) return;
+    const summary = crmComputeRecSummary(data.recs || []);
+    const idx = crmClients.findIndex(c => c.id === clientId);
+    if (idx >= 0) crmClients[idx]._recSummary = summary;
+    try {
+      const prev = JSON.parse(localStorage.getItem(CRM_REC_SUMMARY_LS_KEY) || '{}');
+      prev[clientId] = summary;
+      localStorage.setItem(CRM_REC_SUMMARY_LS_KEY, JSON.stringify(prev));
+    } catch (e) {}
+  } catch (e) {}
+}
+// ═════════════════════════════════════════════════════════════════════
 
 // 切换左侧状态 Tab
 function crmSelectStatusTab(status) {
@@ -4179,18 +4293,44 @@ function crmCardHTML(c) {
 
   const onHoldIconInRow1 = isOnHold ? '<span class="crm-card-onhold-icon" title="已暂停">⏸</span>' : '';
 
-  // 会话 7:右侧紧急标签(方案 D — 按主状态显示)
+  // 会话 8:紧急标签 — 按房源池"最靠后状态"显示(7 条细化)
+  // 规则:
+  //   没房源 / 最靠后=备选   → 待发房源(橙)
+  //   最靠后=已发送           → 等待客户筛选(蓝)
+  //   最靠后=待约看           → 待约看,沟通时间中(橙)
+  //   最靠后=已约看           → 等中介带看(黄)
+  //   最靠后=看过             → 等客户反馈(蓝)
+  //   最靠后=Offer中          → 谈 Offer 中(黄)
+  //   客户主状态=成交         → 已成交(深绿)
+  //   Onhold/Inactive 不显示
   let urgentTag = '';
   if (!isOnHold && !isInactive) {
-    const urgentLabels = {
-      '发房源':  '📤 待发房源',
-      '看房中':  '🏠 看房中',
-      '谈Offer': '💬 谈 Offer',
-      '成交':    '✅ 已成交',
-    };
-    const label = urgentLabels[status];
-    if (label) {
-      urgentTag = `<span class="crm-card-row1-urgent crm-card-urgent-${status}">${label}</span>`;
+    let tagKey = null;
+    let tagLabel = null;
+    if (status === '成交') {
+      tagKey = 'deal';
+      tagLabel = '✅ 已成交';
+    } else {
+      const lastRec = c._recSummary && c._recSummary.lastStatus;
+      const recTagMap = {
+        '备选':    { key: 'draft',   label: '📤 待发房源' },
+        '已发送':  { key: 'sent',    label: '📨 等待客户筛选' },
+        '待约看':  { key: 'booking', label: '📞 待约看,沟通时间中' },
+        '已约看':  { key: 'booked',  label: '📅 等中介带看' },
+        '看过':    { key: 'viewed',  label: '💬 等客户反馈' },
+        'Offer中': { key: 'offer',   label: '💼 谈 Offer 中' },
+      };
+      if (lastRec && recTagMap[lastRec]) {
+        tagKey = recTagMap[lastRec].key;
+        tagLabel = recTagMap[lastRec].label;
+      } else {
+        // 没房源(或全拒绝)→ 提示 Admin 去加
+        tagKey = 'draft';
+        tagLabel = '📤 待发房源';
+      }
+    }
+    if (tagKey && tagLabel) {
+      urgentTag = `<span class="crm-card-row1-urgent crm-urgent-${tagKey}">${tagLabel}</span>`;
     }
   }
 
@@ -4583,6 +4723,28 @@ function crmRenderDetailPage(c) {
     </div>
   `;
 
+  // 会话 8:阶段摘要 — 客户房源池状态分布(不显示"拒绝")
+  let recSummarySection = '';
+  if (!isOnHold && !isInactive && c._recSummary && c._recSummary.total > 0) {
+    const counts = c._recSummary.counts || {};
+    const summaryOrder = [
+      { key: '备选',    icon: '📤', label: '备选' },
+      { key: '已发送',  icon: '📨', label: '已发送' },
+      { key: '待约看',  icon: '📞', label: '待约看' },
+      { key: '已约看',  icon: '📅', label: '已约看' },
+      { key: '看过',    icon: '💬', label: '看过' },
+      { key: 'Offer中', icon: '💼', label: 'Offer 中' },
+      { key: '成交',    icon: '✅', label: '成交' },
+    ];
+    const chips = summaryOrder
+      .filter(s => (counts[s.key] || 0) > 0)
+      .map(s => `<span class="crm-rec-summary-chip">${s.icon} ${counts[s.key]} 套${s.label}</span>`)
+      .join('');
+    if (chips) {
+      recSummarySection = `<div class="crm-rec-summary">${chips}</div>`;
+    }
+  }
+
   const canDelete = crmCanDelete(c);
   // ⚙ 菜单项(会话 4.5:移到 header,取代底部大按钮)
   const gearMenuItems = [];
@@ -4615,6 +4777,7 @@ function crmRenderDetailPage(c) {
       <div class="crm-detail-main">
         ${statusBanner}
         ${statusSection}
+        ${recSummarySection}
 
         <div class="crm-detail-split">
           <div>
@@ -6132,6 +6295,18 @@ async function recRecomputeClientStatus(clientId) {
   if (!clientId) return;
   const client = crmClients.find(c => c.id === clientId);
   if (!client) return;
+
+  // 会话 8:先用 recCurrentList 更新客户的房源摘要(无论后面是否联动状态都要刷)
+  try {
+    const summary = crmComputeRecSummary(recCurrentList);
+    client._recSummary = summary;
+    try {
+      const prev = JSON.parse(localStorage.getItem(CRM_REC_SUMMARY_LS_KEY) || '{}');
+      prev[clientId] = summary;
+      localStorage.setItem(CRM_REC_SUMMARY_LS_KEY, JSON.stringify(prev));
+    } catch (e) {}
+  } catch (e) {}
+
   // Onhold/Inactive 期间不自动联动(决定 3)
   const currentNormalized = crmNormalizeStatus(client.status);
   if (currentNormalized === 'Onhold' || currentNormalized === 'Inactive') return;
