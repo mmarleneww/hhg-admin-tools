@@ -695,6 +695,58 @@
   input.rec-viewing-row-time[type="text"]::placeholder { color: #aaa; }
   /* ═════════════════════════════════════════════════ */
 
+  /* 会话 10:填约看时间 modal(分离版) ────────────────────────────── */
+  /* 时间下拉(5分钟粒度) */
+  select.rec-vt-time-select {
+    width: 130px; flex-shrink: 0; padding: 6px 8px;
+    border: 1px solid var(--border); border-radius: 5px;
+    font-size: 12px; font-family: inherit; outline: none;
+    background: #fff; box-sizing: border-box; cursor: pointer;
+  }
+  select.rec-vt-time-select:focus { border-color: var(--accent-j); }
+  /* 冲突提示(时间下拉下方) */
+  .rec-vt-conflict {
+    font-size: 11px; color: #e65100;
+    padding: 2px 0 0 4px; min-height: 14px;
+  }
+  /* 每套房源一行 —— 复用 rec-viewing-row 结构,但右侧是 select */
+  .rec-vt-row {
+    display: flex; flex-direction: column;
+    padding: 7px 10px; background: #fff;
+    border: 1px solid var(--border); border-radius: 6px;
+    margin-bottom: 6px;
+  }
+  .rec-vt-row-top {
+    display: flex; align-items: center; gap: 8px;
+  }
+  .rec-vt-row-addr {
+    flex: 1; font-size: 12px; color: var(--text2);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .rec-vt-row-status {
+    font-size: 10px; padding: 1px 6px; border-radius: 3px;
+    white-space: nowrap; flex-shrink: 0;
+  }
+  .rec-vt-row-status.is-draft    { background: #f3e5f5; color: #6a1b9a; }  /* 备选(紫) */
+  .rec-vt-row-status.is-sent     { background: #e3f2fd; color: #1565c0; }  /* 已发送(蓝) */
+  .rec-vt-row-status.is-pending  { background: #fff3e0; color: #e65100; }  /* 待约看(橙) */
+  .rec-vt-row-status.is-booked   { background: #fff8e1; color: #f57f17; }  /* 已约看(黄) */
+  /* 日期 picker 栏 */
+  .rec-vt-date-row {
+    display: flex; gap: 10px; align-items: flex-end;
+    padding: 10px; background: var(--surface2);
+    border-radius: 6px; margin-bottom: 12px;
+  }
+  .rec-vt-date-row input[type="date"] {
+    padding: 8px 10px; border: 1px solid var(--border);
+    border-radius: 6px; font-size: 13px; background: #fff;
+    font-family: inherit;
+  }
+  .rec-vt-date-hint {
+    flex: 1; font-size: 11px; color: var(--text3); line-height: 1.4;
+  }
+  /* ═════════════════════════════════════════════════ */
+
   /* 房源详情弹窗:状态按钮组横滑 */
   .rec-detail-status-row {
     display: flex; gap: 5px; flex-wrap: wrap;
@@ -1830,11 +1882,11 @@
       </div>
     </div>
 
-    <!-- 批量约看消息预览 modal(会话 6) -->
+    <!-- 批量约看消息预览 modal(会话 6)—— 会话 10:保留,按钮改名"发约看消息"但内部暂不动 -->
     <div id="rec-viewing-modal" class="crm-modal" style="display:none;" onclick="recCloseViewingPreview(event)">
       <div class="crm-modal-content" onclick="event.stopPropagation()" style="max-width:680px;">
         <div class="crm-modal-header">
-          <div style="font-size:16px;font-weight:600;">📅 生成约看消息 <span style="font-size:12px;color:var(--text3);font-weight:400;">(<span id="rec-viewing-count">0</span> 套)</span></div>
+          <div style="font-size:16px;font-weight:600;">✉️ 生成约看消息 <span style="font-size:12px;color:var(--text3);font-weight:400;">(<span id="rec-viewing-count">0</span> 套)</span></div>
           <button onclick="recCloseViewingPreview()" style="background:none;border:0;font-size:22px;color:var(--text3);cursor:pointer;padding:0 4px;">×</button>
         </div>
         <div class="crm-modal-body">
@@ -1880,6 +1932,36 @@
         <div style="padding:12px 18px 18px;display:flex;gap:10px;">
           <button onclick="recCloseViewingPreview()" style="flex:1;padding:11px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;font-size:14px;cursor:pointer;color:var(--text2);">取消</button>
           <button id="rec-viewing-copy-btn" onclick="recViewingCopyAndSchedule()" disabled style="flex:2;padding:11px;background:var(--accent-j);color:#fff;border:0;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;">复制(状态改为已约看)</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 会话 10:填约看时间 modal(弹窗1 · 只改数据不发消息)─────── -->
+    <div id="rec-vt-modal" class="crm-modal" style="display:none;" onclick="recVtClose(event)">
+      <div class="crm-modal-content" onclick="event.stopPropagation()" style="max-width:640px;">
+        <div class="crm-modal-header">
+          <div style="font-size:16px;font-weight:600;">📅 填约看时间 <span style="font-size:12px;color:var(--text3);font-weight:400;">(<span id="rec-vt-count">0</span> 套)</span></div>
+          <button onclick="recVtClose()" style="background:none;border:0;font-size:22px;color:var(--text3);cursor:pointer;padding:0 4px;">×</button>
+        </div>
+        <div class="crm-modal-body">
+          <div class="rec-vt-date-row">
+            <div>
+              <label style="display:block;font-size:11px;color:var(--text3);margin-bottom:3px;">看房日期</label>
+              <input type="date" id="rec-vt-date" />
+            </div>
+            <div class="rec-vt-date-hint">
+              填了时间的房源,状态会自动改为「已约看」<br>
+              没填时间的房源不会改动
+            </div>
+          </div>
+          <div style="margin-bottom:6px;">
+            <div style="font-size:12px;color:var(--text3);margin-bottom:6px;">每套房源时间(5 分钟粒度,可留空)</div>
+            <div id="rec-vt-rows"></div>
+          </div>
+        </div>
+        <div style="padding:12px 18px 18px;display:flex;gap:10px;">
+          <button onclick="recVtClose()" style="flex:1;padding:11px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;font-size:14px;cursor:pointer;color:var(--text2);">取消</button>
+          <button id="rec-vt-save-btn" onclick="recVtSave()" style="flex:2;padding:11px;background:var(--accent-j);color:#fff;border:0;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;">保存</button>
         </div>
       </div>
     </div>
@@ -5556,11 +5638,14 @@ function recRenderList() {
   });
 
   // 会话 5:批量操作条 / 会话 6:扩展至 待约看 + 约看按钮
-  // 发消息按钮:备选 + 已发送(已有)
-  // 约看按钮:  备选 + 已发送 + 待约看(新增)
+  // 会话 10:拆分「约看」按钮为「📅 填约看时间」+「✉️ 发约看消息」
+  // 发消息按钮(✉️ 发房源):备选 + 已发送
+  // 填时间按钮(📅 填约看时间):备选 + 已发送 + 待约看 + 已约看(可改约)
+  // 发约看消息(✉️ 发约看消息):备选 + 已发送 + 待约看(复用旧逻辑)
   const canSend = r => r.status === '备选' || r.status === '已发送';
+  const canFillTime = r => r.status === '备选' || r.status === '已发送' || r.status === '待约看' || r.status === '已约看';
   const canSchedule = r => r.status === '备选' || r.status === '已发送' || r.status === '待约看';
-  const selectableList = recCurrentList.filter(canSchedule);
+  const selectableList = recCurrentList.filter(r => canFillTime(r) || canSchedule(r));
   const draftList = recCurrentList.filter(r => r.status === '备选');
   // 清掉 selectedIds 里已失效的(比如被删的房源)
   const validIds = new Set(recCurrentList.map(r => r._lark_id));
@@ -5568,9 +5653,10 @@ function recRenderList() {
     if (!validIds.has(id)) recSelectedIds.delete(id);
   }
   const selectedCount = recSelectedIds.size;
-  // 判断选中的房源里是否有可发送/可约看的
+  // 判断选中的房源里是否有可发送/可填时间/可发约看消息的
   const selectedList = recCurrentList.filter(r => recSelectedIds.has(r._lark_id));
   const hasSendable = selectedList.some(canSend);
+  const hasFillable = selectedList.some(canFillTime);
   const hasSchedulable = selectedList.some(canSchedule);
   let batchBarHtml = '';
   if (selectableList.length > 0) {
@@ -5587,8 +5673,11 @@ function recRenderList() {
         <button class="rec-batch-bar-send" ${!hasSendable ? 'disabled' : ''} onclick="recOpenSendPreview()" title="${hasSendable ? '' : '需选中备选/已发送状态的房源'}">
           ✉️ 发房源
         </button>
+        <button class="rec-batch-bar-send" ${!hasFillable ? 'disabled' : ''} onclick="recVtOpen()" title="${hasFillable ? '' : '需选中备选/已发送/待约看/已约看状态的房源'}" style="background:var(--accent-g);">
+          📅 填约看时间
+        </button>
         <button class="rec-batch-bar-send" ${!hasSchedulable ? 'disabled' : ''} onclick="recOpenViewingPreview()" title="${hasSchedulable ? '' : '需选中备选/已发送/待约看状态的房源'}" style="background:var(--accent-g);">
-          📅 约看
+          ✉️ 发约看消息
         </button>
       </div>
     `;
@@ -6204,6 +6293,322 @@ async function recViewingCopyAndSchedule() {
       showToast(`✓ 已复制消息,${okCount} 套标记为已约看`);
     } else {
       showToast(`✓ 已复制。${okCount} 套成功,${errCount} 套失败`);
+    }
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// 会话 10:填约看时间弹窗(弹窗1 · 只改数据,不发消息)
+// ─────────────────────────────────────────────────────────────────────
+// 流程:勾选房源 → 打开弹窗 → 选日期 + 每套选时间(5分钟粒度)
+//     → 保存:填了时间的改为「已约看」+ viewLog 加「预约/改约」事件
+//             没填时间的不变
+// 时间下拉范围:8:00-21:55,每 5 分钟一档,共 168 档
+// 冲突检测:同一套时间两套选一样的,提示但不阻止保存
+// ═══════════════════════════════════════════════════════════════════════
+
+// 生成时间下拉 options(8:00-21:55,5 分钟粒度)
+function recVtTimeOptions(selectedVal) {
+  const parts = ['<option value="">— 清空 —</option>'];
+  for (let h = 8; h <= 21; h++) {
+    const hourLabel = h < 12 ? `${h}:00 AM` : (h === 12 ? '12:00 PM' : `${h-12}:00 PM`);
+    parts.push(`<optgroup label="${hourLabel}">`);
+    for (let m = 0; m < 60; m += 5) {
+      const hh = String(h).padStart(2, '0');
+      const mm = String(m).padStart(2, '0');
+      const val = `${hh}:${mm}`;
+      // 显示格式:AM/PM
+      let display;
+      if (h < 12) display = `${h}:${mm} AM`;
+      else if (h === 12) display = `12:${mm} PM`;
+      else display = `${h-12}:${mm} PM`;
+      const sel = (val === selectedVal) ? ' selected' : '';
+      parts.push(`<option value="${val}"${sel}>${display}</option>`);
+    }
+    parts.push('</optgroup>');
+  }
+  return parts.join('');
+}
+
+// 从房源 viewLog 里提取最新预约时间(作为预填)
+// 返回格式:{ date: 'YYYY-MM-DD' or '', time: 'HH:MM' or '' }
+function recVtExtractLastBooking(r) {
+  const log = Array.isArray(r.viewLog) ? r.viewLog : [];
+  // 反向找最新的 kind=预约 或 改约 事件
+  for (let i = log.length - 1; i >= 0; i--) {
+    const ev = log[i];
+    if (ev && (ev.kind === '预约' || ev.kind === '改约')) {
+      return recVtParseTextToDateTime(ev.text || '');
+    }
+  }
+  return { date: '', time: '' };
+}
+
+// 解析 viewLog.text → {date, time}
+// 支持格式:
+//   "2026-04-25 10:30"
+//   "25/04 10:30"
+//   "17/04 周五 10.15am"
+//   "时间待确定"(返回空)
+// 保守策略:解析不出来就返回空
+function recVtParseTextToDateTime(text) {
+  const out = { date: '', time: '' };
+  if (!text) return out;
+  // 日期:YYYY-MM-DD 优先
+  let m = text.match(/(\d{4})-(\d{1,2})-(\d{1,2})/);
+  if (m) {
+    out.date = `${m[1]}-${String(m[2]).padStart(2,'0')}-${String(m[3]).padStart(2,'0')}`;
+  } else {
+    // DD/MM 格式,假设当年
+    m = text.match(/(\d{1,2})\/(\d{1,2})/);
+    if (m) {
+      const y = new Date().getFullYear();
+      out.date = `${y}-${String(m[2]).padStart(2,'0')}-${String(m[1]).padStart(2,'0')}`;
+    }
+  }
+  // 时间:HH:MM 优先
+  m = text.match(/(\d{1,2}):(\d{2})/);
+  if (m) {
+    const h = parseInt(m[1], 10);
+    const mi = parseInt(m[2], 10);
+    if (h >= 0 && h <= 23 && mi >= 0 && mi <= 59) {
+      // 向下取整到 5 分钟粒度
+      const roundedM = Math.floor(mi / 5) * 5;
+      out.time = `${String(h).padStart(2,'0')}:${String(roundedM).padStart(2,'0')}`;
+    }
+  } else {
+    // H.MMam/pm 格式(如 10.15am, 2.30pm)
+    m = text.match(/(\d{1,2})[.:](\d{2})\s*(am|pm)/i);
+    if (m) {
+      let h = parseInt(m[1], 10);
+      const mi = parseInt(m[2], 10);
+      const ap = m[3].toLowerCase();
+      if (ap === 'pm' && h < 12) h += 12;
+      if (ap === 'am' && h === 12) h = 0;
+      if (h >= 0 && h <= 23 && mi >= 0 && mi <= 59) {
+        const roundedM = Math.floor(mi / 5) * 5;
+        out.time = `${String(h).padStart(2,'0')}:${String(roundedM).padStart(2,'0')}`;
+      }
+    } else {
+      // Ham/pm 格式(如 10am, 2pm)
+      m = text.match(/(\d{1,2})\s*(am|pm)/i);
+      if (m) {
+        let h = parseInt(m[1], 10);
+        const ap = m[2].toLowerCase();
+        if (ap === 'pm' && h < 12) h += 12;
+        if (ap === 'am' && h === 12) h = 0;
+        if (h >= 0 && h <= 23) out.time = `${String(h).padStart(2,'0')}:00`;
+      }
+    }
+  }
+  return out;
+}
+
+// 把 HH:MM(24小时) 转成显示用的 AM/PM 格式
+function recVtDisplayTime(hhmm) {
+  if (!hhmm) return '';
+  const parts = hhmm.split(':');
+  if (parts.length !== 2) return hhmm;
+  const h = parseInt(parts[0], 10);
+  const mm = parts[1];
+  if (h < 12) return `${h}:${mm} AM`;
+  if (h === 12) return `12:${mm} PM`;
+  return `${h-12}:${mm} PM`;
+}
+
+// 打开弹窗1
+function recVtOpen() {
+  if (recSelectedIds.size === 0) { alert('请先勾选至少一套房源'); return; }
+  const selected = recCurrentList.filter(r =>
+    recSelectedIds.has(r._lark_id) &&
+    (r.status === '备选' || r.status === '已发送' || r.status === '待约看' || r.status === '已约看')
+  );
+  if (selected.length === 0) { alert('选中的房源状态不支持填约看时间(需要:备选/已发送/待约看/已约看)'); return; }
+
+  const modal = document.getElementById('rec-vt-modal');
+  if (!modal) { alert('填约看时间窗口未找到'); return; }
+
+  document.getElementById('rec-vt-count').textContent = selected.length;
+
+  // 日期默认:如果选中房源里有已约看的,取它最新预约日期;否则留空
+  let defaultDate = '';
+  for (const r of selected) {
+    if (r.status === '已约看') {
+      const b = recVtExtractLastBooking(r);
+      if (b.date) { defaultDate = b.date; break; }
+    }
+  }
+  document.getElementById('rec-vt-date').value = defaultDate;
+
+  // 每套房源一行
+  const rowsHtml = selected.map((r, i) => {
+    const priceDisplay = recFmtPrice(r.price, r.priceType);
+    const idParts = [`[${i+1}]`, recEscape(r.address || '(无地址)')];
+    if (r.rooms) idParts.push(recEscape(r.rooms));
+    if (priceDisplay !== '—') idParts.push(recEscape(priceDisplay));
+
+    // 状态徽章
+    let statusClass = '', statusText = r.status;
+    if (r.status === '备选')    statusClass = 'is-draft';
+    if (r.status === '已发送')  statusClass = 'is-sent';
+    if (r.status === '待约看')  statusClass = 'is-pending';
+    if (r.status === '已约看')  statusClass = 'is-booked';
+
+    // 预填时间:已约看的从 viewLog 取,其他留空
+    let prefillTime = '';
+    if (r.status === '已约看') {
+      const b = recVtExtractLastBooking(r);
+      prefillTime = b.time;
+    }
+
+    return `
+    <div class="rec-vt-row" data-lark-id="${r._lark_id}">
+      <div class="rec-vt-row-top">
+        <div class="rec-vt-row-addr" title="${recEscape(r.address || '')}">${idParts.join(' · ')}</div>
+        <span class="rec-vt-row-status ${statusClass}">${recEscape(statusText)}</span>
+        <select class="rec-vt-time-select" data-lark-id="${r._lark_id}" onchange="recVtCheckConflicts()">
+          ${recVtTimeOptions(prefillTime)}
+        </select>
+      </div>
+      <div class="rec-vt-conflict" data-conflict-for="${r._lark_id}"></div>
+    </div>`;
+  }).join('');
+  document.getElementById('rec-vt-rows').innerHTML = rowsHtml;
+
+  window._recVtSelected = selected.slice();
+
+  // 初始冲突检测(已约看可能已经预填了)
+  recVtCheckConflicts();
+
+  modal.style.display = 'flex';
+}
+
+function recVtClose(evt) {
+  if (evt && evt.target.id !== 'rec-vt-modal') return;
+  const modal = document.getElementById('rec-vt-modal');
+  if (modal) modal.style.display = 'none';
+  window._recVtSelected = null;
+}
+
+// 冲突检测:哪些行的时间是重复的
+function recVtCheckConflicts() {
+  const selects = document.querySelectorAll('#rec-vt-rows select.rec-vt-time-select');
+  // 先清空所有冲突提示
+  document.querySelectorAll('#rec-vt-rows .rec-vt-conflict').forEach(d => { d.textContent = ''; });
+  // 按时间分组
+  const byTime = {};
+  selects.forEach(sel => {
+    const t = sel.value;
+    if (!t) return;
+    if (!byTime[t]) byTime[t] = [];
+    byTime[t].push(sel.getAttribute('data-lark-id'));
+  });
+  // 对每个时间>1的,给所有涉及的行加提示
+  const selected = window._recVtSelected || [];
+  for (const t in byTime) {
+    const ids = byTime[t];
+    if (ids.length > 1) {
+      ids.forEach(id => {
+        const others = ids.filter(x => x !== id).map(oid => {
+          const rec = selected.find(r => r._lark_id === oid);
+          return rec ? (rec.address || '(无地址)') : '';
+        }).filter(Boolean);
+        const el = document.querySelector(`#rec-vt-rows .rec-vt-conflict[data-conflict-for="${id}"]`);
+        if (el) el.textContent = `⚠️ 和 ${others.join('、')} 时间冲突`;
+      });
+    }
+  }
+}
+
+// 保存:填了时间的 → 状态改「已约看」+ viewLog 加事件
+async function recVtSave() {
+  const selected = window._recVtSelected || [];
+  if (selected.length === 0) { alert('选中的房源丢失,请重开'); return; }
+
+  const dateVal = document.getElementById('rec-vt-date').value;  // YYYY-MM-DD 或 ''
+
+  // 收集每套的时间选择
+  const selects = document.querySelectorAll('#rec-vt-rows select.rec-vt-time-select');
+  const timeMap = {};
+  selects.forEach(sel => {
+    timeMap[sel.getAttribute('data-lark-id')] = sel.value;  // 'HH:MM' 或 ''
+  });
+
+  // 过滤出真的填了时间的(时间是必要条件)
+  const toUpdate = selected.filter(r => !!timeMap[r._lark_id]);
+  if (toUpdate.length === 0) {
+    alert('至少要给一套房源选时间');
+    return;
+  }
+  // 如果填了时间但没填日期:提醒
+  if (!dateVal) {
+    if (!confirm('没有填看房日期,只记时间不记日期。确定继续吗?')) return;
+  }
+
+  const saveBtn = document.getElementById('rec-vt-save-btn');
+  saveBtn.disabled = true;
+  saveBtn.textContent = '保存中...';
+
+  const now = Date.now();
+  let okCount = 0, errCount = 0;
+
+  for (const r of toUpdate) {
+    const t = timeMap[r._lark_id];  // 'HH:MM'
+    const displayT = recVtDisplayTime(t);  // '10:30 AM'
+    // 构造 viewLog 文本:YYYY-MM-DD HH:MM AM/PM
+    let logText;
+    if (dateVal && displayT) logText = `${dateVal} ${displayT}`;
+    else if (displayT) logText = displayT;
+    else logText = '时间待确定';
+
+    // 判断是「预约」还是「改约」:已约看 = 改约,其他 = 预约
+    const wasBooked = (r.status === '已约看');
+    const kind = wasBooked ? '改约' : '预约';
+
+    const newEvent = { time: now, kind, text: logText };
+    const updated = {
+      ...r,
+      status: '已约看',  // 统一改为已约看(即使原本就是已约看也保持)
+      viewLog: [...(r.viewLog || []), newEvent],
+      updatedAt: now,
+    };
+
+    try {
+      const res = await recApi('rec_update', { lark_id: r._lark_id, rec: updated });
+      if (res.success) {
+        const idx = recCurrentList.findIndex(x => x._lark_id === r._lark_id);
+        if (idx >= 0) {
+          recCurrentList[idx] = {
+            ...recCurrentList[idx],
+            status: '已约看',
+            viewLog: updated.viewLog,
+            updatedAt: now,
+          };
+        }
+        okCount++;
+      } else {
+        errCount++;
+      }
+    } catch (err) {
+      errCount++;
+    }
+  }
+
+  // 联动客户状态(有已约看 → 客户=看房中)
+  if (okCount > 0 && recCurrentClientId) {
+    try { await recRecomputeClientStatus(recCurrentClientId); } catch(_) {}
+  }
+
+  // 重渲染
+  recRenderList();
+
+  // 关闭 + toast
+  recVtClose();
+  if (typeof showToast === 'function') {
+    if (errCount === 0) {
+      showToast(`✓ 已保存 ${okCount} 套的约看时间`);
+    } else {
+      showToast(`✓ ${okCount} 套已保存,${errCount} 套失败`);
     }
   }
 }
