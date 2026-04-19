@@ -564,6 +564,41 @@
   .rec-card-created {
     font-size: 10px; color: var(--text3); white-space: nowrap; flex-shrink: 0;
   }
+  /* 会话 9:已约看过期 → 自动升"看过" + 橙色徽章提醒补反馈 ────── */
+  /* 已约看过期(系统还没处理到)—— 暂用,正常情况 crmLoadRecSummaries 会把它升成"看过·待反馈" */
+  .rec-status-已约看.rec-status-overdue {
+    background: #ffe0b2; color: #bf360c; font-weight: 600;
+  }
+  /* 看过但还没记反馈 —— 橙色警告,一眼可见 */
+  .rec-status-看过.rec-status-need-feedback {
+    background: #ffe0b2; color: #bf360c; font-weight: 600;
+  }
+  /* 行内按钮条(已约看 / 看过 状态下出现在卡片底部) */
+  .rec-card-actions {
+    display: flex; gap: 6px; flex-wrap: wrap;
+    margin-top: 8px; padding-top: 8px;
+    border-top: 1px dashed var(--border);
+  }
+  .rec-card-action-btn {
+    font-size: 11px; padding: 4px 10px; border-radius: 4px;
+    border: 1px solid var(--border); background: var(--surface);
+    color: var(--text); cursor: pointer; white-space: nowrap;
+    font-family: inherit;
+  }
+  .rec-card-action-btn:hover { border-color: var(--accent-j); background: #fff5f5; }
+  .rec-card-action-btn.viewed    { color: #2e7d32; }
+  .rec-card-action-btn.viewed:hover    { background: #e8f5e9; border-color: #2e7d32; }
+  .rec-card-action-btn.offer     { color: #6a1b9a; }
+  .rec-card-action-btn.offer:hover     { background: #f3e5f5; border-color: #6a1b9a; }
+  .rec-card-action-btn.reject    { color: #c62828; }
+  .rec-card-action-btn.reject:hover    { background: #ffebee; border-color: #c62828; }
+  .rec-card-action-btn.feedback  { color: var(--accent-g); }
+  .rec-card-action-btn.feedback:hover  { background: #e8f5e9; border-color: var(--accent-g); }
+  .rec-card-action-btn.feedback.has-content {
+    background: #e8f5e9; border-color: var(--accent-g); max-width: 280px;
+    overflow: hidden; text-overflow: ellipsis;
+  }
+
   /* 会话 8:客户卡片紧急标签 — 7 条细化(按房源池最靠后状态)─────── */
   .crm-card-row1-urgent {
     font-size: 10px; font-weight: 500;
@@ -4157,6 +4192,44 @@ async function crmLoadRecSummaries() {
     })))
   );
 
+  // 会话 9:扫描所有"已约看"的房源,超时的自动升级为"看过"
+  // 收集需要升级的房源,批量并发处理,不阻塞主渲染
+  const overdueList = [];
+  results.forEach(r => {
+    if (r.status !== 'fulfilled') return;
+    (r.value.recs || []).forEach(rec => {
+      if (recViewingOverdue(rec)) {
+        overdueList.push({ clientId: r.value.clientId, rec });
+      }
+    });
+  });
+
+  if (overdueList.length > 0) {
+    // 后台升级 —— 先在内存里改,再并发推到 Bitable
+    const upgradePromises = overdueList.map(({ clientId, rec }) => {
+      const logEvent = {
+        time: Date.now(),
+        kind: '系统',
+        text: '约看时间已过,自动标记看过(待补反馈)',
+      };
+      const updated = {
+        ...rec,
+        status: '看过',
+        viewLog: [...(rec.viewLog || []), logEvent],
+        updatedAt: Date.now(),
+      };
+      // 原 rec 也同步改(让后续 summary 计算基于新数据)
+      Object.assign(rec, updated);
+      return recApi('rec_update', { lark_id: rec._lark_id, rec: updated })
+        .catch(err => console.warn('auto-overdue upgrade failed:', rec._lark_id, err));
+    });
+    // 不 await 整个 — 让摘要和卡片渲染先走,升级请求在后台跑
+    Promise.allSettled(upgradePromises).then(() => {
+      // 所有升级完成后提示一次
+      showToast(`⏰ 已自动把 ${overdueList.length} 套过期约看标记为「看过」,请补反馈`);
+    });
+  }
+
   const summaryMap = {};
   results.forEach(r => {
     if (r.status !== 'fulfilled') return;
@@ -5326,6 +5399,113 @@ function recLatestViewingTime(r) {
   return '';
 }
 
+// 会话 9:解析约看时间文本为时间戳。text 格式多样:
+//   "17/04 周五 10am" / "17/4 10am" / "2026-04-17 10:00" / "17/04 10:30am"
+// 返回: { ts: 时间戳或null, isValid: bool }
+// 保守策略:解析失败一律不算过期(返回 ts: null)
+function recParseViewingTime(text, eventTime) {
+  if (!text || typeof text !== 'string') return { ts: null, isValid: false };
+  const t = text.trim();
+  // 如果完全没有数字,直接返回 null(如 "时间待确定")
+  if (!/\d/.test(t)) return { ts: null, isValid: false };
+
+  const now = new Date();
+  let year = now.getFullYear(), month = null, day = null;
+  let m;
+
+  // 2026-04-17 或 2026/04/17
+  m = t.match(/(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})/);
+  if (m) {
+    year = parseInt(m[1]); month = parseInt(m[2]); day = parseInt(m[3]);
+  } else {
+    // DD/MM 或 D/M
+    m = t.match(/(\d{1,2})\/(\d{1,2})(?!\d)/);
+    if (m) {
+      day = parseInt(m[1]); month = parseInt(m[2]);
+      // 跨年处理:约看时间不可能是过去,所以过去日期一律 +1 年
+      // base = 事件创建时间,约看肯定在它之后
+      const candidate = new Date(year, month - 1, day);
+      const base = eventTime ? new Date(Number(eventTime)) : now;
+      // 若 candidate 比 base 早 → 明年
+      if (candidate < base) year += 1;
+    } else {
+      // 没有日期格式:只有当事件创建时间离现在很近(3天内)时,才 fallback 到事件当天
+      // 否则认为 "10am" 是约看那天的 10am 但我们不知道是哪天 → 保守 null
+      if (eventTime) {
+        const eventAge = Date.now() - Number(eventTime);
+        if (eventAge < 3 * 86400000 && eventAge > 0) {
+          const d = new Date(Number(eventTime));
+          year = d.getFullYear(); month = d.getMonth() + 1; day = d.getDate();
+        } else {
+          return { ts: null, isValid: false };
+        }
+      } else {
+        return { ts: null, isValid: false };
+      }
+    }
+  }
+
+  // Step 2: 找时间(10am / 10:30am / 14:00 / 14:30)
+  let hour = null, minute = 0;
+  m = t.match(/(\d{1,2})(?::(\d{2}))?\s*(am|pm|AM|PM)/);
+  if (m) {
+    hour = parseInt(m[1]); minute = m[2] ? parseInt(m[2]) : 0;
+    const period = m[3].toLowerCase();
+    if (period === 'pm' && hour < 12) hour += 12;
+    if (period === 'am' && hour === 12) hour = 0;
+  } else {
+    // 24h format: 14:00 / 14:30 (but not confused with date)
+    m = t.match(/(?:^|\s)(\d{1,2}):(\d{2})(?!\d)/);
+    if (m) {
+      hour = parseInt(m[1]); minute = parseInt(m[2]);
+    }
+  }
+
+  if (hour === null) {
+    // 没时间 → 默认当天晚上 23:59(过了这天才算过期)
+    hour = 23; minute = 59;
+  }
+
+  const ts = new Date(year, month - 1, day, hour, minute).getTime();
+  if (isNaN(ts)) return { ts: null, isValid: false };
+
+  return { ts, isValid: true };
+}
+
+// 会话 9:判断一套"已约看"房源是否过期(客观上已经看过了)
+// 规则:找最新的"预约/改约"事件,解析其文本时间,和 now 比较
+// - 解析不出时间 → 不算过期(保守)
+// - 事件时间解析得到 → 比较
+function recViewingOverdue(r) {
+  if (r.status !== '已约看') return false;
+  const vl = r.viewLog || [];
+  for (let i = vl.length - 1; i >= 0; i--) {
+    const v = vl[i];
+    if (v.kind !== '预约' && v.kind !== '改约') continue;
+    if (!v.text) return false;
+    const { ts, isValid } = recParseViewingTime(v.text, v.time);
+    if (!isValid) return false;
+    return Date.now() > ts;
+  }
+  return false;
+}
+
+// 会话 9:取最新的反馈事件(kind='反馈')
+function recLatestFeedback(r) {
+  const vl = r.viewLog || [];
+  for (let i = vl.length - 1; i >= 0; i--) {
+    if (vl[i].kind === '反馈' && vl[i].text) return vl[i];
+  }
+  return null;
+}
+
+// 会话 9:判断"看过"状态是否还没记反馈(=橙色警告)
+// 规则:状态=看过 且 没有任何反馈事件 → 提醒
+function recNeedsFeedback(r) {
+  if (r.status !== '看过') return false;
+  return recLatestFeedback(r) === null;
+}
+
 // ── REC API 调用包装 ────────────────────────────────────────────────────
 async function recApi(action, body = {}) {
   const res = await fetch('/.netlify/functions/lark-bitable', {
@@ -5428,7 +5608,21 @@ function recRenderList() {
 function recRenderCard(r) {
   const addr = r.address || '(无地址)';
   const priceDisplay = recFmtPrice(r.price, r.priceType);
-  const statusClass = r.status ? `rec-status-${r.status}` : '';
+  // 会话 9:状态样式变体
+  //  - 已约看 + 过期 → 加 rec-status-overdue(橙色)
+  //  - 看过 + 没反馈 → 加 rec-status-need-feedback(橙色)
+  //  - 其他:保持原样
+  let statusClass = r.status ? `rec-status-${r.status}` : '';
+  let statusLabel = r.status || '已发送';
+  const isOverdue = recViewingOverdue(r);
+  const needsFeedback = recNeedsFeedback(r);
+  if (isOverdue) {
+    statusClass += ' rec-status-overdue';
+    statusLabel = '⏰ ' + statusLabel + '·超时';
+  } else if (needsFeedback) {
+    statusClass += ' rec-status-need-feedback';
+    statusLabel = '⏰ 看过·待补反馈';
+  }
   const noShowBadge = r.noShow === '是' ? '<span class="rec-card-noshow">⚠ 曾爽约</span>' : '';
   const meta = [];
   if (r.rooms) meta.push(`<span>${recEscape(r.rooms)}</span>`);
@@ -5465,10 +5659,52 @@ function recRenderCard(r) {
     ? `<span class="rec-card-created">📥 ${recRelTime(createdAt)}</span>`
     : '';
 
+  // 会话 9:行内按钮条 — 按状态显示不同按钮
+  //  已约看/看过: [✓已看过(仅已约看)] [💼Offer] [❌拒绝] [💬加反馈]
+  //  其他: [💬加反馈]
+  let actionsHtml = '';
+  const showFullActions = (r.status === '已约看' || r.status === '看过');
+  const showFeedbackOnly = !showFullActions;
+  // 反馈按钮:有反馈就显示截断的反馈内容,没反馈就显示"加反馈"
+  const latestFb = recLatestFeedback(r);
+  let fbBtnText, fbBtnClass;
+  if (latestFb) {
+    const txt = latestFb.text || '';
+    const truncated = txt.length > 16 ? txt.slice(0, 14) + '…' : txt;
+    fbBtnText = `💬 ${recEscape(truncated)}`;
+    fbBtnClass = 'feedback has-content';
+  } else {
+    fbBtnText = '💬 加反馈';
+    fbBtnClass = 'feedback';
+  }
+  const feedbackBtn = `<button type="button" class="rec-card-action-btn ${fbBtnClass}" onclick="event.stopPropagation();recAddOrEditFeedback('${r._lark_id}')" title="${latestFb ? recEscape(latestFb.text || '') : '记录客户反馈(Admin 自用)'}">${fbBtnText}</button>`;
+  if (showFullActions) {
+    const viewedBtn = r.status === '已约看'
+      ? `<button type="button" class="rec-card-action-btn viewed" onclick="event.stopPropagation();recQuickChangeStatus('${r._lark_id}','看过')">✓ 已看过</button>`
+      : '';
+    actionsHtml = `
+      <div class="rec-card-actions" onclick="event.stopPropagation()">
+        ${viewedBtn}
+        <button type="button" class="rec-card-action-btn offer" onclick="event.stopPropagation();recQuickChangeStatus('${r._lark_id}','Offer中')">💼 Offer</button>
+        <button type="button" class="rec-card-action-btn reject" onclick="event.stopPropagation();recQuickChangeStatus('${r._lark_id}','拒绝')">❌ 拒绝</button>
+        ${feedbackBtn}
+      </div>
+    `;
+  } else if (showFeedbackOnly) {
+    // 只在 Offer中/成交/拒绝 状态下显示(备选/已发送/待约看 还没看房,不给反馈按钮,避免混淆)
+    if (r.status === 'Offer中' || r.status === '成交' || r.status === '拒绝') {
+      actionsHtml = `
+        <div class="rec-card-actions" onclick="event.stopPropagation()">
+          ${feedbackBtn}
+        </div>
+      `;
+    }
+  }
+
   const inner = `
     <div class="rec-card-body">
       <div class="rec-card-row1">
-        <span class="rec-card-status ${statusClass}">${recEscape(r.status || '已发送')}</span>
+        <span class="rec-card-status ${statusClass}">${recEscape(statusLabel)}</span>
         ${viewingTimeBadge}
         <span class="rec-card-addr">${recEscape(addr)}</span>
         ${noShowBadge}
@@ -5478,6 +5714,7 @@ function recRenderCard(r) {
         <span class="rec-card-row3-left">${agentLine.join(' · ')}${r.mrt ? (agentLine.length ? ' · ' : '') + '🚇 ' + recEscape(r.mrt) : ''}</span>
         ${createdBadge}
       </div>` : ''}
+      ${actionsHtml}
     </div>
   `;
 
@@ -6218,6 +6455,86 @@ async function recChangeStatus(larkId, newStatus) {
     showToast(`✓ 状态已改为 ${newStatus}`);
   } catch (err) {
     alert('更新失败:' + err.message);
+  }
+}
+
+// ── 会话 9:卡片上一键切换状态(从房源列表卡片的按钮触发,detail modal 没开) ──
+async function recQuickChangeStatus(larkId, newStatus) {
+  const r = recCurrentList.find(x => x._lark_id === larkId);
+  if (!r) return;
+  if (r.status === newStatus) {
+    showToast(`已经是 ${newStatus} 状态`);
+    return;
+  }
+  const oldStatus = r.status;
+  // 成交特殊情况:走完整 recChangeStatus(会弹 confirm 问其他 Offer 怎么办),但卡片上只有 Offer/拒绝/看过 三个按钮,不会走到这里
+  // 所以这里的路径只处理 "看过" / "Offer中" / "拒绝"
+  const logEvent = { time: Date.now(), kind: '状态', text: `${oldStatus || '无'} → ${newStatus}` };
+  const updated = {
+    ...r,
+    status: newStatus,
+    viewLog: [...(r.viewLog || []), logEvent],
+    updatedAt: Date.now(),
+  };
+
+  try {
+    const res = await recApi('rec_update', { lark_id: larkId, rec: updated });
+    if (!res.success) throw new Error(res.error || '更新失败');
+    Object.assign(r, updated);
+    recRenderList();
+    await recRecomputeClientStatus(recCurrentClientId);
+    showToast(`✓ 状态已改为 ${newStatus}`);
+  } catch (err) {
+    alert('更新失败:' + err.message);
+  }
+}
+
+// ── 会话 9:加/编辑反馈(prompt 弹窗;查看/编辑最新反馈,或新增) ──
+async function recAddOrEditFeedback(larkId) {
+  const r = recCurrentList.find(x => x._lark_id === larkId);
+  if (!r) return;
+  const existing = recLatestFeedback(r);
+  const hint = existing
+    ? '编辑客户反馈(留空并确定=删除此反馈,Admin 自用不会发给客户):'
+    : '记录客户反馈(Admin 自用,不会发给客户):';
+  const defaultVal = existing ? existing.text : '';
+  const result = prompt(hint, defaultVal);
+  if (result === null) return;  // 用户取消
+  const text = result.trim();
+
+  // 构造新 viewLog:
+  // - 如果 existing 存在且 text 非空 → 把 existing 的 text 替换(保留其他字段)
+  // - 如果 existing 存在且 text 为空 → 删掉 existing(视为删除反馈)
+  // - 如果 existing 不存在且 text 非空 → 追加新事件
+  // - 如果 existing 不存在且 text 为空 → 什么都不做
+  const vl = [...(r.viewLog || [])];
+  if (existing) {
+    const idx = vl.findIndex(v => v === existing ||
+      (v.kind === '反馈' && v.time === existing.time && v.text === existing.text));
+    if (text === '') {
+      // 删除
+      if (idx >= 0) vl.splice(idx, 1);
+    } else {
+      // 替换
+      if (idx >= 0) vl[idx] = { ...vl[idx], text, time: Date.now() };
+    }
+  } else {
+    if (text === '') return;  // 空 + 新增 = 没操作
+    vl.push({ time: Date.now(), kind: '反馈', text });
+  }
+
+  const updated = { ...r, viewLog: vl, updatedAt: Date.now() };
+  try {
+    const res = await recApi('rec_update', { lark_id: larkId, rec: updated });
+    if (!res.success) throw new Error(res.error || '保存失败');
+    Object.assign(r, updated);
+    recRenderList();
+    // 反馈不影响客户状态,不需要 recomputeClientStatus
+    if (text === '' && existing) showToast('✓ 反馈已删除');
+    else if (existing) showToast('✓ 反馈已更新');
+    else showToast('✓ 反馈已保存');
+  } catch (err) {
+    alert('保存失败:' + err.message);
   }
 }
 
