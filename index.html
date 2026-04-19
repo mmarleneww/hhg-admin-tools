@@ -137,6 +137,8 @@
     margin: 0 auto;
     padding: 20px 16px;
   }
+  /* 客户页单独放宽 · 会话 4 */
+  #page-crm .page-inner { max-width: 1200px; }
 
   .card {
     background: var(--surface);
@@ -594,6 +596,95 @@
   .rec-add-result-line { font-size: 12px; padding: 4px 0; }
   .rec-add-result-ok { color: #2e7d32; }
   .rec-add-result-err { color: #c62828; }
+
+  /* ═══════════════ 客户详情整页化(会话 4) ═══════════════ */
+  .crm-detail-page { padding: 0; }
+  .crm-detail-header {
+    display: flex; align-items: center; gap: 14px;
+    padding: 14px 18px; border-bottom: 1px solid var(--border);
+    background: var(--surface);
+  }
+  .crm-detail-back-btn {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 7px 14px; background: var(--surface2);
+    border: 1px solid var(--border); border-radius: 7px;
+    font-size: 14px; cursor: pointer; color: var(--text2);
+  }
+  .crm-detail-back-btn:hover { background: #fff; border-color: var(--accent-j); color: var(--accent-j); }
+  .crm-detail-header-title { font-size: 17px; font-weight: 600; color: var(--text1); }
+  .crm-detail-header-sub { font-size: 12px; color: var(--text3); margin-top: 2px; }
+
+  /* 整页主区域 */
+  .crm-detail-main {
+    background: var(--surface);
+    padding: 16px 18px 18px;
+  }
+  .crm-detail-status-bar {
+    padding-bottom: 14px; margin-bottom: 14px;
+    border-bottom: 1px solid var(--border);
+  }
+  /* 上部左右分栏:基本信息 | 跟进记录 */
+  .crm-detail-split {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 18px;
+    padding-bottom: 14px; margin-bottom: 14px;
+    border-bottom: 1px solid var(--border);
+  }
+  .crm-detail-split-right {
+    padding-left: 18px; border-left: 1px solid var(--border);
+  }
+  /* 下部推荐房源(全宽) */
+  .crm-detail-rec-area {
+    margin-bottom: 14px;
+  }
+  /* 内嵌的添加房源工具条 */
+  .rec-add-inline {
+    background: #fafafa; border: 1px solid var(--border);
+    border-radius: 8px; padding: 10px 12px; margin-bottom: 10px;
+  }
+  .rec-add-inline-header {
+    display: flex; justify-content: space-between; align-items: center;
+    cursor: pointer; user-select: none;
+  }
+  .rec-add-inline-title {
+    font-size: 13px; font-weight: 500; color: var(--text2);
+  }
+  .rec-add-inline-toggle {
+    font-size: 12px; color: var(--text3);
+  }
+  .rec-add-inline-body {
+    display: none; margin-top: 10px;
+  }
+  .rec-add-inline-body.expanded { display: block; }
+  .rec-add-inline textarea {
+    width: 100%; min-height: 80px; padding: 8px 10px;
+    border: 1px solid var(--border); border-radius: 6px;
+    font-size: 13px; font-family: inherit; resize: vertical;
+    background: #fff; outline: none; box-sizing: border-box;
+  }
+  .rec-add-inline textarea:focus { border-color: var(--accent-j); }
+  .rec-add-inline-actions {
+    display: flex; gap: 8px; margin-top: 8px; align-items: center;
+  }
+  .rec-add-inline-submit {
+    padding: 7px 16px; background: var(--accent-j); color: #fff;
+    border: 0; border-radius: 6px; font-size: 13px; font-weight: 500; cursor: pointer;
+  }
+  .rec-add-inline-submit:disabled { opacity: 0.5; cursor: not-allowed; }
+  .rec-add-inline-hint {
+    font-size: 11px; color: var(--text3);
+  }
+  /* 整页详情底部操作按钮 */
+  .crm-detail-bottom-actions {
+    display: flex; gap: 8px; padding-top: 14px;
+    border-top: 1px solid var(--border); flex-wrap: wrap;
+  }
+
+  /* 窄屏自动回落为上下堆叠 */
+  @media (max-width: 820px) {
+    .crm-detail-split { grid-template-columns: 1fr; }
+    .crm-detail-split-right { padding-left: 0; border-left: 0; padding-top: 14px; border-top: 1px solid var(--border); }
+  }
+  /* ═══════════════ /客户详情整页化 ═══════════════ */
 
   /* Mobile: 左侧竖 Tab 改成横向滚动条 */
   @media (max-width: 640px) {
@@ -1283,6 +1374,8 @@
 <!-- ═══════════════════════════════════════════════════════════════════════ -->
 <div class="page" id="page-crm">
   <div class="page-inner">
+    <!-- 看板视图 · 默认显示 -->
+    <div id="crm-board-view">
     <!-- CRM top toolbar: 3 个下拉 filter + 新客户按钮(一行布局) -->
     <div class="crm-toolbar">
       <div class="crm-filter-row">
@@ -1539,6 +1632,11 @@
         <div class="crm-modal-body" id="rec-detail-body"></div>
       </div>
     </div>
+
+    </div><!-- /crm-board-view -->
+
+    <!-- 客户详情整页视图 · 会话 4 -->
+    <div id="crm-detail-page-view" style="display:none;"></div>
 
   </div>
 </div>
@@ -4166,17 +4264,176 @@ function crmOpenDetail(id) {
   const c = crmClients.find(x => x.id === id);
   if (!c) return;
   crmDetailId = id;
-  document.getElementById('crm-detail-title').textContent = c.name || '客户详情';
-  document.getElementById('crm-detail-body').innerHTML = crmRenderDetailBody(c);
-  document.getElementById('crm-detail-modal').style.display = 'flex';
+  // 整页视图切换(会话 4)
+  document.getElementById('crm-board-view').style.display = 'none';
+  const page = document.getElementById('crm-detail-page-view');
+  page.innerHTML = crmRenderDetailPage(c);
+  page.style.display = 'block';
   // 异步加载推荐房源
   recLoadForClient(id);
+  // 滚到顶
+  window.scrollTo(0, 0);
 }
 
 function crmCloseDetail(evt) {
-  if (evt && evt.target.id !== 'crm-detail-modal') return;
-  document.getElementById('crm-detail-modal').style.display = 'none';
+  // 老 modal 兼容:点击遮罩时传 event,忽略(整页后不再用 modal 背景点击关闭)
+  if (evt && evt.target && evt.target.id === 'crm-detail-modal') return;
+  document.getElementById('crm-board-view').style.display = 'block';
+  document.getElementById('crm-detail-page-view').style.display = 'none';
+  document.getElementById('crm-detail-page-view').innerHTML = '';
   crmDetailId = null;
+  // 返回看板时也刷一次
+  crmRender();
+}
+
+// 在整页模式或 modal 模式下刷新客户详情(会话 4 辅助函数)
+function crmRefreshDetail(updated) {
+  const page = document.getElementById('crm-detail-page-view');
+  if (page && page.style.display !== 'none') {
+    // 整页模式:重渲染整个详情页,并重新加载推荐房源
+    page.innerHTML = crmRenderDetailPage(updated);
+    if (typeof recLoadForClient === 'function') recLoadForClient(updated.id);
+    return;
+  }
+  // modal 模式兼容(老代码路径):
+  const modalBody = document.getElementById('crm-detail-body');
+  if (modalBody) modalBody.innerHTML = crmRenderDetailBody(updated);
+}
+
+function crmRenderDetailPage(c) {
+  // 整页客户详情 · Y 方案(会话 4)
+  const color = crmComputeColor(c);
+  const colorIcon = CRM_COLOR_ICON[color];
+  const tierDisplay = c.tier === 'vip' ? '⭐ VIP' : '普通';
+  const amtDisplay = crmFmtAmount(c.amount, c.deal) || '—';
+  const normalizedStatus = crmNormalizeStatus(c.status);
+  const isOnHold = normalizedStatus === 'Onhold';
+  const isInactive = normalizedStatus === 'Inactive';
+
+  const statusRow = CRM_STATUSES_MAIN.map(s =>
+    `<span class="crm-status-btn ${normalizedStatus === s ? 'active' : ''}" onclick="crmQuickChangeStatus('${c.id}','${s}')">${s}</span>`
+  ).join('');
+
+  const timeline = (c.timeline || []).slice().reverse().map(t => `
+    <div class="crm-timeline-item">
+      <div class="crm-timeline-time">${crmFmtDate(t.time)}</div>
+      <div class="crm-timeline-text">${crmEscape(t.text)}</div>
+    </div>
+  `).join('') || '<div style="color:var(--text3);font-size:13px;font-style:italic;padding:8px 0;">暂无跟进记录</div>';
+
+  // 状态横幅(Onhold/Inactive)
+  let statusBanner = '';
+  if (isOnHold) {
+    const days = crmOnHoldDays(c);
+    const resumeDate = c.onHoldResumeAt ? crmFmtDate(c.onHoldResumeAt).split(' ')[0] : '';
+    statusBanner = `
+      <div style="background:#fafafa;border:1px solid var(--border);border-left:3px solid #999;padding:10px 12px;border-radius:7px;margin-bottom:10px;">
+        <div style="font-size:13px;font-weight:600;color:var(--text2);">⏸ 已暂停 ${days} 天</div>
+        ${c.onHoldReason ? `<div style="font-size:12px;color:var(--text3);margin-top:3px;">原因:${crmEscape(c.onHoldReason)}</div>` : ''}
+        ${resumeDate ? `<div style="font-size:12px;color:var(--text3);margin-top:3px;">预计恢复:${resumeDate}</div>` : ''}
+        <button onclick="crmResumeAutoStatus('${c.id}')" style="margin-top:8px;padding:6px 12px;background:#fff;border:1px solid var(--border);border-radius:6px;font-size:12px;cursor:pointer;color:var(--text2);">▶ 恢复自动状态</button>
+      </div>
+    `;
+  } else if (isInactive) {
+    statusBanner = `
+      <div style="background:#f5f5f5;border:1px solid var(--border);border-left:3px solid #999;padding:10px 12px;border-radius:7px;margin-bottom:10px;">
+        <div style="font-size:13px;font-weight:600;color:var(--text2);">❌ 已流失</div>
+        ${c.inactiveReason ? `<div style="font-size:12px;color:var(--text3);margin-top:3px;">原因:${crmEscape(c.inactiveReason)}${c.inactiveNote ? ' · ' + crmEscape(c.inactiveNote) : ''}</div>` : ''}
+        <button onclick="crmResumeAutoStatus('${c.id}')" style="margin-top:8px;padding:6px 12px;background:#fff;border:1px solid var(--border);border-radius:6px;font-size:12px;cursor:pointer;color:var(--text2);">▶ 恢复自动状态</button>
+      </div>
+    `;
+  }
+
+  const statusSection = (isOnHold || isInactive) ? '' : `
+    <div class="crm-detail-status-bar">
+      <div class="crm-detail-label" style="margin-bottom:8px;">状态</div>
+      <div class="crm-status-row">${statusRow}</div>
+      <div style="font-size:11px;color:var(--text3);margin-top:6px;line-height:1.4;">
+        提示:Phase 3a 后,状态会根据房源自动更新。暂时可以手动切换。
+      </div>
+    </div>
+  `;
+
+  const canDelete = crmCanDelete(c);
+  const bottomButtons = [];
+  bottomButtons.push(`<button onclick="crmShowForm('edit','${c.id}')" style="flex:1;padding:10px;background:var(--surface2);border:1px solid var(--border);border-radius:7px;font-size:13px;cursor:pointer;color:var(--text2);">编辑</button>`);
+  if (!isOnHold && !isInactive) {
+    bottomButtons.push(`<button onclick="crmOnHold('${c.id}')" style="flex:1;padding:10px;background:#fff;border:1px solid var(--border);border-radius:7px;font-size:13px;cursor:pointer;color:var(--text2);">⏸ 暂停</button>`);
+    bottomButtons.push(`<button onclick="crmInactivate('${c.id}')" style="flex:1;padding:10px;background:#fff;border:1px solid var(--border);border-radius:7px;font-size:13px;cursor:pointer;color:var(--text2);">❌ 流失</button>`);
+  }
+  if (canDelete) {
+    bottomButtons.push(`<button onclick="crmDeleteClient('${c.id}')" style="flex:1;padding:10px;background:#fff;border:1px solid #d42b2b;color:#d42b2b;border-radius:7px;font-size:13px;cursor:pointer;">删除</button>`);
+  }
+
+  return `
+    <div class="crm-detail-page">
+      <div class="crm-detail-header">
+        <button class="crm-detail-back-btn" onclick="crmCloseDetail()">← 返回</button>
+        <div>
+          <div class="crm-detail-header-title">${colorIcon} ${crmEscape(c.name) || '(无名)'}</div>
+          <div class="crm-detail-header-sub">${tierDisplay} · ${crmEscape(c.deal) || '—'} · ${amtDisplay}</div>
+        </div>
+      </div>
+      <div class="crm-detail-main">
+        ${statusBanner}
+        ${statusSection}
+
+        <div class="crm-detail-split">
+          <div>
+            <div class="crm-detail-label" style="margin-bottom:8px;">基本信息</div>
+            <div style="display:grid;grid-template-columns:auto 1fr;gap:5px 14px;font-size:13px;">
+              <div style="color:var(--text3);">联系方式</div><div>${crmEscape(c.contact) || '<span style="color:var(--text3);">—</span>'}</div>
+              <div style="color:var(--text3);">交易类型</div><div>${crmEscape(c.deal) || '—'} · ${crmEscape(c.type) || '—'}</div>
+              <div style="color:var(--text3);">${crmAmountLabel(c.deal)}</div><div>${amtDisplay}</div>
+              <div style="color:var(--text3);">负责</div><div>${crmEscape(c.admin) || '—'}${c.agent ? ' / ' + crmEscape(c.agent) : ''}</div>
+              <div style="color:var(--text3);">来源</div><div>${crmEscape(c.source) || '<span style="color:var(--text3);">—</span>'}</div>
+              <div style="color:var(--text3);">创建</div><div>${crmFmtDate(c.createdAt)}</div>
+              <div style="color:var(--text3);">服务时间</div><div>${crmServiceTimeLabel(c)}</div>
+            </div>
+            ${c.needs ? `<div style="margin-top:10px;"><div class="crm-detail-label" style="margin-bottom:4px;">需求描述</div><div style="font-size:13px;white-space:pre-wrap;color:var(--text2);">${crmEscape(c.needs)}</div></div>` : ''}
+          </div>
+
+          <div class="crm-detail-split-right">
+            <div class="crm-detail-label" style="margin-bottom:8px;">跟进记录</div>
+            <div class="crm-timeline" style="max-height:260px;overflow-y:auto;">${timeline}</div>
+            <div class="crm-add-note" style="margin-top:10px;">
+              <input type="text" id="crm-note-input" placeholder="添加一条跟进记录..." onkeydown="if(event.key==='Enter')crmAddNote()">
+              <button onclick="crmAddNote()">添加</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="crm-detail-rec-area">
+          <div class="crm-detail-label" style="margin-bottom:8px;">推荐房源 <span id="rec-count-badge" style="color:var(--text3);font-weight:400;font-size:11px;"></span></div>
+
+          <div class="rec-add-inline" id="rec-add-inline">
+            <div class="rec-add-inline-header" onclick="recInlineToggle()">
+              <div class="rec-add-inline-title">+ 添加推荐房源</div>
+              <div class="rec-add-inline-toggle" id="rec-add-inline-toggle-text">展开</div>
+            </div>
+            <div class="rec-add-inline-body" id="rec-add-inline-body">
+              <div style="font-size:11px;color:var(--text3);margin-bottom:6px;">粘贴 PG 链接(每行一个,最多 20 条)</div>
+              <textarea id="rec-add-textarea" placeholder="https://www.propertyguru.com.sg/listing/..."></textarea>
+              <div class="rec-add-inline-actions">
+                <button class="rec-add-inline-submit" id="rec-add-submit-btn" onclick="recSubmitBatch()">添加</button>
+                <span class="rec-add-inline-hint">系统会自动提取地址、价格、中介等</span>
+              </div>
+              <div id="rec-add-progress" class="rec-add-progress" style="display:none;"></div>
+              <div id="rec-add-results" style="margin-top:6px;"></div>
+            </div>
+          </div>
+
+          <div id="rec-list-container">
+            <div class="rec-empty">读取中...</div>
+          </div>
+        </div>
+
+        <div class="crm-detail-bottom-actions">
+          ${bottomButtons.join('')}
+        </div>
+      </div>
+    </div>
+  `;
 }
 
 function crmRenderDetailBody(c) {
@@ -4333,7 +4590,7 @@ async function crmQuickChangeStatus(id, newStatus) {
     if (idx >= 0) crmClients[idx] = updated;
     try { localStorage.setItem(CRM_LS_KEY, JSON.stringify(crmClients)); } catch(e) {}
     // Re-render detail + kanban
-    document.getElementById('crm-detail-body').innerHTML = crmRenderDetailBody(updated);
+    crmRefreshDetail(updated);
     crmRender();
     showToast('✓ 状态已更新');
   } catch (err) {
@@ -4361,7 +4618,7 @@ async function crmAddNote() {
     if (idx >= 0) crmClients[idx] = updated;
     try { localStorage.setItem(CRM_LS_KEY, JSON.stringify(crmClients)); } catch(e) {}
     input.value = '';
-    document.getElementById('crm-detail-body').innerHTML = crmRenderDetailBody(updated);
+    crmRefreshDetail(updated);
     crmRender();
   } catch (err) {
     alert('添加跟进失败：' + err.message);
@@ -4441,7 +4698,7 @@ async function crmOnHoldConfirm() {
     crmOnHoldTargetId = null;
     // 跳转到 Onhold Tab 让用户看到结果
     crmActiveTab = 'Onhold';
-    document.getElementById('crm-detail-body').innerHTML = crmRenderDetailBody(updated);
+    crmRefreshDetail(updated);
     crmRender();
     showToast('⏸ 已暂停跟进');
   } catch (err) {
@@ -4506,7 +4763,7 @@ async function crmInactiveConfirm() {
     document.getElementById('crm-inactive-modal').style.display = 'none';
     crmInactiveTargetId = null;
     crmActiveTab = 'Inactive';
-    document.getElementById('crm-detail-body').innerHTML = crmRenderDetailBody(updated);
+    crmRefreshDetail(updated);
     crmRender();
     showToast('❌ 已标记为流失');
   } catch (err) {
@@ -4573,7 +4830,7 @@ async function crmResumeAutoStatus(id) {
     if (idx >= 0) crmClients[idx] = updated;
     try { localStorage.setItem(CRM_LS_KEY, JSON.stringify(crmClients)); } catch(e) {}
     crmActiveTab = targetStatus;
-    document.getElementById('crm-detail-body').innerHTML = crmRenderDetailBody(updated);
+    crmRefreshDetail(updated);
     crmRender();
     showToast('▶ 已恢复自动状态');
   } catch (err) {
@@ -4718,19 +4975,42 @@ function recRenderCard(r) {
 // ═══════════════════════════════════════════════════════════════════════
 // 添加推荐房源弹窗
 // ═══════════════════════════════════════════════════════════════════════
+function recInlineToggle() {
+  const body = document.getElementById('rec-add-inline-body');
+  const toggle = document.getElementById('rec-add-inline-toggle-text');
+  if (!body) return;
+  const expanded = body.classList.toggle('expanded');
+  if (toggle) toggle.textContent = expanded ? '收起' : '展开';
+  if (expanded) {
+    const ta = document.getElementById('rec-add-textarea');
+    if (ta) ta.focus();
+  }
+}
+
 function recOpenAdd() {
+  // 兼容:老的弹窗入口 → 展开 inline
   if (!recCurrentClientId) { alert('请先打开客户详情'); return; }
-  document.getElementById('rec-add-textarea').value = '';
-  document.getElementById('rec-add-progress').style.display = 'none';
-  document.getElementById('rec-add-results').innerHTML = '';
-  document.getElementById('rec-add-submit-btn').disabled = false;
-  document.getElementById('rec-add-submit-btn').textContent = '开始提取';
-  document.getElementById('rec-add-modal').style.display = 'flex';
+  const body = document.getElementById('rec-add-inline-body');
+  if (body) {
+    if (!body.classList.contains('expanded')) recInlineToggle();
+    return;
+  }
+  // 若找不到 inline(老视图兼容,不应该到这),用老弹窗
+  const modal = document.getElementById('rec-add-modal');
+  if (modal) {
+    document.getElementById('rec-add-textarea').value = '';
+    document.getElementById('rec-add-progress').style.display = 'none';
+    document.getElementById('rec-add-results').innerHTML = '';
+    document.getElementById('rec-add-submit-btn').disabled = false;
+    document.getElementById('rec-add-submit-btn').textContent = '开始提取';
+    modal.style.display = 'flex';
+  }
 }
 
 function recCloseAdd(evt) {
   if (evt && evt.target.id !== 'rec-add-modal') return;
-  document.getElementById('rec-add-modal').style.display = 'none';
+  const m = document.getElementById('rec-add-modal');
+  if (m) m.style.display = 'none';
 }
 
 async function recSubmitBatch() {
@@ -4805,13 +5085,44 @@ async function recSubmitBatch() {
     }
   }
   progress.textContent = `完成。成功 ${okCount} 条,失败 ${errCount} 条。`;
-  submitBtn.textContent = '完成';
+  submitBtn.disabled = false;
+  submitBtn.textContent = '添加';
+
+  // toast 提示
+  if (typeof showToast === 'function') {
+    showToast(`添加房源:成功 ${okCount} 条,失败 ${errCount} 条`);
+  }
 
   // 重新加载列表
   if (okCount > 0) {
     await recLoadForClient(recCurrentClientId);
     // 触发客户状态联动
     await recRecomputeClientStatus(recCurrentClientId);
+    // 成功后清空 textarea(失败保留链接方便重试)
+    if (errCount === 0) {
+      const ta = document.getElementById('rec-add-textarea');
+      if (ta) ta.value = '';
+      // 3 秒后自动收起 inline(只在 inline 模式下)
+      const inlineBody = document.getElementById('rec-add-inline-body');
+      if (inlineBody && inlineBody.classList.contains('expanded')) {
+        setTimeout(() => {
+          if (inlineBody.classList.contains('expanded')) recInlineToggle();
+          progress.style.display = 'none';
+          progress.textContent = '';
+          const res = document.getElementById('rec-add-results');
+          if (res) res.innerHTML = '';
+        }, 3000);
+      }
+    } else {
+      // 有失败的:清掉成功的行,保留失败链接在 textarea
+      const ta = document.getElementById('rec-add-textarea');
+      if (ta) {
+        const failedLines = [];
+        const resultEls = document.querySelectorAll('#rec-add-results .rec-add-result-err');
+        // 从 results 拿不到原 URL,干脆保留全部让用户自己筛
+        // (后续改进:每个失败项单独 retry 按钮)
+      }
+    }
   }
 }
 
@@ -5037,16 +5348,14 @@ async function recRecomputeClientStatus(clientId) {
     const idx = crmClients.findIndex(x => x.id === clientId);
     if (idx >= 0) crmClients[idx] = updated;
     try { localStorage.setItem(CRM_LS_KEY, JSON.stringify(crmClients)); } catch(e) {}
-    // 重渲染客户详情:完全重渲染以处理 Onhold/Inactive 时的不同结构
-    if (document.getElementById('crm-detail-modal').style.display === 'flex') {
-      // 只更新状态按钮(4 主档),避免覆盖推荐房源 section 异步加载的内容
-      const statusRow = document.querySelector('.crm-status-row');
-      if (statusRow) {
-        const normalized = crmNormalizeStatus(updated.status);
-        statusRow.innerHTML = CRM_STATUSES_MAIN.map(s =>
-          `<span class="crm-status-btn ${normalized === s ? 'active' : ''}" onclick="crmQuickChangeStatus('${clientId}','${s}')">${s}</span>`
-        ).join('');
-      }
+    // 只更新状态按钮(保留已加载的推荐房源内容)
+    // 整页和老 modal 都用 class 选择器
+    const statusRow = document.querySelector('.crm-status-row');
+    if (statusRow) {
+      const normalized = crmNormalizeStatus(updated.status);
+      statusRow.innerHTML = CRM_STATUSES_MAIN.map(s =>
+        `<span class="crm-status-btn ${normalized === s ? 'active' : ''}" onclick="crmQuickChangeStatus('${clientId}','${s}')">${s}</span>`
+      ).join('');
     }
     crmRender();
   } catch (err) {
