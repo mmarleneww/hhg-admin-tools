@@ -4524,8 +4524,34 @@ async function crmResumeAutoStatus(id) {
 
   const now = Date.now();
   const fromLabel = current === 'Onhold' ? '暂停' : '流失';
-  // 恢复目标:优先用保存的 prevStatus,否则默认"发房源"
-  const targetStatus = c.onHoldPrevStatus || '发房源';
+  // 恢复目标(方案 2):
+  //  1. 优先用暂停前保存的 prevStatus(最常见、最准)
+  //  2. 否则按当前加载的房源列表反推(详情弹窗开着时 recCurrentList 已加载)
+  //  3. 都没有 → 兜底"发房源"
+  let targetStatus = c.onHoldPrevStatus || '';
+  let resumeReasonTag = 'prevStatus';
+  if (!targetStatus) {
+    // 从 recCurrentList 反推(只有当前详情弹窗的客户=目标客户时 recCurrentList 才对应)
+    if (recCurrentClientId === c.id && Array.isArray(recCurrentList) && recCurrentList.length > 0) {
+      const active = recCurrentList.filter(r => r.status && (REC_STATUS_RANK[r.status] ?? -1) >= 0);
+      if (active.length > 0) {
+        let topStatus = '已发送', topRank = -1;
+        active.forEach(r => {
+          const rank = REC_STATUS_RANK[r.status] ?? 0;
+          if (rank > topRank) { topRank = rank; topStatus = r.status; }
+        });
+        const mapped = REC_TO_CRM[topStatus];
+        if (mapped) {
+          targetStatus = mapped;
+          resumeReasonTag = `recRecompute(${topStatus})`;
+        }
+      }
+    }
+  }
+  if (!targetStatus) {
+    targetStatus = '发房源';
+    resumeReasonTag = resumeReasonTag === 'prevStatus' ? 'fallback' : resumeReasonTag + '→fallback';
+  }
   const updated = {
     ...c,
     status: targetStatus,
