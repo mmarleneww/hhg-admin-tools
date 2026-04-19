@@ -629,13 +629,15 @@
     flex: 1; font-size: 12px; color: var(--text2);
     overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   }
-  .rec-viewing-row-time {
-    width: 100px; padding: 5px 8px;
+  /* 提升选择器特异性以覆盖全局 input[type="text"] { width: 100% } 规则(会话 7 bug fix)*/
+  input.rec-viewing-row-time[type="text"] {
+    width: 110px; flex-shrink: 0; padding: 5px 8px;
     border: 1px solid var(--border); border-radius: 5px;
     font-size: 12px; font-family: inherit; outline: none;
+    box-sizing: border-box;
   }
-  .rec-viewing-row-time:focus { border-color: var(--accent-j); }
-  .rec-viewing-row-time::placeholder { color: #aaa; }
+  input.rec-viewing-row-time[type="text"]:focus { border-color: var(--accent-j); }
+  input.rec-viewing-row-time[type="text"]::placeholder { color: #aaa; }
   /* ═════════════════════════════════════════════════ */
 
   /* 房源详情弹窗:状态按钮组横滑 */
@@ -5130,7 +5132,7 @@ function recExtractCreatedAt(r) {
   return 0;
 }
 
-// 会话 7:相对时间("3分钟前" / "昨天" / "3 天前" / "Apr 10")
+// 会话 7:相对时间 — 全部用相对描述,不显示具体日期避免跨年歧义
 function recRelTime(ts) {
   if (!ts) return '';
   const diff = Date.now() - Number(ts);
@@ -5144,8 +5146,8 @@ function recRelTime(ts) {
   if (day === 1) return '昨天';
   if (day < 7) return `${day} 天前`;
   if (day < 30) return `${Math.floor(day / 7)} 周前`;
-  // 超过 30 天,显示具体日期
-  return new Date(Number(ts)).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
+  if (day < 365) return `${Math.floor(day / 30)} 个月前`;
+  return `${Math.floor(day / 365)} 年前`;
 }
 
 // 会话 7:从 viewLog 里取最新的"预约"事件的时间文本(如 "17/04 周五 10am")
