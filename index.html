@@ -548,6 +548,34 @@
   }
   .rec-card-link { color: var(--accent-g); text-decoration: none; font-size: 11px; }
 
+  /* 会话 7:房源卡片 — 约看时间徽章 + 添加时间 + 分栏 row3 ─────── */
+  .rec-card-vtime {
+    font-size: 10px; font-weight: 500;
+    background: #fff3e0; color: #e65100;
+    padding: 1px 6px; border-radius: 3px; white-space: nowrap;
+  }
+  .rec-card-row3 {
+    display: flex; justify-content: space-between; align-items: center;
+    gap: 8px;
+  }
+  .rec-card-row3-left {
+    flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .rec-card-created {
+    font-size: 10px; color: var(--text3); white-space: nowrap; flex-shrink: 0;
+  }
+  /* 会话 7:客户卡片 — 右侧紧急标签(方案 D)─────────────────── */
+  .crm-card-row1-urgent {
+    font-size: 10px; font-weight: 500;
+    padding: 2px 7px; border-radius: 3px; white-space: nowrap;
+    margin-left: auto; flex-shrink: 0;
+  }
+  .crm-card-urgent-发房源   { background: #fff3e0; color: #e65100; }
+  .crm-card-urgent-看房中   { background: #e8f5e9; color: #2e7d32; }
+  .crm-card-urgent-谈Offer  { background: #f3e5f5; color: #6a1b9a; }
+  .crm-card-urgent-成交     { background: #c8e6c9; color: #1b5e20; }
+  /* ═════════════════════════════════════════════════════════════ */
+
   /* 批量发送房源(会话 5) ═════════════════════════════ */
   .rec-card-checkbox {
     width: 16px; height: 16px; cursor: pointer;
@@ -1781,7 +1809,7 @@
             <input type="text" id="rec-viewing-note" placeholder="如:其他的还在等中介回复中" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;background:#fff;box-sizing:border-box;">
           </div>
           <div style="margin-bottom:10px;">
-            <div style="font-size:12px;color:var(--text3);margin-bottom:5px;">每套房源时间(选填,留空 = 等待确认)</div>
+            <div style="font-size:12px;color:var(--text3);margin-bottom:5px;">每套房源时间(选填,留空 = 时间待确定)</div>
             <div id="rec-viewing-rows"></div>
           </div>
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
@@ -4149,6 +4177,21 @@ function crmCardHTML(c) {
 
   const onHoldIconInRow1 = isOnHold ? '<span class="crm-card-onhold-icon" title="已暂停">⏸</span>' : '';
 
+  // 会话 7:右侧紧急标签(方案 D — 按主状态显示)
+  let urgentTag = '';
+  if (!isOnHold && !isInactive) {
+    const urgentLabels = {
+      '发房源':  '📤 待发房源',
+      '看房中':  '🏠 看房中',
+      '谈Offer': '💬 谈 Offer',
+      '成交':    '✅ 已成交',
+    };
+    const label = urgentLabels[status];
+    if (label) {
+      urgentTag = `<span class="crm-card-row1-urgent crm-card-urgent-${status}">${label}</span>`;
+    }
+  }
+
   const classes = ['crm-card'];
   if (stale) classes.push('stale');
   if (isOnHold) classes.push('is-onhold');
@@ -4161,6 +4204,7 @@ function crmCardHTML(c) {
         <span class="crm-card-name">${crmEscape(c.name) || '(未命名)'}</span>
         ${isVip ? '<span class="crm-card-vip">⭐</span>' : ''}
         ${onHoldIconInRow1}
+        ${urgentTag}
       </div>
       ${metaTags.length ? `<div class="crm-card-meta">${metaTags.join('')}</div>` : ''}
       ${c.needs ? `<div class="crm-card-needs">${crmEscape(c.needs)}</div>` : ''}
@@ -5077,6 +5121,46 @@ function recFmtDate(ts) {
   return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }) + ' ' + d.toTimeString().substring(0, 5);
 }
 
+// 会话 7:房源创建时间(老数据兜底:从 id 里解析时间戳)
+function recExtractCreatedAt(r) {
+  if (r.createdAt && Number(r.createdAt) > 0) return Number(r.createdAt);
+  // id 格式:"rec_1713456789012_0" → 第二段是时间戳
+  const m = String(r.id || r._lark_id || '').match(/^rec_(\d{13})/);
+  if (m) return parseInt(m[1]);
+  return 0;
+}
+
+// 会话 7:相对时间("3分钟前" / "昨天" / "3 天前" / "Apr 10")
+function recRelTime(ts) {
+  if (!ts) return '';
+  const diff = Date.now() - Number(ts);
+  if (diff < 0) return '';
+  const min = Math.floor(diff / 60000);
+  if (min < 1) return '刚刚';
+  if (min < 60) return `${min} 分钟前`;
+  const hr = Math.floor(min / 60);
+  if (hr < 24) return `${hr} 小时前`;
+  const day = Math.floor(hr / 24);
+  if (day === 1) return '昨天';
+  if (day < 7) return `${day} 天前`;
+  if (day < 30) return `${Math.floor(day / 7)} 周前`;
+  // 超过 30 天,显示具体日期
+  return new Date(Number(ts)).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
+}
+
+// 会话 7:从 viewLog 里取最新的"预约"事件的时间文本(如 "17/04 周五 10am")
+function recLatestViewingTime(r) {
+  const vl = r.viewLog || [];
+  // 从新到旧找最新的预约事件
+  for (let i = vl.length - 1; i >= 0; i--) {
+    const v = vl[i];
+    if (v.kind === '预约' && v.text) return v.text;
+    // 改约也算
+    if (v.kind === '改约' && v.text) return v.text;
+  }
+  return '';
+}
+
 // ── REC API 调用包装 ────────────────────────────────────────────────────
 async function recApi(action, body = {}) {
   const res = await fetch('/.netlify/functions/lark-bitable', {
@@ -5192,22 +5276,43 @@ function recRenderCard(r) {
   if (r.agentPhone) agentLine.push(`<a href="tel:${recEscape(r.agentPhone)}" onclick="event.stopPropagation()" class="rec-card-link">${recEscape(r.agentPhone)}</a>`);
   if (r.agentCo) agentLine.push(recEscape(r.agentCo));
 
-  // 会话 5+6:备选/已发送/待约看 状态房源显示勾选框(备选=发消息+约看,已发送=重发+约看,待约看=只能约看)
+  // 会话 5+6:备选/已发送/待约看 状态房源显示勾选框
   const isSelectable = (r.status === '备选' || r.status === '已发送' || r.status === '待约看');
   const isChecked = recSelectedIds.has(r._lark_id);
   const checkboxHtml = isSelectable
     ? `<input type="checkbox" class="rec-card-checkbox" ${isChecked ? 'checked' : ''} onclick="event.stopPropagation();recToggleSelect('${r._lark_id}')">`
     : '';
 
+  // 会话 7:约看时间徽章(已约看/待约看 状态在状态标签旁显示时间)
+  let viewingTimeBadge = '';
+  if (r.status === '已约看' || r.status === '待约看') {
+    const vt = recLatestViewingTime(r);
+    if (vt) {
+      viewingTimeBadge = `<span class="rec-card-vtime" title="约看时间">📅 ${recEscape(vt)}</span>`;
+    } else if (r.status === '已约看') {
+      viewingTimeBadge = `<span class="rec-card-vtime" style="color:var(--text3);">📅 时间待确定</span>`;
+    }
+  }
+
+  // 会话 7:添加时间(右下角小标签)
+  const createdAt = recExtractCreatedAt(r);
+  const createdBadge = createdAt
+    ? `<span class="rec-card-created">📥 ${recRelTime(createdAt)}</span>`
+    : '';
+
   const inner = `
     <div class="rec-card-body">
       <div class="rec-card-row1">
         <span class="rec-card-status ${statusClass}">${recEscape(r.status || '已发送')}</span>
+        ${viewingTimeBadge}
         <span class="rec-card-addr">${recEscape(addr)}</span>
         ${noShowBadge}
       </div>
       ${meta.length ? `<div class="rec-card-row2">${meta.join('')}</div>` : ''}
-      ${agentLine.length || r.mrt ? `<div class="rec-card-row3">${agentLine.join(' · ')}${r.mrt ? (agentLine.length ? ' · ' : '') + '🚇 ' + recEscape(r.mrt) : ''}</div>` : ''}
+      ${(agentLine.length || r.mrt || createdBadge) ? `<div class="rec-card-row3">
+        <span class="rec-card-row3-left">${agentLine.join(' · ')}${r.mrt ? (agentLine.length ? ' · ' : '') + '🚇 ' + recEscape(r.mrt) : ''}</span>
+        ${createdBadge}
+      </div>` : ''}
     </div>
   `;
 
@@ -5463,13 +5568,19 @@ function recOpenViewingPreview() {
   document.getElementById('rec-viewing-intro-custom').value = '';
   document.getElementById('rec-viewing-count').textContent = selected.length;
 
-  // 渲染每套房源一行
-  const rowsHtml = selected.map((r, i) => `
+  // 渲染每套房源一行(会话 7:加序号+卧室+价格,避免同小区分不清)
+  const rowsHtml = selected.map((r, i) => {
+    const priceDisplay = recFmtPrice(r.price, r.priceType);
+    const idParts = [`[${i+1}]`, recEscape(r.address || '(无地址)')];
+    if (r.rooms) idParts.push(recEscape(r.rooms));
+    if (priceDisplay !== '—') idParts.push(recEscape(priceDisplay));
+    return `
     <div class="rec-viewing-row">
-      <div class="rec-viewing-row-addr" title="${recEscape(r.address || '')}">${i+1}. ${recEscape(r.address || '(无地址)')}</div>
+      <div class="rec-viewing-row-addr" title="${recEscape(r.address || '')}">${idParts.join(' · ')}</div>
       <input type="text" class="rec-viewing-row-time" data-lark-id="${r._lark_id}" placeholder="时间(选填)" />
     </div>
-  `).join('');
+  `;
+  }).join('');
   document.getElementById('rec-viewing-rows').innerHTML = rowsHtml;
 
   document.getElementById('rec-viewing-preview-area').innerHTML =
@@ -5545,11 +5656,11 @@ async function recGenerateViewingMessage() {
     const priceDisplay = recFmtPrice(r.price, r.priceType);
     let s = `房源${i+1}:\n链接: ${r.link || '(无链接)'}`;
     s += `\n小区名: ${r.address||''}, 价格: ${priceDisplay !== '—' ? priceDisplay : ''}, 户型: ${r.rooms||''}, 面积: ${r.area ? r.area + 'sqft' : ''}, 家具: ${r.furnishing||''}, 入住: ${r.availability||''}`;
-    s += `\n确认时间: ${r._viewingTime || '等待确认'}`;
+    s += `\n确认时间: ${r._viewingTime || '【时间待确定】'}`;
     return s;
   }).join('\n\n');
 
-  // System/User prompt 复用 generateListing 的 viewing-mode(3274-3305 行)
+  // System/User prompt 会话 7:空时间输出"【时间待确定】"行,不再省略
   const systemPrompt = `你是新加坡房地产中介"好好过 Haohaoguo Realty"的AI助手。
 任务：生成看房安排消息发给客户（微信中文）。
 
@@ -5571,12 +5682,14 @@ async function recGenerateViewingMessage() {
 💰 $[月租] | [X]房[X]卫 | [面积]sqft
 🛋 [家具情况] | [入住日期]
 🔗 [PropertyGuru链接，原样粘贴，不要修改]
-【已确定[时间]】（已确认的才加，等待确认的省略）
+【已确定[时间]】 或 【时间待确定】
 
 规则：
-- 已确认时间的排前面，等待确认的排后面
+- 每套房源的最后一行必须输出时间状态:
+  · 有具体时间 → 【已确定[时间]】 例如 【已确定 10.15am】
+  · 没具体时间(输入为"【时间待确定】"或空)→ 【时间待确定】
+- 已确认时间的排前面，时间待确定的排后面
 - 编号用【1】【2】格式
-- 等待确认的房源不加【已确定】行
 - 🔗 后面必须是完整的PropertyGuru URL，直接原样输出
 - ⚠️ 面积（如484sqft）是纯文字，不是链接，不要变成超链接格式
 - 直接输出消息，不要加前缀`;
@@ -5632,13 +5745,13 @@ async function recViewingCopyAndSchedule() {
   const now = Date.now();
   let okCount = 0, errCount = 0;
   for (const r of selected) {
-    // 构造 viewLog 事件文本
+    // 构造 viewLog 事件文本(会话 7:统一用"时间待确定")
     const t = r._viewingTime || '';
     let logText = '';
     if (viewingDate && t) logText = `${viewingDate} ${t}`;
-    else if (viewingDate) logText = `${viewingDate} 等待确认`;
+    else if (viewingDate) logText = `${viewingDate} 时间待确定`;
     else if (t) logText = t;
-    else logText = '等待确认';
+    else logText = '时间待确定';
 
     const newEvent = { time: now, kind: '预约', text: logText };
     const updated = {
@@ -5776,6 +5889,7 @@ async function recSubmitBatch() {
         status: '备选',
         noShow: '',
         viewLog: [],
+        createdAt: Date.now(),  // 会话 7:添加时间,用于卡片显示
       };
       const createRes = await recApi('rec_create', { rec });
       if (createRes.success) {
