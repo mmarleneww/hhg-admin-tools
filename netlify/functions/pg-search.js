@@ -140,12 +140,35 @@ exports.handler = async function (event) {
               : '';
 
             // Beds / Baths / Area — from propertyOverviewData.propertyInfo.amenities
+            // BUGFIX (2026-04-19): PG sometimes changes `unit` field format, causing areaSqft
+            // to be misread or missed. Now we scan multiple fields + sanity check.
             const amenities = data?.propertyOverviewData?.propertyInfo?.amenities || [];
             let beds = null, baths = null, areaSqft = null;
             for (const a of amenities) {
-              if (a.unit === 'Bed' || a.unit === 'Beds') beds = parseInt(a.value) || null;
-              else if (a.unit === 'Bath' || a.unit === 'Baths') baths = parseInt(a.value) || null;
-              else if (a.unit === 'sqft') areaSqft = parseInt(a.value) || null;
+              const unit  = String(a.unit  || '').toLowerCase();
+              const label = String(a.label || a.name || '').toLowerCase();
+              const valueRaw = String(a.value || '');
+              const num = parseInt(valueRaw.replace(/[^\d]/g, '')) || null;
+              // Bedrooms
+              if (/bed/.test(unit) || /bed/.test(label)) {
+                if (num !== null && num < 20) beds = num;
+              }
+              // Bathrooms
+              else if (/bath/.test(unit) || /bath/.test(label)) {
+                if (num !== null && num < 20) baths = num;
+              }
+              // Floor area — sqft/sqm/square, and sanity check (must be >= 50)
+              else if (/sqft|sqm|square|area|floor/.test(unit) || /sqft|sqm|square|area|floor/.test(label)) {
+                if (num !== null && num >= 50) areaSqft = num;
+              }
+            }
+            // Secondary: try direct fields on listingDetail (some PG pages have these)
+            if (areaSqft === null) {
+              const directArea = r.floorArea || r.area?.value || r.area?.localeStringValue || '';
+              if (directArea) {
+                const n = parseInt(String(directArea).replace(/[^\d]/g, '')) || null;
+                if (n !== null && n >= 50) areaSqft = n;
+              }
             }
 
             // MRT
@@ -231,8 +254,19 @@ exports.handler = async function (event) {
       const priceRaw = priceMatch ? parseInt((priceMatch[1]||'').replace(/,/g,'')) : 0;
       const bedsMatch = html.match(/"bedrooms"\s*:\s*(\d+)/i) || html.match(/(\d+)\s*Bed/i);
       const bathsMatch = html.match(/"bathrooms"\s*:\s*(\d+)/i) || html.match(/(\d+)\s*Bath/i);
-      const areaMatch = html.match(/"floorArea"\s*:\s*"?(\d+)"?/i) || html.match(/([\d,]+)\s*sqft/i);
-      const areaSqft = areaMatch ? parseInt((areaMatch[1]||'').replace(/,/g,'')) : null;
+      // BUGFIX (2026-04-19): prefer JSON floorArea field, else find largest sqft match >= 50
+      let areaSqft = null;
+      const faMatch = html.match(/"floorArea"\s*:\s*"?(\d+)"?/i);
+      if (faMatch) {
+        const n = parseInt(faMatch[1]);
+        if (!isNaN(n) && n >= 50) areaSqft = n;
+      }
+      if (areaSqft === null) {
+        const all = [...html.matchAll(/([\d,]+)\s*sqft/gi)]
+          .map(m => parseInt(m[1].replace(/,/g, '')))
+          .filter(n => !isNaN(n) && n >= 50);
+        if (all.length > 0) areaSqft = Math.max(...all);
+      }
       const furnishMatch = html.match(/(Fully [Ff]urnished|Partial(?:ly)? [Ff]urnished|Unfurnished)/i);
       const mrtMatch = html.match(/"nearbyText"\s*:\s*"([^"]+)"/i);
       const tenureMatch = html.match(/(Freehold|Leasehold[^"<]{0,20})/i);
@@ -342,11 +376,21 @@ function formatListing(r, listingType) {
   // Beds / baths / area — CONFIRMED from live PG JSON:
   // r.bedrooms, r.bathrooms, r.floorArea are direct fields
   // r.area.localeStringValue is "807 sqft"
+  // BUGFIX (2026-04-19): add sanity check — area must be >= 50 sqft
   let beds = r.bedrooms ?? null;
   let baths = r.bathrooms ?? null;
-  let areaSqft = r.floorArea ? parseInt(r.floorArea) || null : null;
-  if (!areaSqft && r.area?.localeStringValue) {
-    areaSqft = parseInt(r.area.localeStringValue.replace(/[^\d]/g, "")) || null;
+  let areaSqft = null;
+  if (r.floorArea) {
+    const n = parseInt(String(r.floorArea).replace(/[^\d]/g, '')) || null;
+    if (n !== null && n >= 50) areaSqft = n;
+  }
+  if (areaSqft === null && r.area?.localeStringValue) {
+    const n = parseInt(r.area.localeStringValue.replace(/[^\d]/g, "")) || null;
+    if (n !== null && n >= 50) areaSqft = n;
+  }
+  if (areaSqft === null && r.area?.value) {
+    const n = parseInt(String(r.area.value).replace(/[^\d]/g, '')) || null;
+    if (n !== null && n >= 50) areaSqft = n;
   }
   // Fallback to listingFeatures if direct fields missing
   if ((beds === null || areaSqft === null) && r.listingFeatures) {
@@ -354,7 +398,10 @@ function formatListing(r, listingType) {
     feats.forEach(f => {
       if (f.dataAutomationId === "listing-card-v2-bedrooms" && beds === null) beds = parseInt(f.text) || null;
       if (f.dataAutomationId === "listing-card-v2-bathrooms" && baths === null) baths = parseInt(f.text) || null;
-      if (f.text?.includes("sqft") && areaSqft === null) areaSqft = parseInt(f.text.replace(/[^\d]/g, "")) || null;
+      if (f.text?.includes("sqft") && areaSqft === null) {
+        const n = parseInt(f.text.replace(/[^\d]/g, "")) || null;
+        if (n !== null && n >= 50) areaSqft = n;
+      }
     });
   }
 
@@ -413,9 +460,18 @@ async function enrichPhone(listing) {
       if (fm) listing.furnishing = fm[1];
     }
     // Area fallback
+    // BUGFIX (2026-04-19): PG detail HTML can contain spurious "2 sqft" strings
+    // (e.g. unit-toggle icons or other UI chrome). Old regex `.match()` took the FIRST
+    // which could be garbage. Now: find ALL matches, filter to >= 50 sqft, take largest.
     if (!listing.areaSqft) {
-      const am = html.match(/([\d,]+)\s*sqft/i);
-      if (am) { listing.areaSqft = parseInt(am[1].replace(/,/g,"")); listing.areaDisplay = `${listing.areaSqft.toLocaleString()} sqft`; }
+      const all = [...html.matchAll(/([\d,]+)\s*sqft/gi)]
+        .map(m => parseInt(m[1].replace(/,/g, '')))
+        .filter(n => !isNaN(n) && n >= 50);
+      if (all.length > 0) {
+        const best = Math.max(...all);
+        listing.areaSqft = best;
+        listing.areaDisplay = `${best.toLocaleString()} sqft`;
+      }
     }
     // Lease term
     if (!listing.leaseTerm) {
