@@ -548,6 +548,50 @@
   }
   .rec-card-link { color: var(--accent-g); text-decoration: none; font-size: 11px; }
 
+  /* 批量发送房源(会话 5) ═════════════════════════════ */
+  .rec-card-checkbox {
+    width: 16px; height: 16px; cursor: pointer;
+    accent-color: var(--accent-j); flex-shrink: 0;
+  }
+  .rec-card.selectable { display: flex; gap: 8px; align-items: flex-start; }
+  .rec-card-body { flex: 1; min-width: 0; }
+  /* 批量操作条 */
+  .rec-batch-bar {
+    display: flex; align-items: center; gap: 10px;
+    background: #fff8f0; border: 1px solid #f0d8b0;
+    border-radius: 8px; padding: 10px 12px; margin-bottom: 10px;
+  }
+  .rec-batch-bar-count {
+    font-size: 13px; color: var(--text2); font-weight: 500;
+  }
+  .rec-batch-bar-count b { color: var(--accent-j); }
+  .rec-batch-bar-spacer { flex: 1; }
+  .rec-batch-bar-link {
+    font-size: 12px; color: var(--text3); cursor: pointer;
+    background: none; border: 0; padding: 4px 6px; text-decoration: underline;
+  }
+  .rec-batch-bar-link:hover { color: var(--accent-j); }
+  .rec-batch-bar-send {
+    padding: 7px 14px; background: var(--accent-j); color: #fff;
+    border: 0; border-radius: 6px; font-size: 13px; font-weight: 500; cursor: pointer;
+  }
+  .rec-batch-bar-send:disabled {
+    background: #ccc; cursor: not-allowed;
+  }
+  /* 消息预览 modal(复用 crm-modal 样式) */
+  .rec-send-preview {
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 8px; padding: 12px; min-height: 200px;
+    white-space: pre-wrap; font-size: 13px; line-height: 1.6;
+    font-family: inherit; color: var(--text);
+    max-height: 400px; overflow-y: auto;
+  }
+  .rec-send-loading {
+    display: flex; align-items: center; justify-content: center;
+    min-height: 200px; color: var(--text3); font-size: 13px;
+  }
+  /* ═════════════════════════════════════════════════ */
+
   /* 房源详情弹窗:状态按钮组横滑 */
   .rec-detail-status-row {
     display: flex; gap: 5px; flex-wrap: wrap;
@@ -1638,6 +1682,48 @@
           <button onclick="recCloseDetail()" style="background:none;border:0;font-size:22px;color:var(--text3);cursor:pointer;padding:0 4px;">×</button>
         </div>
         <div class="crm-modal-body" id="rec-detail-body"></div>
+      </div>
+    </div>
+
+    <!-- 批量发送房源消息预览 modal(会话 5) -->
+    <div id="rec-send-modal" class="crm-modal" style="display:none;" onclick="recCloseSendPreview(event)">
+      <div class="crm-modal-content" onclick="event.stopPropagation()" style="max-width:640px;">
+        <div class="crm-modal-header">
+          <div style="font-size:16px;font-weight:600;">✉️ 生成发客户消息 <span style="font-size:12px;color:var(--text3);font-weight:400;">(<span id="rec-send-count">0</span> 套)</span></div>
+          <button onclick="recCloseSendPreview()" style="background:none;border:0;font-size:22px;color:var(--text3);cursor:pointer;padding:0 4px;">×</button>
+        </div>
+        <div class="crm-modal-body">
+          <div class="crm-field" style="margin-bottom:10px;">
+            <label>客户称呼</label>
+            <input type="text" id="rec-send-client" placeholder="如:老板、张总" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;background:#fff;box-sizing:border-box;">
+          </div>
+          <div class="crm-field" style="margin-bottom:10px;">
+            <label>开头语</label>
+            <select id="rec-send-intro-select" onchange="recSendIntroChange(this.value)" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;background:#fff;margin-bottom:6px;box-sizing:border-box;">
+              <option value="">— 不加开头语 —</option>
+              <option value="这是我们为您精选的几套房源，都比较符合您的要求，价格也在预算范围内 😊">这是我们为您精选的几套房源，都比较符合您的要求，价格也在预算范围内 😊</option>
+              <option value="根据您的需求，我们整理了以下几套较合适的房源，供您参考～">根据您的需求，我们整理了以下几套较合适的房源，供您参考～</option>
+              <option value="先发几套您看看，有喜欢的我们再重点约看 🏠">先发几套您看看，有喜欢的我们再重点约看 🏠</option>
+              <option value="这几套是目前市场上相对更适合您的选择，整体条件比较均衡。">这几套是目前市场上相对更适合您的选择，整体条件比较均衡。</option>
+              <option value="这几套是最近新出的房源，状态都比较新，您可以先看看～">这几套是最近新出的房源，状态都比较新，您可以先看看～</option>
+              <option value="这几套性价比都不错，在目前预算范围内算比较有竞争力。">这几套性价比都不错，在目前预算范围内算比较有竞争力。</option>
+              <option value="这几套条件都不错，如果有喜欢的建议尽快安排看房，因为近期流动比较快。">这几套条件都不错，如果有喜欢的建议尽快安排看房，因为近期流动比较快。</option>
+              <option value="__custom__">✏️ 自定义...</option>
+            </select>
+            <input type="text" id="rec-send-intro-custom" placeholder="自定义开头语..." style="display:none;width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;background:#fff;box-sizing:border-box;">
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+            <div style="font-size:12px;color:var(--text3);">消息预览</div>
+            <button id="rec-send-gen-btn" onclick="recGenerateSendMessage()" style="padding:6px 14px;background:var(--accent-g);color:#fff;border:0;border-radius:6px;font-size:12px;font-weight:500;cursor:pointer;">🤖 生成消息</button>
+          </div>
+          <div class="rec-send-preview" id="rec-send-preview-area">
+            <div class="rec-send-loading">点击右上方「生成消息」按钮</div>
+          </div>
+        </div>
+        <div style="padding:12px 18px 18px;display:flex;gap:10px;">
+          <button onclick="recCloseSendPreview()" style="flex:1;padding:11px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;font-size:14px;cursor:pointer;color:var(--text2);">取消</button>
+          <button id="rec-send-copy-btn" onclick="recSendCopyAndMarkSent()" disabled style="flex:2;padding:11px;background:var(--accent-j);color:#fff;border:0;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;">复制(状态改为已发送)</button>
+        </div>
       </div>
     </div>
 
@@ -4897,6 +4983,8 @@ const REC_TO_CRM = {
 let recCurrentClientId = null;
 let recCurrentList = [];
 let recDetailId = null;
+// 会话 5:批量发送 选中房源 ID 集合(Set<lark_id>)
+let recSelectedIds = new Set();
 
 function recEscape(s) {
   return String(s == null ? '' : s).replace(/[&<>"]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch]));
@@ -4930,6 +5018,7 @@ async function recApi(action, body = {}) {
 // ── 加载某客户名下所有推荐房源 ─────────────────────────────────────────────
 async function recLoadForClient(clientId) {
   recCurrentClientId = clientId;
+  recSelectedIds = new Set();  // 会话 5:切换客户时清空选择
   const container = document.getElementById('rec-list-container');
   if (!container) return;
   try {
@@ -4964,14 +5053,44 @@ function recRenderList() {
     if (!groups[status]) groups[status] = [];
     groups[status].push(r);
   });
+
+  // 会话 5:批量操作条
+  // 只统计 selectable(备选/已发送)状态的房源
+  const selectableList = recCurrentList.filter(r => r.status === '备选' || r.status === '已发送');
+  const draftList = recCurrentList.filter(r => r.status === '备选');
+  // 清掉 selectedIds 里已失效的(比如被删的房源)
+  const validIds = new Set(recCurrentList.map(r => r._lark_id));
+  for (const id of Array.from(recSelectedIds)) {
+    if (!validIds.has(id)) recSelectedIds.delete(id);
+  }
+  const selectedCount = recSelectedIds.size;
+  let batchBarHtml = '';
+  if (selectableList.length > 0) {
+    const hasDraft = draftList.length > 0;
+    const allDraftSelected = hasDraft && draftList.every(r => recSelectedIds.has(r._lark_id));
+    batchBarHtml = `
+      <div class="rec-batch-bar">
+        <div class="rec-batch-bar-count">
+          已选 <b>${selectedCount}</b> 套${hasDraft ? ` · 备选 ${draftList.length} 套` : ''}
+        </div>
+        <div class="rec-batch-bar-spacer"></div>
+        ${hasDraft && !allDraftSelected ? `<button class="rec-batch-bar-link" onclick="recBatchSelectAvailable()">全选备选</button>` : ''}
+        ${selectedCount > 0 ? `<button class="rec-batch-bar-link" onclick="recClearSelection()">取消全选</button>` : ''}
+        <button class="rec-batch-bar-send" ${selectedCount === 0 ? 'disabled' : ''} onclick="recOpenSendPreview()">
+          ✉️ 生成发客户消息
+        </button>
+      </div>
+    `;
+  }
+
   // 按 GROUPS_ORDER 顺序输出
-  const html = REC_GROUPS_ORDER.filter(s => groups[s] && groups[s].length).map(s => `
+  const groupsHtml = REC_GROUPS_ORDER.filter(s => groups[s] && groups[s].length).map(s => `
     <div class="rec-group">
       <div class="rec-group-title">${s} (${groups[s].length})</div>
       ${groups[s].map(r => recRenderCard(r)).join('')}
     </div>
   `).join('');
-  container.innerHTML = html;
+  container.innerHTML = batchBarHtml + groupsHtml;
 }
 
 // ── 单个房源卡片 ─────────────────────────────────────────────────────────
@@ -4990,8 +5109,16 @@ function recRenderCard(r) {
   if (r.agentName) agentLine.push(recEscape(r.agentName));
   if (r.agentPhone) agentLine.push(`<a href="tel:${recEscape(r.agentPhone)}" onclick="event.stopPropagation()" class="rec-card-link">${recEscape(r.agentPhone)}</a>`);
   if (r.agentCo) agentLine.push(recEscape(r.agentCo));
-  return `
-    <div class="rec-card" onclick="recOpenDetail('${r._lark_id}')">
+
+  // 会话 5:备选/已发送 状态房源显示勾选框(备选=默认新加的,已发送=可以重发)
+  const isSelectable = (r.status === '备选' || r.status === '已发送');
+  const isChecked = recSelectedIds.has(r._lark_id);
+  const checkboxHtml = isSelectable
+    ? `<input type="checkbox" class="rec-card-checkbox" ${isChecked ? 'checked' : ''} onclick="event.stopPropagation();recToggleSelect('${r._lark_id}')">`
+    : '';
+
+  const inner = `
+    <div class="rec-card-body">
       <div class="rec-card-row1">
         <span class="rec-card-status ${statusClass}">${recEscape(r.status || '已发送')}</span>
         <span class="rec-card-addr">${recEscape(addr)}</span>
@@ -5001,6 +5128,227 @@ function recRenderCard(r) {
       ${agentLine.length || r.mrt ? `<div class="rec-card-row3">${agentLine.join(' · ')}${r.mrt ? (agentLine.length ? ' · ' : '') + '🚇 ' + recEscape(r.mrt) : ''}</div>` : ''}
     </div>
   `;
+
+  return `
+    <div class="rec-card ${isSelectable ? 'selectable' : ''}" onclick="recOpenDetail('${r._lark_id}')">
+      ${checkboxHtml}
+      ${inner}
+    </div>
+  `;
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// 批量发送房源(会话 5)
+// 流程:勾选 备选/已发送 → 生成消息 → 复制 → 自动改 已发送
+// ═══════════════════════════════════════════════════════════════════════
+
+function recToggleSelect(larkId) {
+  if (recSelectedIds.has(larkId)) recSelectedIds.delete(larkId);
+  else recSelectedIds.add(larkId);
+  recRenderList();  // 重渲染更新批量条数字
+}
+
+function recBatchSelectAvailable() {
+  // 全选所有 备选 状态的房源(不包含已发送)
+  recCurrentList.forEach(r => {
+    if (r.status === '备选') recSelectedIds.add(r._lark_id);
+  });
+  recRenderList();
+}
+
+function recClearSelection() {
+  recSelectedIds.clear();
+  recRenderList();
+}
+
+// 打开发送预览 modal
+function recOpenSendPreview() {
+  if (recSelectedIds.size === 0) { alert('请先勾选至少一套房源'); return; }
+  // 取选中的房源(按 recCurrentList 顺序排列)
+  const selected = recCurrentList.filter(r => recSelectedIds.has(r._lark_id));
+  if (selected.length === 0) { alert('选中的房源已失效,请重新选择'); return; }
+
+  const modal = document.getElementById('rec-send-modal');
+  if (!modal) { alert('消息预览窗口未找到'); return; }
+
+  // 取客户称呼默认值
+  const client = crmClients.find(c => c.id === recCurrentClientId);
+  const defaultCall = client?.name || '老板';
+
+  // 填充 UI
+  document.getElementById('rec-send-client').value = defaultCall;
+  document.getElementById('rec-send-intro-select').value = '';
+  document.getElementById('rec-send-intro-custom').style.display = 'none';
+  document.getElementById('rec-send-intro-custom').value = '';
+  document.getElementById('rec-send-count').textContent = selected.length;
+  document.getElementById('rec-send-preview-area').innerHTML =
+    '<div class="rec-send-loading">点击下方「生成消息」按钮</div>';
+  document.getElementById('rec-send-copy-btn').disabled = true;
+  document.getElementById('rec-send-copy-btn').textContent = '复制(状态改为已发送)';
+
+  // 记录当前的选中列表(防止 modal 开着时勾选框变化)
+  window._recSendSelected = selected.slice();
+  window._recSendGeneratedText = '';
+
+  modal.style.display = 'flex';
+}
+
+function recCloseSendPreview(evt) {
+  if (evt && evt.target.id !== 'rec-send-modal') return;
+  const modal = document.getElementById('rec-send-modal');
+  if (modal) modal.style.display = 'none';
+  window._recSendSelected = null;
+  window._recSendGeneratedText = '';
+}
+
+function recSendIntroChange(val) {
+  const custom = document.getElementById('rec-send-intro-custom');
+  if (val === '__custom__') {
+    custom.style.display = 'block';
+    custom.focus();
+  } else {
+    custom.style.display = 'none';
+  }
+}
+
+// 生成消息(调用 Claude API,复用找房 Tab 的 prompt)
+async function recGenerateSendMessage() {
+  const selected = window._recSendSelected || [];
+  if (selected.length === 0) { alert('选中的房源丢失,请重开预览'); return; }
+
+  const client = document.getElementById('rec-send-client').value.trim() || '老板';
+  const introSel = document.getElementById('rec-send-intro-select').value;
+  const introCustom = document.getElementById('rec-send-intro-custom').value.trim();
+  const intro = introSel === '__custom__' ? introCustom : (introSel || '');
+
+  const genBtn = document.getElementById('rec-send-gen-btn');
+  const previewArea = document.getElementById('rec-send-preview-area');
+  const copyBtn = document.getElementById('rec-send-copy-btn');
+
+  genBtn.disabled = true;
+  genBtn.textContent = '生成中...';
+  previewArea.innerHTML = '<div class="rec-send-loading">AI 正在整理消息...</div>';
+  copyBtn.disabled = true;
+
+  // 构造 listingsText(完全复用找房 Tab 的 prompt 格式)
+  const listingsText = selected.map((r, i) => {
+    let s = `房源${i+1}:\n链接: ${r.link || '(无链接)'}`;
+    // 拆 rooms "2房2卫" → beds/baths(给 AI 参考即可,AI 能识别)
+    const priceDisplay = recFmtPrice(r.price, r.priceType);
+    s += `\n小区名: ${r.address||''}, 价格: ${priceDisplay !== '—' ? priceDisplay : ''}, 户型: ${r.rooms||''}, 面积: ${r.area ? r.area + 'sqft' : ''}, 家具: ${r.furnishing||''}, 入住: ${r.availability||''}`;
+    return s;
+  }).join('\n\n');
+
+  // System/User prompt 完全复用 generateListing 的 list-mode(3152-3181 行的逻辑)
+  const systemPrompt = `你是新加坡房地产中介"好好过 Haohaoguo Realty"的AI助手。
+任务：根据房源信息，整理成发给客户的微信消息，格式如下：
+
+${intro ? '[开头语]\n\n' : ''}【1】🏠 [小区名]
+💰 $[月租] | [X]房[X]卫 | [面积]sqft
+🛋 [家具情况] | [入住日期]
+🔗 [PropertyGuru链接，原样粘贴，不要修改]
+
+【2】🏠 [小区名]
+...（以此类推）
+
+规则：
+- 编号用【1】【2】格式，前面加🏠
+- 价格格式：$X,XXX（不加/mo）
+- 面积加sqft，家具：Fully Furnished→家具齐全，Partial Furnished→配备部分家具，Unfurnished→无家具
+- 入住日期：Ready to Move→马上入住，否则保留英文日期
+- 🔗 后面必须是完整的PropertyGuru URL（https://www.propertyguru.com.sg/listing/...），直接原样输出
+- ⚠️ 绝对不要把面积（如484sqft）变成链接，sqft是纯文字
+- ⚠️ 每行只能有一个链接，且链接只能出现在🔗那一行
+- 开头语：如果有开头语则放在第一套房源前面
+- 最后加一行：如有疑问欢迎随时告知 😊
+- 直接输出消息，不要加任何前缀`;
+
+  const userPrompt = `客户称呼：${client}
+${intro ? '开头语：' + intro : '（无开头语，直接列房源）'}
+请整理以下${selected.length}套房源：
+
+${listingsText}`;
+
+  try {
+    const text = await callAPI(systemPrompt, userPrompt);
+    window._recSendGeneratedText = text;
+    previewArea.textContent = text;
+    copyBtn.disabled = false;
+    genBtn.textContent = '重新生成';
+    genBtn.disabled = false;
+  } catch (err) {
+    previewArea.innerHTML = '<div style="color:#c62828;padding:14px;">❌ 生成失败:' + recEscape(err.message) + '</div>';
+    genBtn.textContent = '重试';
+    genBtn.disabled = false;
+  }
+}
+
+// 复制 + 改状态为已发送 + 联动客户状态
+async function recSendCopyAndMarkSent() {
+  const text = window._recSendGeneratedText || '';
+  if (!text) { alert('请先生成消息'); return; }
+  const selected = window._recSendSelected || [];
+  if (selected.length === 0) { alert('选中的房源丢失'); return; }
+
+  const copyBtn = document.getElementById('rec-send-copy-btn');
+  copyBtn.disabled = true;
+  copyBtn.textContent = '处理中...';
+
+  // 1. 复制到剪贴板
+  try {
+    await navigator.clipboard.writeText(text);
+  } catch (e) {
+    // 兼容不支持 Clipboard API 的环境:用 textarea
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand('copy'); } catch(_) {}
+    document.body.removeChild(ta);
+  }
+
+  // 2. 批量更新房源状态:备选 → 已发送(已发送 的保持不变,只是"重发"了一次)
+  const now = Date.now();
+  let okCount = 0, errCount = 0;
+  for (const r of selected) {
+    if (r.status !== '备选') continue;  // 已发送的不重复改
+    const updated = { ...r, status: '已发送', lastSentAt: now };
+    try {
+      const res = await recApi('rec_update', { lark_id: r._lark_id, rec: updated });
+      if (res.success) {
+        Object.assign(r, updated);
+        // 同步 recCurrentList
+        const idx = recCurrentList.findIndex(x => x._lark_id === r._lark_id);
+        if (idx >= 0) recCurrentList[idx] = { ...recCurrentList[idx], ...updated };
+        okCount++;
+      } else {
+        errCount++;
+      }
+    } catch (err) {
+      errCount++;
+    }
+  }
+
+  // 3. 清空选择
+  recSelectedIds.clear();
+
+  // 4. 联动客户状态(如果有房源状态变了)
+  if (okCount > 0 && recCurrentClientId) {
+    try { await recRecomputeClientStatus(recCurrentClientId); } catch(_) {}
+  }
+
+  // 5. 重渲染
+  recRenderList();
+
+  // 6. 关闭 modal + toast 提示
+  recCloseSendPreview();
+  if (typeof showToast === 'function') {
+    if (errCount === 0) {
+      showToast(`✓ 已复制消息,${okCount > 0 ? `${okCount} 套已标记为已发送` : '无状态变动'}`);
+    } else {
+      showToast(`✓ 已复制消息。${okCount} 套成功,${errCount} 套失败`);
+    }
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -5083,7 +5431,7 @@ async function recSubmitBatch() {
         agentPhone: L.agent?.phone || '',
         agentCo:    L.agent?.agency || '',
         cea:        L.agent?.cea   || '',
-        status: '已发送',
+        status: '备选',
         noShow: '',
         viewLog: [],
       };
