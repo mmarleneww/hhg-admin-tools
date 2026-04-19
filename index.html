@@ -673,10 +673,47 @@
   .rec-add-inline-hint {
     font-size: 11px; color: var(--text3);
   }
-  /* 整页详情底部操作按钮 */
+  /* 整页详情底部操作按钮(已废弃,保留 class 向后兼容) */
   .crm-detail-bottom-actions {
     display: flex; gap: 8px; padding-top: 14px;
     border-top: 1px solid var(--border); flex-wrap: wrap;
+  }
+
+  /* Header 右上角操作菜单(⚙) */
+  .crm-detail-header {
+    position: relative;
+  }
+  .crm-detail-actions-wrap {
+    margin-left: auto;
+    position: relative;
+  }
+  .crm-detail-gear-btn {
+    width: 34px; height: 34px;
+    display: inline-flex; align-items: center; justify-content: center;
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 7px; font-size: 16px; cursor: pointer; color: var(--text2);
+    padding: 0; line-height: 1;
+  }
+  .crm-detail-gear-btn:hover { background: #fff; border-color: var(--accent-j); color: var(--accent-j); }
+  .crm-detail-gear-menu {
+    position: absolute; top: 100%; right: 0; margin-top: 4px;
+    background: #fff; border: 1px solid var(--border); border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+    min-width: 140px; padding: 4px 0; z-index: 50;
+    display: none;
+  }
+  .crm-detail-gear-menu.open { display: block; }
+  .crm-detail-gear-menu button {
+    display: block; width: 100%; text-align: left;
+    padding: 9px 14px; background: none; border: 0;
+    font-size: 13px; color: var(--text2); cursor: pointer;
+    font-family: inherit;
+  }
+  .crm-detail-gear-menu button:hover { background: var(--surface2); }
+  .crm-detail-gear-menu button.danger { color: #d42b2b; }
+  .crm-detail-gear-menu button.danger:hover { background: #fff5f5; }
+  .crm-detail-gear-divider {
+    height: 1px; background: var(--border); margin: 4px 0;
   }
 
   /* 窄屏自动回落为上下堆叠 */
@@ -1419,16 +1456,7 @@
       </div>
     </div>
 
-    <!-- Client detail modal -->
-    <div id="crm-detail-modal" class="crm-modal" style="display:none;" onclick="crmCloseDetail(event)">
-      <div class="crm-modal-content" onclick="event.stopPropagation()">
-        <div class="crm-modal-header">
-          <div id="crm-detail-title" style="font-size:16px;font-weight:600;">客户详情</div>
-          <button onclick="crmCloseDetail()" style="background:none;border:0;font-size:22px;color:var(--text3);cursor:pointer;padding:0 4px;">×</button>
-        </div>
-        <div class="crm-modal-body" id="crm-detail-body"></div>
-      </div>
-    </div>
+    </div><!-- /crm-board-view -->
 
     <!-- Onhold modal -->
     <div id="crm-onhold-modal" class="crm-modal" style="display:none;" onclick="crmOnHoldCancel(event)">
@@ -1602,26 +1630,6 @@
       </div>
     </div>
 
-    <!-- 添加推荐房源弹窗 -->
-    <div id="rec-add-modal" class="crm-modal" style="display:none;" onclick="recCloseAdd(event)">
-      <div class="crm-modal-content" onclick="event.stopPropagation()">
-        <div class="crm-modal-header">
-          <div style="font-size:16px;font-weight:600;">+ 添加推荐房源</div>
-          <button onclick="recCloseAdd()" style="background:none;border:0;font-size:22px;color:var(--text3);cursor:pointer;padding:0 4px;">×</button>
-        </div>
-        <div class="crm-modal-body">
-          <div style="font-size:13px;color:var(--text2);margin-bottom:8px;">粘贴 PG 链接,每行一个。系统会自动提取地址、价格、中介等信息。</div>
-          <textarea id="rec-add-textarea" class="rec-add-modal-textarea" placeholder="https://www.propertyguru.com.sg/listing/...&#10;https://www.propertyguru.com.sg/listing/..."></textarea>
-          <div id="rec-add-progress" class="rec-add-progress" style="display:none;"></div>
-          <div id="rec-add-results" style="margin-top:8px;"></div>
-        </div>
-        <div style="padding:12px 18px 18px;display:flex;gap:10px;">
-          <button onclick="recCloseAdd()" style="flex:1;padding:11px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;font-size:14px;cursor:pointer;color:var(--text2);">关闭</button>
-          <button id="rec-add-submit-btn" onclick="recSubmitBatch()" style="flex:2;padding:11px;background:var(--accent-j);color:#fff;border:0;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;">开始提取</button>
-        </div>
-      </div>
-    </div>
-
     <!-- 房源详情弹窗 -->
     <div id="rec-detail-modal" class="crm-modal" style="display:none;" onclick="recCloseDetail(event)">
       <div class="crm-modal-content" onclick="event.stopPropagation()">
@@ -1632,8 +1640,6 @@
         <div class="crm-modal-body" id="rec-detail-body"></div>
       </div>
     </div>
-
-    </div><!-- /crm-board-view -->
 
     <!-- 客户详情整页视图 · 会话 4 -->
     <div id="crm-detail-page-view" style="display:none;"></div>
@@ -4276,8 +4282,7 @@ function crmOpenDetail(id) {
 }
 
 function crmCloseDetail(evt) {
-  // 老 modal 兼容:点击遮罩时传 event,忽略(整页后不再用 modal 背景点击关闭)
-  if (evt && evt.target && evt.target.id === 'crm-detail-modal') return;
+  // 会话 4.5:整页化后不再有 modal,event 参数保留以兼容旧调用
   document.getElementById('crm-board-view').style.display = 'block';
   document.getElementById('crm-detail-page-view').style.display = 'none';
   document.getElementById('crm-detail-page-view').innerHTML = '';
@@ -4285,6 +4290,26 @@ function crmCloseDetail(evt) {
   // 返回看板时也刷一次
   crmRender();
 }
+
+// ⚙ 菜单(会话 4.5)
+function crmGearMenuToggle(evt) {
+  if (evt) { evt.stopPropagation(); }
+  const menu = document.getElementById('crm-detail-gear-menu');
+  if (!menu) return;
+  menu.classList.toggle('open');
+}
+function crmGearMenuClose() {
+  const menu = document.getElementById('crm-detail-gear-menu');
+  if (menu) menu.classList.remove('open');
+}
+// 点击菜单外部时自动关闭
+document.addEventListener('click', function(e) {
+  const menu = document.getElementById('crm-detail-gear-menu');
+  if (!menu || !menu.classList.contains('open')) return;
+  // 点击在 ⚙ 按钮或菜单内部时由自身逻辑处理
+  if (e.target.closest('.crm-detail-actions-wrap')) return;
+  menu.classList.remove('open');
+});
 
 // 在整页模式或 modal 模式下刷新客户详情(会话 4 辅助函数)
 function crmRefreshDetail(updated) {
@@ -4355,14 +4380,17 @@ function crmRenderDetailPage(c) {
   `;
 
   const canDelete = crmCanDelete(c);
-  const bottomButtons = [];
-  bottomButtons.push(`<button onclick="crmShowForm('edit','${c.id}')" style="flex:1;padding:10px;background:var(--surface2);border:1px solid var(--border);border-radius:7px;font-size:13px;cursor:pointer;color:var(--text2);">编辑</button>`);
+  // ⚙ 菜单项(会话 4.5:移到 header,取代底部大按钮)
+  const gearMenuItems = [];
+  gearMenuItems.push(`<button onclick="crmGearMenuClose();crmShowForm('edit','${c.id}')">编辑</button>`);
   if (!isOnHold && !isInactive) {
-    bottomButtons.push(`<button onclick="crmOnHold('${c.id}')" style="flex:1;padding:10px;background:#fff;border:1px solid var(--border);border-radius:7px;font-size:13px;cursor:pointer;color:var(--text2);">⏸ 暂停</button>`);
-    bottomButtons.push(`<button onclick="crmInactivate('${c.id}')" style="flex:1;padding:10px;background:#fff;border:1px solid var(--border);border-radius:7px;font-size:13px;cursor:pointer;color:var(--text2);">❌ 流失</button>`);
+    gearMenuItems.push(`<div class="crm-detail-gear-divider"></div>`);
+    gearMenuItems.push(`<button onclick="crmGearMenuClose();crmOnHold('${c.id}')">⏸ 暂停</button>`);
+    gearMenuItems.push(`<button onclick="crmGearMenuClose();crmInactivate('${c.id}')">❌ 流失</button>`);
   }
   if (canDelete) {
-    bottomButtons.push(`<button onclick="crmDeleteClient('${c.id}')" style="flex:1;padding:10px;background:#fff;border:1px solid #d42b2b;color:#d42b2b;border-radius:7px;font-size:13px;cursor:pointer;">删除</button>`);
+    gearMenuItems.push(`<div class="crm-detail-gear-divider"></div>`);
+    gearMenuItems.push(`<button class="danger" onclick="crmGearMenuClose();crmDeleteClient('${c.id}')">删除</button>`);
   }
 
   return `
@@ -4372,6 +4400,12 @@ function crmRenderDetailPage(c) {
         <div>
           <div class="crm-detail-header-title">${colorIcon} ${crmEscape(c.name) || '(无名)'}</div>
           <div class="crm-detail-header-sub">${tierDisplay} · ${crmEscape(c.deal) || '—'} · ${amtDisplay}</div>
+        </div>
+        <div class="crm-detail-actions-wrap">
+          <button class="crm-detail-gear-btn" onclick="crmGearMenuToggle(event)" title="更多操作">⚙</button>
+          <div class="crm-detail-gear-menu" id="crm-detail-gear-menu">
+            ${gearMenuItems.join('')}
+          </div>
         </div>
       </div>
       <div class="crm-detail-main">
@@ -4428,9 +4462,6 @@ function crmRenderDetailPage(c) {
           </div>
         </div>
 
-        <div class="crm-detail-bottom-actions">
-          ${bottomButtons.join('')}
-        </div>
       </div>
     </div>
   `;
@@ -4988,29 +5019,14 @@ function recInlineToggle() {
 }
 
 function recOpenAdd() {
-  // 兼容:老的弹窗入口 → 展开 inline
+  // 会话 4.5:modal 已删,只用 inline
   if (!recCurrentClientId) { alert('请先打开客户详情'); return; }
   const body = document.getElementById('rec-add-inline-body');
-  if (body) {
-    if (!body.classList.contains('expanded')) recInlineToggle();
-    return;
-  }
-  // 若找不到 inline(老视图兼容,不应该到这),用老弹窗
-  const modal = document.getElementById('rec-add-modal');
-  if (modal) {
-    document.getElementById('rec-add-textarea').value = '';
-    document.getElementById('rec-add-progress').style.display = 'none';
-    document.getElementById('rec-add-results').innerHTML = '';
-    document.getElementById('rec-add-submit-btn').disabled = false;
-    document.getElementById('rec-add-submit-btn').textContent = '开始提取';
-    modal.style.display = 'flex';
-  }
+  if (body && !body.classList.contains('expanded')) recInlineToggle();
 }
 
 function recCloseAdd(evt) {
-  if (evt && evt.target.id !== 'rec-add-modal') return;
-  const m = document.getElementById('rec-add-modal');
-  if (m) m.style.display = 'none';
+  // 会话 4.5:modal 已删,noop(保留函数名兼容任何遗漏的引用)
 }
 
 async function recSubmitBatch() {
