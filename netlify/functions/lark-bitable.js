@@ -91,6 +91,14 @@ const CRM_FIELDS = {
   nextAction:  '下一步动作',   // 待办类型(发房源/催客户回房源/...)
   nextDueAt:   '下次跟进时间', // 何时该做这个动作
   nextNotes:   '下一步备注',   // 上下文(选填)
+  // ── Phase 3a 会话 3 新增(Onhold / Inactive) ─────────────────────────
+  onHoldAt:         'onHoldAt',          // 暂停起始时间(datetime)
+  onHoldReason:     'onHoldReason',      // 暂停原因(text)
+  onHoldResumeAt:   'onHoldResumeAt',    // 预计恢复时间(datetime,选填)
+  onHoldPrevStatus: 'onHoldPrevStatus',  // 暂停前的状态(恢复时回到这里)
+  inactiveAt:       'inactiveAt',        // 流失时间(datetime)
+  inactiveReason:   'inactiveReason',    // 流失原因(5 个 pill 之一)
+  inactiveNote:     'inactiveNote',      // 流失补充说明(选填)
 };
 
 function crmClientToFields(c) {
@@ -122,6 +130,22 @@ function crmClientToFields(c) {
   if (c.nextDueAt && c.nextDueAt > 0) {
     fields[CRM_FIELDS.nextDueAt] = c.nextDueAt;
   }
+  // ── Phase 3a 会话 3 新增:Onhold / Inactive ─────────────────────────
+  // Text 类型:始终写入(空字符串可以)
+  fields[CRM_FIELDS.onHoldReason]     = c.onHoldReason     || '';
+  fields[CRM_FIELDS.onHoldPrevStatus] = c.onHoldPrevStatus || '';
+  fields[CRM_FIELDS.inactiveReason]   = c.inactiveReason   || '';
+  fields[CRM_FIELDS.inactiveNote]     = c.inactiveNote     || '';
+  // Datetime 类型:>0 才写入(传 null / 0 会报错)
+  if (c.onHoldAt && c.onHoldAt > 0) {
+    fields[CRM_FIELDS.onHoldAt] = c.onHoldAt;
+  }
+  if (c.onHoldResumeAt && c.onHoldResumeAt > 0) {
+    fields[CRM_FIELDS.onHoldResumeAt] = c.onHoldResumeAt;
+  }
+  if (c.inactiveAt && c.inactiveAt > 0) {
+    fields[CRM_FIELDS.inactiveAt] = c.inactiveAt;
+  }
   return fields;
 }
 
@@ -152,6 +176,14 @@ function crmFieldsToClient(record) {
     nextAction: f[CRM_FIELDS.nextAction] || '',
     nextDueAt:  f[CRM_FIELDS.nextDueAt]  || 0,
     nextNotes:  f[CRM_FIELDS.nextNotes]  || '',
+    // ── Phase 3a 会话 3 新增:Onhold / Inactive ─────────────────────
+    onHoldAt:         f[CRM_FIELDS.onHoldAt]         || 0,
+    onHoldReason:     f[CRM_FIELDS.onHoldReason]     || '',
+    onHoldResumeAt:   f[CRM_FIELDS.onHoldResumeAt]   || 0,
+    onHoldPrevStatus: f[CRM_FIELDS.onHoldPrevStatus] || '',
+    inactiveAt:       f[CRM_FIELDS.inactiveAt]       || 0,
+    inactiveReason:   f[CRM_FIELDS.inactiveReason]   || '',
+    inactiveNote:     f[CRM_FIELDS.inactiveNote]     || '',
   };
 }
 
