@@ -6503,6 +6503,13 @@ function recVtOpen() {
   const modal = document.getElementById('rec-vt-modal');
   if (!modal) { alert('填约看时间窗口未找到'); return; }
 
+  // 会话11-fix:打开时复位保存按钮,防止上次异常卡在"保存中"状态
+  const saveBtn0 = document.getElementById('rec-vt-save-btn');
+  if (saveBtn0) {
+    saveBtn0.disabled = false;
+    saveBtn0.textContent = '保存';
+  }
+
   document.getElementById('rec-vt-count').textContent = selected.length;
 
   // 日期默认:如果选中房源里有已约看的,取它最新预约日期;否则留空
@@ -6627,65 +6634,130 @@ async function recVtSave() {
   const now = Date.now();
   let okCount = 0, errCount = 0;
 
-  for (const r of toUpdate) {
-    const t = timeMap[r._lark_id];  // 'HH:MM'
-    const displayT = recVtDisplayTime(t);  // '10:30 AM'
-    // 构造 viewLog 文本:YYYY-MM-DD HH:MM AM/PM
-    let logText;
-    if (dateVal && displayT) logText = `${dateVal} ${displayT}`;
-    else if (displayT) logText = displayT;
-    else logText = '时间待确定';
+  try {
+    for (const r of toUpdate) {
+      const t = timeMap[r._lark_id];  // 'HH:MM'
+      const displayT = recVtDisplayTime(t);  // '10:30 AM'
+      // 构造 viewLog 文本:YYYY-MM-DD HH:MM AM/PM
+      let logText;
+      if (dateVal && displayT) logText = `${dateVal} ${displayT}`;
+      else if (displayT) logText = displayT;
+      else logText = '时间待确定';
 
-    // 判断是「预约」还是「改约」:已约看 = 改约,其他 = 预约
-    const wasBooked = (r.status === '已约看');
-    const kind = wasBooked ? '改约' : '预约';
+      // 判断是「预约」还是「改约」:已约看 = 改约,其他 = 预约
+      const wasBooked = (r.status === '已约看');
+      const kind = wasBooked ? '改约' : '预约';
 
-    const newEvent = { time: now, kind, text: logText };
-    const updated = {
-      ...r,
-      status: '已约看',  // 统一改为已约看(即使原本就是已约看也保持)
-      viewLog: [...(r.viewLog || []), newEvent],
-      updatedAt: now,
-    };
+      const newEvent = { time: now, kind, text: logText };
+      const updated = {
+        ...r,
+        status: '已约看',  // 统一改为已约看(即使原本就是已约看也保持)
+        viewLog: [...(r.viewLog || []), newEvent],
+        updatedAt: now,
+      };
 
-    try {
-      const res = await recApi('rec_update', { lark_id: r._lark_id, rec: updated });
-      if (res.success) {
-        const idx = recCurrentList.findIndex(x => x._lark_id === r._lark_id);
-        if (idx >= 0) {
-          recCurrentList[idx] = {
-            ...recCurrentList[idx],
-            status: '已约看',
-            viewLog: updated.viewLog,
-            updatedAt: now,
-          };
+      try {
+        const res = await recApi('rec_update', { lark_id: r._lark_id, rec: updated });
+        if (res.success) {
+          const idx = recCurrentList.findIndex(x => x._lark_id === r._lark_id);
+          if (idx >= 0) {
+            recCurrentList[idx] = {
+              ...recCurrentList[idx],
+              status: '已约看',
+              viewLog: updated.viewLog,
+              updatedAt: now,
+            };
+          }
+          okCount++;
+        } else {
+          errCount++;
         }
-        okCount++;
-      } else {
+      } catch (err) {
         errCount++;
       }
-    } catch (err) {
-      errCount++;
     }
-  }
 
-  // 联动客户状态(有已约看 → 客户=看房中)
-  if (okCount > 0 && recCurrentClientId) {
-    try { await recRecomputeClientStatus(recCurrentClientId); } catch(_) {}
-  }
-
-  // 重渲染
-  recRenderList();
-
-  // 关闭 + toast
-  recVtClose();
-  if (typeof showToast === 'function') {
-    if (errCount === 0) {
-      showToast(`✓ 已保存 ${okCount} 套的约看时间`);
-    } else {
-      showToast(`✓ ${okCount} 套已保存,${errCount} 套失败`);
+    // 联动客户状态(有已约看 → 客户=看房中)
+    if (okCount > 0 && recCurrentClientId) {
+      try { await recRecomputeClientStatus(recCurrentClientId); } catch(_) {}
     }
+
+    // 重渲染
+    recRenderList();
+
+    // 关闭 + toast
+    recVtClose();
+    if (typeof showToast === 'function') {
+      if (errCount === 0) {
+        showToast(`✓ 已保存 ${okCount} 套的约看时间`);
+      } else {
+        showToast(`✓ ${okCount} 套已保存,${errCount} 套失败`);
+      }
+    }
+  } catch (fatalErr) {
+    // 会话11-fix:兜底,保证任何意外崩溃都不会卡按钮
+    alert('保存时出错:' + (fatalErr.message || fatalErr));
+  } finally {
+    // 会话11-fix:无论成功/失败/崩溃,按钮一定还原
+    saveBtn.disabled = false;
+    saveBtn.textContent = '保存';
   }
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// 会话11-fix:单套版填约看时间弹窗
+// 用于房源详情 popup 里点「+ 约看」「+ 改约」时,替代 prompt 输入
+// 直接复用 rec-vt-modal 的 DOM,只塞一套房源进去
+// ═══════════════════════════════════════════════════════════════════════
+function recVtOpenSingle(larkId, kindHint) {
+  const r = recCurrentList.find(x => x._lark_id === larkId);
+  if (!r) { alert('房源未找到'); return; }
+  const modal = document.getElementById('rec-vt-modal');
+  if (!modal) { alert('填约看时间窗口未找到'); return; }
+
+  // 复位保存按钮
+  const saveBtn0 = document.getElementById('rec-vt-save-btn');
+  if (saveBtn0) { saveBtn0.disabled = false; saveBtn0.textContent = '保存'; }
+
+  document.getElementById('rec-vt-count').textContent = 1;
+
+  // 预填日期:优先用 viewLog 最新预约日期
+  let defaultDate = '';
+  const booking = recVtExtractLastBooking(r);
+  if (booking.date) defaultDate = booking.date;
+  document.getElementById('rec-vt-date').value = defaultDate;
+
+  // 状态徽章 class
+  let statusClass = '';
+  if (r.status === '备选')    statusClass = 'is-draft';
+  if (r.status === '已发送')  statusClass = 'is-sent';
+  if (r.status === '待约看')  statusClass = 'is-pending';
+  if (r.status === '已约看')  statusClass = 'is-booked';
+
+  // 预填时间:从 viewLog 取
+  const prefillTime = booking.time || '';
+
+  const priceDisplay = recFmtPrice(r.price, r.priceType);
+  const idParts = [recEscape(r.address || '(无地址)')];
+  if (r.rooms) idParts.push(recEscape(r.rooms));
+  if (priceDisplay !== '—') idParts.push(recEscape(priceDisplay));
+
+  document.getElementById('rec-vt-rows').innerHTML = `
+    <div class="rec-vt-row" data-lark-id="${r._lark_id}">
+      <div class="rec-vt-row-top">
+        <div class="rec-vt-row-addr" title="${recEscape(r.address || '')}">${idParts.join(' · ')}</div>
+        <span class="rec-vt-row-status ${statusClass}">${recEscape(r.status)}</span>
+        <select class="rec-vt-time-select" data-lark-id="${r._lark_id}" onchange="recVtCheckConflicts()">
+          ${recVtTimeOptions(prefillTime)}
+        </select>
+      </div>
+      <div class="rec-vt-conflict" data-conflict-for="${r._lark_id}"></div>
+    </div>
+  `;
+
+  window._recVtSelected = [r];
+  recVtCheckConflicts();
+  modal.style.display = 'flex';
 }
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -7022,10 +7094,17 @@ async function recAddOrEditFeedback(larkId) {
 async function recAddEvent(kind) {
   const r = recCurrentList.find(x => x._lark_id === recDetailId);
   if (!r) return;
+
+  // 会话11-fix:预约/改约改走时间下拉弹窗,替代 prompt 手写输入
+  if (kind === '预约' || kind === '改约') {
+    // 先关闭详情 modal(避免 modal 叠 modal 体验差)
+    recCloseDetail();
+    recVtOpenSingle(r._lark_id, kind);
+    return;
+  }
+
   let promptMsg, defaultText = '';
-  if (kind === '预约')      promptMsg = '约看时间(如 2026-04-22 10:00)及备注:';
-  else if (kind === '改约') promptMsg = '改约后的时间及原因:';
-  else if (kind === '爽约') promptMsg = '爽约原因(可选):';
+  if (kind === '爽约') promptMsg = '爽约原因(可选):';
   else if (kind === '看房完成') promptMsg = '客户反馈:';
   const text = prompt(promptMsg, defaultText);
   if (text === null) return;  // 用户取消
