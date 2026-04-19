@@ -5725,7 +5725,8 @@ function recRenderCard(r) {
   if (r.agentCo) agentLine.push(recEscape(r.agentCo));
 
   // 会话 5+6:备选/已发送/待约看 状态房源显示勾选框
-  const isSelectable = (r.status === '备选' || r.status === '已发送' || r.status === '待约看');
+  // 会话 10:已约看也能勾选(用于批量改约)
+  const isSelectable = (r.status === '备选' || r.status === '已发送' || r.status === '待约看' || r.status === '已约看');
   const isChecked = recSelectedIds.has(r._lark_id);
   const checkboxHtml = isSelectable
     ? `<input type="checkbox" class="rec-card-checkbox" ${isChecked ? 'checked' : ''} onclick="event.stopPropagation();recToggleSelect('${r._lark_id}')">`
